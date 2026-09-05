@@ -1,0 +1,60 @@
+# Application configuration for the Sidewatch service
+# Demonstrates common YAML constructs
+
+apiVersion: v1
+kind: Deployment
+metadata:
+  name: sidewatch-server
+  namespace: production
+  labels:
+    app: sidewatch
+    tier: backend
+    version: "1.1.6"
+
+# Anchors and aliases
+defaults: &default_resources
+  cpu: 500m
+  memory: 256Mi
+
+spec:
+  replicas: 3
+  minReadySeconds: 10
+  enabled: true
+  paused: false
+  strategy: null
+  resources:
+    <<: *default_resources
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+  env:
+    - name: LOG_LEVEL
+      value: DEBUG
+    - name: MAX_CONNECTIONS
+      value: "100"
+    - name: TIMEOUT_SECONDS
+      value: 30
+  ports:
+    - containerPort: 8080
+      protocol: TCP
+    - containerPort: 9090
+      protocol: TCP
+
+# Flow-style collections
+featureFlags: { darkMode: true, betaSearch: false, retryCount: 5 }
+allowedOrigins: ["https://example.com", "https://sidewatch.app"]
+
+# Multi-line block scalar
+startupScript: |
+  #!/bin/sh
+  echo "Starting server on port 8080"
+  exec /usr/bin/sidewatch --config /etc/config.yaml
+
+description: >
+  This is a folded multi-line string that will be
+  joined into a single line when parsed.
+
+pi: 3.14159
+retries: -1
+ratio: 0.75
+scientific: 1.5e-3

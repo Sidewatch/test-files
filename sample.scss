@@ -1,0 +1,35 @@
+// Design tokens
+$primary: #336699;
+$radius: 4px;
+$spacing: 0.75rem;
+
+@use "sass:color";
+
+@mixin flex($dir: row) {
+  display: flex;
+  flex-direction: $dir;
+}
+
+%card-base {
+  border-radius: $radius;
+  padding: $spacing;
+}
+
+.card {
+  @extend %card-base;
+  @include flex(column);
+  color: $primary;
+  background: color.adjust($primary, $lightness: 40%);
+
+  &:hover {
+    border-color: darken($primary, 10%);
+  }
+
+  .card__title {
+    font-size: 1.25rem; /* block comment */
+  }
+}
+
+@media (max-width: 600px) {
+  .card { padding: $spacing * 0.5; }
+}

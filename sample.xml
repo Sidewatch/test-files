@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?xml-stylesheet type="text/xsl" href="catalog.xsl"?>
+<!DOCTYPE catalog [
+  <!ELEMENT catalog (book+)>
+  <!ATTLIST book id ID #REQUIRED>
+  <!ENTITY publisher "O'Grady &amp; Sons">
+]>
+<!-- A small book catalog exercising tags, attributes, entities, CDATA. -->
+<catalog xmlns:dc="http://purl.org/dc/elements/1.1/" version="2.1">
+  <book id="bk101" available="true">
+    <dc:title>The Emerald Vale</dc:title>
+    <author>Margaret Holt</author>
+    <price currency="USD">29.95</price>
+    <published>2024-11-05</published>
+    <publisher>&publisher;</publisher>
+    <blurb>Fewer than 5 &lt;copies&gt; left &#8212; order soon.</blurb>
+    <review><![CDATA[Raw text: <not-a-tag> & unescaped ampersands allowed here.]]></review>
+    <tags>
+      <tag>fiction</tag>
+      <tag>fantasy</tag>
+    </tags>
+    <cover href="covers/bk101.png" width="320" height="480"/>
+  </book>
+</catalog>
