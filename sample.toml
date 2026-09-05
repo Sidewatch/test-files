@@ -1,0 +1,56 @@
+# Sample configuration file for a web service
+# Demonstrates TOML constructs for syntax-highlight testing
+
+title = "Sidewatch Service Config"
+enabled = true
+max_connections = 512
+timeout_seconds = 30.5
+release_date = 1979-05-27T07:32:00Z
+
+# An array of numbers and an array of strings
+ports = [8080, 8443, 9090]
+hosts = ["alpha.local", "beta.local", "gamma.local"]
+
+[database]
+server = "192.168.1.1"
+port = 5432
+username = "admin"
+password = "s3cr3t"
+connection_max = 5000
+enabled = false
+
+[servers]
+
+  [servers.primary]
+  ip = "10.0.0.1"
+  dc = "eqdc10"
+  weight = 1.5e3
+
+  [servers.replica]
+  ip = "10.0.0.2"
+  dc = "eqdc10"
+  weight = 0xDEADBEEF
+
+# Array of tables
+[[products]]
+name = "Hammer"
+sku = 738594937
+price = 9.99
+
+[[products]]
+name = "Nail"
+sku = 284758393
+color = "gray"
+
+[owner]
+name = "David Sherlock"
+dob = 1990-01-15
+bio = """
+Multi-line string bio.
+Supports multiple lines.
+"""
+
+[features]
+literal_path = 'C:\Users\config\app.toml'
+regex = '\d{3}-\d{4}'
+unicode = "éè"

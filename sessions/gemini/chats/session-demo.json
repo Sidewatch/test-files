@@ -1,0 +1,7 @@
+{"sessionId":"s1","projectHash":"abc","startTime":"2026-07-26T10:00:00.000Z","lastUpdated":"2026-07-26T10:05:00.000Z","messages":[
+ {"id":"m1","timestamp":"2026-07-26T10:00:01.000Z","type":"user","content":"Add a retry to the uploader"},
+ {"id":"m2","timestamp":"2026-07-26T10:00:04.000Z","type":"gemini","content":[{"text":"Adding exponential backoff."}],"toolCalls":[
+   {"id":"t1","name":"read_file","args":{"file_path":"Uploader.swift"},"status":"success","timestamp":"2026-07-26T10:00:05.000Z"},
+   {"id":"t2","name":"replace","args":{"file_path":"Sources/Uploader.swift"},"status":"success","timestamp":"2026-07-26T10:00:06.000Z"}]},
+ {"id":"m3","timestamp":"2026-07-26T10:05:00.000Z","type":"user","content":[{"text":"Cap it at 30 seconds"}]}
+]}

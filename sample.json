@@ -1,0 +1,44 @@
+{
+  "name": "sidewatch",
+  "version": "1.1.6",
+  "private": true,
+  "description": "A lightweight code editor with tree-sitter highlighting",
+  "escaped": "line\nbreak \"quoted\" tab\t backslash\\ unicode é",
+  "keywords": ["editor", "macos", "swift", "tree-sitter"],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/example/sidewatch.git"
+  },
+  "config": {
+    "port": 8080,
+    "timeout": 30.5,
+    "retries": 3,
+    "debug": false,
+    "maxConnections": 1024,
+    "ratio": -0.75,
+    "scientific": 1.6e-19,
+    "fallback": null
+  },
+  "dependencies": {
+    "tree-sitter": "^0.20.8",
+    "highlight": "~2.3.0"
+  },
+  "features": [
+    {
+      "id": 1,
+      "name": "highlighting",
+      "enabled": true,
+      "priority": 100
+    },
+    {
+      "id": 2,
+      "name": "folding",
+      "enabled": false,
+      "priority": 50
+    }
+  ]
+}

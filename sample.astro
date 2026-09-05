@@ -1,0 +1,63 @@
+---
+// Frontmatter is TypeScript — imports, types and interfaces should all colour.
+import type { CollectionEntry } from 'astro:content';
+import { formatDate } from '@/utils/dates';
+
+interface Props {
+  item: CollectionEntry<'news'>;
+  featured?: boolean;
+}
+
+const { item, featured = false } = Astro.props;
+const { data } = item;
+
+const dateLabel = formatDate(data.date, 'short');
+const ctaLabel: string = featured ? 'Read the story' : 'Read more';
+---
+
+<article class="card" data-featured={featured}>
+  <a href={data.url} rel={data.external ? 'noopener' : undefined}>
+    {data.image ? (
+      <img src={`/news/${data.image}`} alt="" loading="lazy" />
+    ) : (
+      <div class="card__placeholder" aria-hidden="true" />
+    )}
+
+    <h3>{data.title}</h3>
+    <time datetime={data.date.toISOString()}>{dateLabel}</time>
+    <span>{ctaLabel} {data.external ? '↗' : '→'}</span>
+  </a>
+</article>
+
+<script>
+  // A bare <script> is TypeScript in Astro.
+  const cards = document.querySelectorAll<HTMLElement>('.card');
+  cards.forEach((card, index: number) => {
+    card.style.setProperty('--delay', `${index * 40}ms`);
+  });
+</script>
+
+<script type="application/ld+json">
+  { "@context": "https://schema.org", "@type": "NewsArticle" }
+</script>
+
+<style>
+  /* Property names, selectors, units and functions should all be coloured —
+     and the `in` of color-mix() must NOT read as a JavaScript keyword. */
+  .card {
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    color: var(--accent);
+    border-radius: 12px;
+    transition: background 200ms ease-in-out;
+  }
+
+  .card__placeholder {
+    aspect-ratio: 16 / 9;
+    background: rgba(168, 85, 247, 0.12);
+    color: #c084fc;
+  }
+
+  @media (max-width: 700px) {
+    .card { border-radius: 8px; }
+  }
+</style>

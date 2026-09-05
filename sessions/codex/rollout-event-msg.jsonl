@@ -1,0 +1,5 @@
+{"timestamp":"2026-07-26T10:00:00.000Z","type":"session_meta","payload":{"id":"01998e0f","cwd":"/tmp/demo","originator":"codex_cli_rs","cli_version":"0.9.0","source":"cli"}}
+{"timestamp":"2026-07-26T10:00:01.000Z","type":"event_msg","payload":{"type":"user_message","message":"Add a retry to the uploader","kind":"plain"}}
+{"timestamp":"2026-07-26T10:00:04.000Z","type":"event_msg","payload":{"type":"agent_message","message":"Adding exponential backoff."}}
+{"timestamp":"2026-07-26T10:00:09.000Z","type":"response_item","payload":{"type":"function_call","name":"apply_patch","call_id":"c1","arguments":"{\"input\":\"*** Update File: Sources/Uploader.swift\\n@@\\n+retry()\"}"}}
+{"timestamp":"2026-07-26T10:05:00.000Z","type":"event_msg","payload":{"type":"user_message","message":"Now cap it at 30 seconds","kind":"plain"}}
