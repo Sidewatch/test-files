@@ -1,5 +1,6 @@
 // Track inventory for a small shop.
 use std::collections::HashMap;
+use std::io::{self, Write};
 
 /// Maximum number of items a single order may contain.
 const MAX_ITEMS: u32 = 100;

@@ -23,6 +23,9 @@ class Signer {
 
 use AcmeVault\Crypto\Signer as CryptoSigner;
 use function AcmeVault\Util\clamp;
+use AcmeVault\Crypto\{Cipher, Digest as CryptoDigest};
+use function AcmeVault\Util\{normalize, truncate};
+use const AcmeVault\Limits\{MAX_BODY, soft_cap};
 
 class Pipeline extends \AcmeVault\Core\BaseRunner {
     private CryptoSigner $signer;
