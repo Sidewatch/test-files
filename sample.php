@@ -23,6 +23,9 @@ class Signer {
 
 use FreshlyVault\Crypto\Signer as CryptoSigner;
 use function FreshlyVault\Util\clamp;
+use FreshlyVault\Crypto\{Cipher, Digest as CryptoDigest};
+use function FreshlyVault\Util\{normalize, truncate};
+use const FreshlyVault\Limits\{MAX_BODY, soft_cap};
 
 class Pipeline extends \FreshlyVault\Core\BaseRunner {
     private CryptoSigner $signer;
