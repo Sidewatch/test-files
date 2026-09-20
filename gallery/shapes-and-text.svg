@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200" width="400" height="200">
+  <rect x="10" y="10" width="180" height="180" rx="24" fill="#2dd4bf"/>
+  <circle cx="300" cy="100" r="80" fill="#f43f5e" opacity="0.8"/>
+  <text x="200" y="110" font-family="Helvetica" font-size="36" text-anchor="middle" fill="#111">Sidewatch</text>
+</svg>
