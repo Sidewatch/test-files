@@ -34,6 +34,9 @@ built or shipped; every file exists to exercise one part of the app at a known s
   one mark, a test file and a README that are never scanned. Open the commit that added them in
   History to see the marks; `sessions/claude/database-turn.jsonl` is a transcript whose first
   turn runs eight database commands, three destructive, for the Timeline.
+- `schemas/` — the same data model as a Prisma schema, a Rails `schema.rb` and Django models
+  (20 Sep 2026), for the ER diagram (View ▸ Preview on any of them) and the structural schema
+  diff (edit one: the Changes rail badge and the file's banner in All Changes say what changed).
 - `people.csv`, `sample.db`, `sample.json`, `sample.png`, `example.zip`, `page.html` — the
   preview surfaces (table, database browser, JSON tree, image, archive, web).
 
