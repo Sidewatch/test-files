@@ -26,6 +26,14 @@ built or shipped; every file exists to exercise one part of the app at a known s
   PNGs and a pad one level down, three JPEGs and a pad two down) for the Subfolders box; `notes.txt`
   and `manifest.json` are the non-media noise a gallery must ignore. The harness also writes a
   2 s ramping-tone WAV of its own for the waveform tile. 13 MB.
+- `migrations/` — example migrations for the destructive-SQL marks (20 Sep 2026): the same
+  clean-up written in raw SQL, Prisma, Rails, Django, Alembic, Knex and Laravel, each with the
+  statements that ARE marked (DROP TABLE / COLUMN, TRUNCATE, DELETE and UPDATE without a WHERE, a
+  type change, a missing down step) beside the ones that must NOT be (comments, a literal in an
+  INSERT, a conditioned DELETE with its WHERE on the next line, DROP CONSTRAINT), a pg_dump that is
+  one mark, a test file and a README that are never scanned. Open the commit that added them in
+  History to see the marks; `sessions/claude/database-turn.jsonl` is a transcript whose first
+  turn runs eight database commands, three destructive, for the Timeline.
 - `people.csv`, `sample.db`, `sample.json`, `sample.png`, `example.zip`, `page.html` — the
   preview surfaces (table, database browser, JSON tree, image, archive, web).
 
