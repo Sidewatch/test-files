@@ -22,9 +22,10 @@ built or shipped; every file exists to exercise one part of the app at a known s
   shapes + text, viewBox-only). Four short ffmpeg videos (mp4/mov/m4v, one with an audio
   track). Audio: synthetic sine/silence/pink-noise in wav/m4a/aiff/flac/mp3 across sample rates
   and channel counts (a 10-minute silence for the duration column), plus a handful of real
-  Driftscape pads and a stretching source. `nested/` and `nested/deeper/` hold more of each
-  for the include-subfolders case; `notes.txt` and `manifest.json` are the non-media noise a
-  gallery must ignore. 13 MB.
+  Driftscape pads and a stretching source. `nested/` and `nested/deeper/` hold ten more (five
+  PNGs and a pad one level down, three JPEGs and a pad two down) for the Subfolders box; `notes.txt`
+  and `manifest.json` are the non-media noise a gallery must ignore. The harness also writes a
+  2 s ramping-tone WAV of its own for the waveform tile. 13 MB.
 - `people.csv`, `sample.db`, `sample.json`, `sample.png`, `example.zip`, `page.html` — the
   preview surfaces (table, database browser, JSON tree, image, archive, web).
 
