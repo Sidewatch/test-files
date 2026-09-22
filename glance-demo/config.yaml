@@ -1,0 +1,18 @@
+# a service file
+version: "3.9"
+services:
+  web:
+    image: nginx:1.25
+    ports:
+      - "80:80"
+      - 443
+    debug: true
+    replicas: 3
+    ratio: 0.5
+    notes: |
+      line one
+      line two
+  db:
+    image: postgres
+    environment: {POSTGRES_DB: app, POSTGRES_USER: app}
+volumes: [data, logs]
