@@ -1,0 +1,26 @@
+{# Nunjucks: an orders page rendered by Eleventy/Express. #}
+{% extends "layouts/base.njk" %}
+{% set title = user.name + " — Orders" %}
+
+{% macro money(n, currency="GBP") %}{{ n | currency(currency) }}{% endmacro %}
+
+{% block content %}
+  <h1>Orders for {{ user.name | title }}</h1>
+
+  {% if orders | length == 0 %}
+    <p class="muted">No orders yet.</p>
+  {% else %}
+    <table>
+      {% for order in orders | sort(true, false, "placedAt") %}
+        <tr class="{{ 'paid' if order.paid else 'open' }}">
+          <td>#{{ order.number }}</td>
+          <td>{{ money(order.total) }}</td>
+          {% if loop.first %}<td><span class="badge">latest</span></td>{% endif %}
+        </tr>
+      {% endfor %}
+    </table>
+  {% endif %}
+
+  {% include "partials/pagination.njk" %}
+  {{ footerHtml | safe }}
+{% endblock %}

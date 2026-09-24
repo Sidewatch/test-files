@@ -1,0 +1,23 @@
+<%# Orders index — Rails view; @orders and current_user come from the controller. %>
+<h1><%= t(".title", name: current_user.name) %></h1>
+
+<% if @orders.empty? %>
+  <p class="muted"><%= t(".empty") %></p>
+<% else %>
+  <table class="orders">
+    <% @orders.each do |order| %>
+      <tr class="<%= order.paid? ? 'paid' : 'open' %>">
+        <td><%= link_to order.number, order_path(order) %></td>
+        <td><%= number_to_currency(order.total) %></td>
+        <td><%= time_ago_in_words(order.created_at) %> ago</td>
+        <td>
+          <%= button_to "Cancel", cancel_order_path(order), method: :patch,
+                data: { turbo_confirm: "Cancel order #{order.number}?" } if order.cancellable? %>
+        </td>
+      </tr>
+    <% end %>
+  </table>
+  <%= paginate @orders %>
+<% end %>
+
+<%= render partial: "summary", locals: { count: @orders.size } %>

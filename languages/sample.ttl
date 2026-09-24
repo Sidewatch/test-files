@@ -1,0 +1,23 @@
+# Turtle (RDF): people and the projects they worked on.
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex:   <https://example.com/schema#> .
+@base <https://example.com/data/> .
+
+<ada> a foaf:Person ;
+    foaf:name "Ada"@en ;
+    ex:joined "2019-03-01"^^xsd:date ;
+    ex:workedOn <sidewatch>, <metricbar> .
+
+<linus> a foaf:Person ;
+    foaf:name "Linus" ;
+    foaf:knows <ada> ;
+    ex:workedOn <sidewatch> .
+
+<sidewatch> a ex:Project ;
+    ex:title "Sidewatch"@en ;
+    ex:budget 120000.00 ;
+    ex:tags ( "macos" "review" "agents" ) .
+
+<metricbar> a ex:Project ; ex:title "MetricBar"@en ; ex:budget 35000 .

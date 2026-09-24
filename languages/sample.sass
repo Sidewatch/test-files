@@ -1,0 +1,30 @@
+// Sass (indented syntax): variables, a mixin with a default, nesting, a loop.
+$primary: #336699
+$radius: 4px
+$spacing: 0.75rem
+$sizes: (small: 0.875rem, base: 1rem, large: 1.25rem)
+
+@use "sass:color"
+
+=rounded($r: $radius)
+  border-radius: $r
+
+.card
+  +rounded
+  color: $primary
+  background: color.adjust($primary, $lightness: 40%)
+  padding: $spacing
+
+  &:hover
+    border-color: color.adjust($primary, $lightness: -10%)
+
+  &__title
+    font-size: 1.25rem   // the heading
+
+@each $name, $size in $sizes
+  .text-#{$name}
+    font-size: $size
+
+@media (max-width: 600px)
+  .card
+    padding: $spacing * 0.5

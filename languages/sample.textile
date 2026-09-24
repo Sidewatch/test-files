@@ -1,0 +1,22 @@
+h1. Inventory service
+
+The *inventory service* keeps stock levels for every _warehouse_ and answers reorder questions.
+
+h2. Endpoints
+
+* @GET /orders@ -- the orders, newest first
+* @POST /orders@ -- place an order
+** returns @201 Created@
+* @GET /healthz@
+
+h2. Configuration
+
+|_. Key |_. Default |_. Notes |
+| @REORDER_POINT@ | 25 | per SKU |
+| @LOG_LEVEL@ | info | debug, info, warn |
+
+bc. curl -s https://api.example.com/orders | jq '.[0]'
+
+bq. Cancelled orders are excluded from revenue totals.
+
+See "the deployment guide":https://example.com/docs/deploy and !logo.png(Example)!.

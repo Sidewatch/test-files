@@ -1,0 +1,20 @@
+# SPARQL: people and the projects they worked on, ranked by shared projects.
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX ex:   <https://example.com/schema#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?person (COUNT(DISTINCT ?project) AS ?shared) (GROUP_CONCAT(?title; separator=", ") AS ?titles)
+WHERE {
+  ?person a foaf:Person ;
+          foaf:name ?name ;
+          ex:workedOn ?project .
+  ?project ex:title ?title ;
+           ex:budget ?budget .
+  FILTER (?budget > "100000"^^xsd:decimal && LANG(?title) = "en")
+  OPTIONAL { ?person ex:joined ?joined }
+  MINUS { ?person ex:status "inactive" }
+}
+GROUP BY ?person
+HAVING (COUNT(DISTINCT ?project) >= 2)
+ORDER BY DESC(?shared) ?name
+LIMIT 10

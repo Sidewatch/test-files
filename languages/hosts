@@ -1,0 +1,14 @@
+##
+# Host database — sample entries for local development.
+##
+127.0.0.1       localhost
+255.255.255.255 broadcasthost
+::1             localhost
+
+# Local services
+127.0.0.1       api.local admin.local
+127.0.0.1       db.local        # Postgres in Docker
+
+# Block telemetry hosts
+0.0.0.0         telemetry.example.net
+0.0.0.0         metrics.example.net

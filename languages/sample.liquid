@@ -1,0 +1,25 @@
+{% comment %} Shopify Liquid: a product grid with filters and a snippet. {% endcomment %}
+{% assign on_sale = collection.products | where: "compare_at_price" %}
+{% assign heading = collection.title | default: "Products" | upcase %}
+
+<h1>{{ heading }}</h1>
+
+{% if on_sale.size > 0 %}
+  <p>{{ on_sale.size }} on sale — up to {{ on_sale | map: "discount_percent" | sort | last }}% off</p>
+{% endif %}
+
+<ul class="grid">
+  {% for product in collection.products limit: 12 %}
+    <li class="{% cycle 'odd', 'even' %}">
+      <a href="{{ product.url | within: collection }}">
+        <img src="{{ product.featured_image | img_url: '300x300' }}" alt="{{ product.title | escape }}">
+        {{ product.title }} — {{ product.price | money_with_currency }}
+      </a>
+      {% unless product.available %}<span class="badge">Sold out</span>{% endunless %}
+    </li>
+  {% else %}
+    <li>No products yet.</li>
+  {% endfor %}
+</ul>
+
+{% render 'pagination', paginate: paginate %}

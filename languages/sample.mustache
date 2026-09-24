@@ -1,0 +1,21 @@
+{{! Orders list, logic-less Mustache. }}
+<h1>Orders for {{user.name}}</h1>
+
+{{#orders.length}}
+<table class="orders">
+  {{#orders}}
+  <tr class="{{#paid}}paid{{/paid}}{{^paid}}open{{/paid}}">
+    <td>#{{number}}</td>
+    <td>{{total}}</td>
+    <td>{{status}}</td>
+  </tr>
+  {{/orders}}
+</table>
+{{/orders.length}}
+
+{{^orders.length}}
+<p class="muted">No orders yet.</p>
+{{/orders.length}}
+
+{{> pagination}}
+{{{footerHtml}}}

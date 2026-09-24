@@ -1,0 +1,31 @@
+#+TITLE: Inventory service notes
+#+AUTHOR: Jane Doe
+#+DATE: 2026-09-24
+#+OPTIONS: toc:2
+
+* Overview
+The inventory service keeps stock levels for every warehouse.
+
+** Endpoints
+- =GET /orders= :: the orders, newest first
+- =POST /orders= :: place an order, returns ~201 Created~
+- =GET /healthz= :: liveness
+
+* Tasks [1/3]
+** DONE Write the reorder query
+   CLOSED: [2026-09-20 Sat 14:02]
+** TODO Add the daily rollup                                          :report:
+   SCHEDULED: <2026-09-26 Fri>
+** TODO Paginate =/orders=
+   - [ ] cursor parameter
+   - [ ] tests
+
+* Configuration
+| Key           | Default | Notes            |
+|---------------+---------+------------------|
+| REORDER_POINT |      25 | per SKU          |
+| LOG_LEVEL     | info    | debug/info/warn  |
+
+#+BEGIN_SRC bash
+curl -s https://api.example.com/orders | jq '.[0]'
+#+END_SRC

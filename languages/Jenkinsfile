@@ -1,0 +1,37 @@
+// Declarative Jenkins pipeline: build, test in parallel, deploy on main.
+pipeline {
+    agent { label 'linux' }
+
+    environment {
+        REGISTRY = 'registry.example.com'
+        IMAGE = "${env.REGISTRY}/inventory:${env.BUILD_NUMBER}"
+    }
+
+    options { timeout(time: 30, unit: 'MINUTES') }
+
+    stages {
+        stage('Build') {
+            steps { sh './gradlew assemble' }
+        }
+        stage('Test') {
+            parallel {
+                stage('Unit') { steps { sh './gradlew test' } }
+                stage('Lint') { steps { sh './gradlew spotlessCheck' } }
+            }
+        }
+        stage('Deploy') {
+            when { branch 'main' }
+            steps {
+                script {
+                    def tag = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+                    docker.build(IMAGE, "--build-arg GIT_SHA=${tag} .").push()
+                }
+            }
+        }
+    }
+
+    post {
+        failure { mail to: 'ops@example.com', subject: "Build ${env.BUILD_NUMBER} failed" }
+        always { junit 'build/test-results/**/*.xml' }
+    }
+}

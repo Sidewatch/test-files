@@ -1,0 +1,30 @@
+# systemd unit for the inventory API.
+[Unit]
+Description=Inventory API
+Documentation=https://example.com/docs/inventory
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=notify
+User=inventory
+Group=inventory
+WorkingDirectory=/opt/inventory
+EnvironmentFile=-/etc/inventory/env
+ExecStartPre=/opt/inventory/bin/migrate --check
+ExecStart=/opt/inventory/bin/inventory --port 8080
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=30s
+LimitNOFILE=65536
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/inventory
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

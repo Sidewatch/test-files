@@ -1,0 +1,18 @@
+# Normalise line endings and mark binaries and generated files.
+* text=auto eol=lf
+
+*.sh text eol=lf
+*.bat text eol=crlf
+
+*.png binary
+*.jpg binary
+*.woff2 binary
+*.sqlite binary diff=sqlite
+
+# Generated: collapse in diffs and PR views
+package-lock.json linguist-generated=true -diff
+*.min.js linguist-generated=true
+docs/** linguist-documentation
+
+# Large assets through LFS
+*.mp4 filter=lfs diff=lfs merge=lfs -text

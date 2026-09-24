@@ -1,0 +1,21 @@
+diff --git a/src/inventory.py b/src/inventory.py
+index 3f2a1c9..8b7d0e4 100644
+--- a/src/inventory.py
++++ b/src/inventory.py
+@@ -12,10 +12,13 @@ REORDER_POINT = 25
+ 
+ def low_stock(items):
+-    return [i for i in items if i.qty < REORDER_POINT]
++    """Items at or below the reorder point, cheapest first."""
++    low = [i for i in items if i.qty <= REORDER_POINT]
++    return sorted(low, key=lambda i: i.price)
+ 
+ 
+ def total_value(items):
+-    return sum(i.qty * i.price for i in items)
++    total = sum(i.qty * i.price for i in items)
++    return round(total, 2)
+@@ -40,4 +43,4 @@ if __name__ == "__main__":
+     for item in low_stock(load()):
+-        print(item.sku)
++        print(f"{item.sku}: {item.qty} left")

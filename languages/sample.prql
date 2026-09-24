@@ -1,0 +1,24 @@
+# PRQL: revenue by month for paid orders, with a derived margin.
+prql target:sql.postgres
+
+let paid = (
+  from orders
+  filter status == "paid"
+  filter placed_at >= @2026-01-01
+)
+
+from paid
+join items (==order_id)
+derive {
+  revenue = items.quantity * items.unit_price,
+  month = s"date_trunc('month', {placed_at})",
+}
+group {month} (
+  aggregate {
+    order_count = count_distinct orders.id,
+    total = sum revenue,
+    avg_order = average revenue,
+  }
+)
+sort {-month}
+take 12

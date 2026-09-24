@@ -1,0 +1,13 @@
+%% Mermaid: the order lifecycle as a state diagram, and a sequence.
+stateDiagram-v2
+    [*] --> Pending
+    Pending --> Paid : payment ok
+    Pending --> Cancelled : timeout / user
+    Paid --> Shipped : picked & packed
+    Shipped --> [*]
+    Cancelled --> [*]
+
+    note right of Paid
+        A paid order can still be
+        cancelled within 1 hour.
+    end note

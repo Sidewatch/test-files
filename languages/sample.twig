@@ -1,0 +1,29 @@
+{# Twig: the orders page; orders and user come from the controller. #}
+{% extends "layout.html.twig" %}
+{% set title = user.name ~ " — Orders" %}
+
+{% macro money(n, currency = "GBP") %}{{ n|format_currency(currency) }}{% endmacro %}
+{% import _self as fmt %}
+
+{% block content %}
+  <h1>Orders for {{ user.name|title }}</h1>
+
+  {% if orders is empty %}
+    <p class="muted">No orders yet.</p>
+  {% else %}
+    <table class="orders">
+      {% for order in orders|sort((a, b) => b.placedAt <=> a.placedAt) %}
+        <tr class="{{ order.paid ? 'paid' : 'open' }}">
+          <td>#{{ order.number }}</td>
+          <td>{{ fmt.money(order.total) }}</td>
+          <td>{{ order.placedAt|date("Y-m-d") }}</td>
+          {% if loop.first %}<td><span class="badge">latest</span></td>{% endif %}
+        </tr>
+      {% endfor %}
+    </table>
+    <p>{{ orders|filter(o => o.paid)|length }} of {{ orders|length }} paid</p>
+  {% endif %}
+
+  {{ include("partials/pagination.html.twig", { page: page }) }}
+  {{ footerHtml|raw }}
+{% endblock %}

@@ -1,0 +1,23 @@
+// RON (Rusty Object Notation): a service config as a Rust-shaped literal.
+#![enable(implicit_some)]
+Config(
+    name: "inventory-api",
+    version: "1.4.0",
+    replicas: 3,
+    ports: [8080, 9090],
+    debug: false,
+    database: Database(
+        host: "db.internal",
+        port: 5432,
+        ssl: true,
+        timeout: Duration(secs: 30, nanos: 0),
+    ),
+    env: {
+        "LOG_LEVEL": "info",
+        "FEATURE_FLAGS": "search,export",
+    },
+    retry: Some(Retry(attempts: 3, backoff_ms: 250)),
+    mode: Production,
+    ratio: 0.75,
+    tags: ("eu-west-1", 'p'),
+)

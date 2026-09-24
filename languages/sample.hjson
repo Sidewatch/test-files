@@ -1,0 +1,23 @@
+{
+  # Hjson: JSON for humans — comments, unquoted keys, multiline strings.
+  name: inventory-api
+  version: 1.4.0
+  replicas: 3
+
+  ports: [8080, 9090]
+
+  database: {
+    host: db.internal
+    port: 5432
+    ssl: true
+  }
+
+  motd:
+    '''
+    Welcome to the inventory service.
+    Nothing here is billable.
+    '''
+
+  // Trailing commas and quoteless values are fine
+  features: [search, export,],
+}

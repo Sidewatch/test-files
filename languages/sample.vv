@@ -1,0 +1,43 @@
+// V: a struct, a method, a sum type and a result-returning function.
+module main
+
+import os
+
+const reorder_point = 25
+
+struct Item {
+	sku   string
+	qty   int
+	price f64
+}
+
+type Outcome = Item | string
+
+fn (i Item) describe() string {
+	return if i.qty == 0 { '${i.sku}: out of stock' } else { '${i.sku}: ${i.qty} left' }
+}
+
+fn parse(line string) !Item {
+	parts := line.split(',')
+	if parts.len != 3 {
+		return error('expected 3 fields, got ${parts.len}')
+	}
+	return Item{parts[0], parts[1].int(), parts[2].f64()}
+}
+
+fn main() {
+	lines := ['A-100,12,4.5', 'B-200,40,1.25', 'bad line']
+	mut items := []Item{}
+	for line in lines {
+		items << parse(line) or {
+			eprintln('skip: ${err}')
+			continue
+		}
+	}
+	low := items.filter(it.qty <= reorder_point)
+	for it in low {
+		println(it.describe())
+	}
+	value := items.map(it.qty * it.price).reduce(fn (a f64, b f64) f64 { return a + b }, 0.0)
+	println('value: ${value:.2f} (${os.args.len} args)')
+}

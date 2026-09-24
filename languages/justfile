@@ -1,0 +1,29 @@
+# just: the project's task runner (`just --list` shows these).
+set shell := ["bash", "-euo", "pipefail", "-c"]
+set dotenv-load
+
+config := env_var_or_default("CONFIG", "debug")
+app := "Inventory"
+
+# Build the app in the chosen configuration
+build:
+    swift build -c {{config}}
+
+# Run the whole test suite
+test *ARGS: build
+    swift test {{ARGS}}
+
+# Format and lint
+lint:
+    swiftformat --lint Sources
+    swiftlint --strict
+
+# Bundle and sign for release
+[confirm("Build a signed release?")]
+release: (build "release")
+    ./bundle.sh
+    @echo "Built {{app}} ({{config}})"
+
+# Remove build products
+clean:
+    rm -rf .build

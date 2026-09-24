@@ -44,3 +44,11 @@ built or shipped; every file exists to exercise one part of the app at a known s
 
 Clone it next to the app (`~/Developer/Swift/Sidewatch/TestFiles`); the app's docs refer to
 it as `../TestFiles`.
+
+## languages/ and kinds/ (24 Sep 2026)
+
+- `languages/` — one sample per language the detector knows (216 of 221 from the name alone; the four collisions
+  under `languages/picker-only/`). Step through it in Finder with Space to test Quick Look, or open it in Sidewatch.
+- `kinds/` — one file per non-code format the previews handle that the gallery did not already cover: fonts, PDF,
+  every archive type, the database extensions, and the remaining image / audio / video formats.
+

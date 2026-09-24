@@ -1,0 +1,39 @@
+\documentclass[11pt,a4paper]{article}
+% A short note with a theorem, an equation and a table.
+\usepackage{amsmath,amsthm}
+\usepackage[margin=2.5cm]{geometry}
+\newtheorem{theorem}{Theorem}
+\newcommand{\R}{\mathbb{R}}
+
+\title{On Bounded Sequences}
+\author{Jane Doe}
+\date{September 2026}
+
+\begin{document}
+\maketitle
+
+\section{Statement}
+Let $(a_n)_{n \ge 1}$ be a sequence in $\R$ with $|a_n| \le M$ for all $n$.
+
+\begin{theorem}[Bolzano--Weierstrass]
+  Every bounded sequence in $\R$ has a convergent subsequence.
+\end{theorem}
+
+\begin{equation}\label{eq:limsup}
+  \limsup_{n \to \infty} a_n = \lim_{n \to \infty} \sup_{k \ge n} a_k
+\end{equation}
+
+By~\eqref{eq:limsup} the value is finite. See Table~\ref{tab:values}.
+
+\begin{table}[h]
+  \centering
+  \begin{tabular}{l r}
+    \hline
+    $n$ & $a_n$ \\ \hline
+    1 & 0.500 \\
+    2 & 0.750 \\
+    3 & 0.875 \\ \hline
+  \end{tabular}
+  \caption{First terms.}\label{tab:values}
+\end{table}
+\end{document}

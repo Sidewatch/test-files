@@ -1,0 +1,12 @@
+Plain text: nothing here is highlighted, which is the point.
+
+The inventory service keeps stock levels for every warehouse and answers
+reorder questions. This file exists so the "no colours at all" case can be
+checked beside the coloured ones: keywords like if, class and return, a
+"quoted string", the number 42, and // a comment marker should all stay in
+the foreground colour.
+
+    An indented block.
+	A tab-indented line.
+
+— end —

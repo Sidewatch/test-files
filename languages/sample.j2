@@ -1,0 +1,25 @@
+{# Jinja2: an nginx upstream block rendered by Ansible. #}
+{% set backends = groups['api'] | default([]) %}
+upstream {{ service_name | default('api') }} {
+{% for host in backends %}
+    server {{ hostvars[host]['ansible_host'] }}:{{ api_port }} weight={{ loop.first and 2 or 1 }};
+{% else %}
+    server 127.0.0.1:{{ api_port }} down;
+{% endfor %}
+    keepalive {{ backends | length * 4 }};
+}
+
+server {
+    listen 443 ssl;
+    server_name {{ server_name }};
+{% if tls_cert is defined %}
+    ssl_certificate     {{ tls_cert }};
+    ssl_certificate_key {{ tls_key }};
+{% endif %}
+
+    location / {
+        proxy_pass http://{{ service_name | default('api') }};
+        proxy_set_header Host $host;
+        {{ extra_headers | to_nice_yaml | indent(8) }}
+    }
+}
