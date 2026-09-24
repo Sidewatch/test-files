@@ -23,4 +23,5 @@ vendor/
 # Logs and caches
 logs/
 *.log
+!sample.log
 .cache/
