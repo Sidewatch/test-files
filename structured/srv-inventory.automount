@@ -1,0 +1,9 @@
+[Unit]
+Description=Automount the inventory volume
+
+[Automount]
+Where=/srv/inventory
+TimeoutIdleSec=600
+
+[Install]
+WantedBy=multi-user.target

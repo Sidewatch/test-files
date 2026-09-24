@@ -1,0 +1,18 @@
+version: "3.9"
+services:
+  web:
+    image: nginx:1.27
+    ports:
+      - "80:80"
+      - 443
+    environment:
+      DEBUG: false
+      REPLICAS: 3
+  db:
+    image: postgres:16
+    volumes: [db-data:/var/lib/postgresql/data]
+volumes:
+  db-data: {}
+notes: |
+  Two lines,
+  kept as written.

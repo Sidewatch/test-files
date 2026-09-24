@@ -1,0 +1,53 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.1276,
+          51.5072
+        ]
+      },
+      "properties": {
+        "name": "London",
+        "capacity": 1200
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -3.19,
+              55.95
+            ],
+            [
+              -3.18,
+              55.95
+            ],
+            [
+              -3.18,
+              55.96
+            ],
+            [
+              -3.19,
+              55.96
+            ],
+            [
+              -3.19,
+              55.95
+            ]
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Edinburgh yard",
+        "capacity": 300
+      }
+    }
+  ]
+}

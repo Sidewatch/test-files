@@ -1,0 +1,6 @@
+; the pre-1.0 EditorConfig shape, still INI
+root = true
+
+[*]
+indent_style = space
+indent_size = 2

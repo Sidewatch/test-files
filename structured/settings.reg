@@ -1,0 +1,11 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CURRENT_USER\Software\Example\Inventory]
+"InstallPath"="C:\\Program Files\\Inventory"
+"Version"="1.4.0"
+"MaxUploadMB"=dword:00000020
+"Telemetry"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Example\Inventory\Window]
+"Width"=dword:00000500
+"Height"=dword:000002d0

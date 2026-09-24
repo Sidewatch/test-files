@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="23094" targetRuntime="MacOSX.Cocoa">
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23094"/>
+    </dependencies>
+    <objects>
+        <customObject id="-2" userLabel="File's Owner" customClass="PanelController" customModule="Inventory"/>
+        <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
+        <window title="Panel" id="QvC-M9-y7g">
+            <rect key="contentRect" x="196" y="240" width="320" height="200"/>
+            <view key="contentView" id="EiT-Mj-1SZ">
+                <rect key="frame" x="0.0" y="0.0" width="320" height="200"/>
+            </view>
+        </window>
+    </objects>
+</document>

@@ -1,0 +1,13 @@
+[MASTER]
+ignore = migrations
+jobs = 0
+
+[MESSAGES CONTROL]
+disable = missing-docstring, too-few-public-methods
+
+[FORMAT]
+max-line-length = 100
+indent-string = '    '
+
+[DESIGN]
+max-args = 6

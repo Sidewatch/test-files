@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Inventory Van" xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata>
+    <name>Delivery run 42</name>
+    <time>2026-09-25T08:00:00Z</time>
+  </metadata>
+  <wpt lat="51.5072" lon="-0.1276">
+    <name>Depot</name>
+  </wpt>
+  <trk>
+    <name>Morning route</name>
+    <trkseg>
+      <trkpt lat="51.5072" lon="-0.1276"><ele>11</ele><time>2026-09-25T08:00:00Z</time></trkpt>
+      <trkpt lat="51.5100" lon="-0.1300"><ele>12</ele><time>2026-09-25T08:05:00Z</time></trkpt>
+      <trkpt lat="51.5150" lon="-0.1350"><ele>14</ele><time>2026-09-25T08:10:00Z</time></trkpt>
+    </trkseg>
+  </trk>
+</gpx>

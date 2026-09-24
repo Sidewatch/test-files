@@ -1,0 +1,23 @@
+{
+  "version": "4",
+  "specifiers": {
+    "jsr:@std/assert@^1.0.6": "1.0.6",
+    "npm:zod@^3.23.8": "3.23.8"
+  },
+  "jsr": {
+    "@std/assert@1.0.6": {
+      "integrity": "sha256-1e4c0b1d"
+    }
+  },
+  "npm": {
+    "zod@3.23.8": {
+      "integrity": "sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g=="
+    }
+  },
+  "workspace": {
+    "dependencies": [
+      "jsr:@std/assert@^1.0.6",
+      "npm:zod@^3.23.8"
+    ]
+  }
+}

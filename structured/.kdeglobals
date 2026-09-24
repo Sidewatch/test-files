@@ -1,0 +1,11 @@
+[General]
+ColorScheme=BreezeDark
+fixed=JetBrains Mono,11,-1,5,50,0,0,0,0,0
+font=Inter,10,-1,5,50,0,0,0,0,0
+
+[Icons]
+Theme=breeze-dark
+
+[KDE]
+SingleClick=false
+ShowDeleteCommand=true

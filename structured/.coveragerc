@@ -1,0 +1,14 @@
+[run]
+branch = True
+source = inventory
+omit =
+    */tests/*
+    */migrations/*
+
+[report]
+fail_under = 85
+show_missing = True
+skip_covered = True
+
+[html]
+directory = htmlcov

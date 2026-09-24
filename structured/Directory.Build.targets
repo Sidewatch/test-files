@@ -1,0 +1,8 @@
+<Project>
+  <Target Name="PrintVersion" AfterTargets="Build">
+    <Message Importance="high" Text="Built $(AssemblyName) $(VersionPrefix)" />
+  </Target>
+  <Target Name="CleanArtifacts" BeforeTargets="Clean">
+    <RemoveDir Directories="$(MSBuildThisFileDirectory)artifacts" />
+  </Target>
+</Project>

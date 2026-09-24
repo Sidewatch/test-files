@@ -1,0 +1,11 @@
+[Unit]
+Description=Inventory API socket
+
+[Socket]
+ListenStream=0.0.0.0:3000
+Accept=no
+Backlog=128
+NoDelay=true
+
+[Install]
+WantedBy=sockets.target
