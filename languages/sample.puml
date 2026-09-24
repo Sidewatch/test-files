@@ -1,0 +1,32 @@
+@startuml
+' PlantUML: the order flow between services.
+title Placing an order
+skinparam sequenceMessageAlign center
+
+actor Customer
+participant "Web app" as Web
+participant "Orders API" as API
+database Postgres as DB
+queue "Payments" as Pay
+
+Customer -> Web : Checkout
+Web -> API : POST /orders
+activate API
+API -> DB : INSERT order (pending)
+API -> Pay : charge(order)
+alt payment ok
+    Pay --> API : paid
+    API -> DB : UPDATE status = paid
+    API --> Web : 201 Created
+else declined
+    Pay --> API : declined
+    API --> Web : 402 Payment Required
+end
+deactivate API
+Web --> Customer : Confirmation
+
+note right of DB
+  Orders keep their history
+  in the audit table.
+end note
+@enduml

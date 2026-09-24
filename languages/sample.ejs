@@ -1,0 +1,25 @@
+<%# Orders list rendered by Express; `orders` and `user` come from the route. %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title><%= user.name %> — Orders</title>
+  <%- include('partials/head', { css: ['orders.css'] }) %>
+</head>
+<body>
+  <h1>Orders for <%= user.name %></h1>
+  <% if (orders.length === 0) { %>
+    <p class="muted">No orders yet.</p>
+  <% } else { %>
+    <ul>
+      <% orders.forEach(function (order, i) { %>
+        <li class="<%= order.paid ? 'paid' : 'open' %>">
+          #<%= order.number %> — <%= order.total.toFixed(2) %>
+          <% if (i === 0) { %><span class="badge">latest</span><% } %>
+        </li>
+      <% }); %>
+    </ul>
+  <% } %>
+  <footer><%= new Date().getFullYear() %> &middot; <%- footerHtml %></footer>
+</body>
+</html>

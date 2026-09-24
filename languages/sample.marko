@@ -1,0 +1,27 @@
+// Marko: an orders list with state, an event handler and a child tag.
+import money from "./money.js";
+
+class {
+  onCreate() { this.state = { query: "" }; }
+  filter(e) { this.state.query = e.target.value; }
+}
+
+$ const visible = input.orders.filter((o) => String(o.number).includes(state.query));
+
+<h1>Orders for ${input.user.name}</h1>
+<input placeholder="Filter…" value=state.query on-input("filter")/>
+
+<if(visible.length === 0)>
+  <p class="muted">No orders match.</p>
+</if>
+<else>
+  <table>
+    <for|order, i| of=visible>
+      <tr class={ paid: order.paid, latest: i === 0 }>
+        <td>#${order.number}</td>
+        <td>${money(order.total)}</td>
+        <td><status-badge status=order.status/></td>
+      </tr>
+    </for>
+  </table>
+</else>

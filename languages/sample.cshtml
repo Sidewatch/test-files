@@ -1,0 +1,34 @@
+@page "/orders"
+@model OrdersModel
+@using Inventory.Web.Helpers
+@{
+    ViewData["Title"] = $"{Model.User.Name} — Orders";
+    var paidCount = Model.Orders.Count(o => o.IsPaid);
+}
+@* Razor: the orders page, with a partial and a conditional block. *@
+
+<h1>Orders for @Model.User.Name</h1>
+
+@if (!Model.Orders.Any())
+{
+    <p class="muted">No orders yet.</p>
+}
+else
+{
+    <table class="orders">
+        @foreach (var order in Model.Orders.OrderByDescending(o => o.PlacedAt))
+        {
+            <tr class="@(order.IsPaid ? "paid" : "open")">
+                <td><a asp-page="/Order" asp-route-id="@order.Id">#@order.Number</a></td>
+                <td>@order.Total.ToString("C")</td>
+                <td>@order.PlacedAt.ToString("yyyy-MM-dd")</td>
+            </tr>
+        }
+    </table>
+    <p>@paidCount of @Model.Orders.Count paid</p>
+    <partial name="_Pagination" model="Model.Paging" />
+}
+
+@section Scripts {
+    <script>console.log("@Model.Orders.Count orders");</script>
+}

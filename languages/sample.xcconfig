@@ -1,0 +1,20 @@
+// Xcode build settings for the Release configuration.
+#include "Shared.xcconfig"
+
+PRODUCT_NAME = Inventory
+PRODUCT_BUNDLE_IDENTIFIER = com.example.inventory
+MARKETING_VERSION = 1.4.0
+CURRENT_PROJECT_VERSION = 140
+
+MACOSX_DEPLOYMENT_TARGET = 14.0
+SWIFT_VERSION = 6.0
+SWIFT_STRICT_CONCURRENCY = complete
+
+CODE_SIGN_IDENTITY = Developer ID Application
+CODE_SIGN_STYLE = Manual
+DEVELOPMENT_TEAM = ABCDE12345
+ENABLE_HARDENED_RUNTIME = YES
+
+OTHER_SWIFT_FLAGS = $(inherited) -warnings-as-errors
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = $(inherited) RELEASE
+GCC_PREPROCESSOR_DEFINITIONS[sdk=macosx*] = $(inherited) NDEBUG=1

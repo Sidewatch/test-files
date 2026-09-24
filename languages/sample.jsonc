@@ -1,0 +1,15 @@
+{
+  // JSON with comments — a tsconfig-style file.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    /* Emit */
+    "outDir": "./dist",
+    "sourceMap": true,
+    "declaration": true
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"], // trailing comment
+}

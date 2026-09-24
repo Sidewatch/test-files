@@ -1,0 +1,31 @@
+---
+title: Getting started
+description: Install the CLI and run your first report.
+---
+
+import { Callout } from "@/components/callout";
+import Chart from "./revenue-chart.jsx";
+
+# Getting started
+
+Install the CLI with your package manager of choice:
+
+```bash
+npm install -g @example/inventory-cli
+```
+
+<Callout kind="warning">
+  The CLI needs **Node 20** or newer. Run `node --version` to check.
+</Callout>
+
+## Your first report
+
+export const year = new Date().getFullYear();
+
+Revenue for {year} so far:
+
+<Chart period="ytd" currency="GBP" />
+
+1. Authenticate with `inventory login`.
+2. Run `inventory report --week previous`.
+3. Open the link it prints.

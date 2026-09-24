@@ -1,0 +1,22 @@
+-# Orders index, Haml. @orders and current_user come from the controller.
+!!! 5
+%html{lang: "en"}
+  %head
+    %meta{charset: "utf-8"}
+    %title= "#{current_user.name} — Orders"
+  %body
+    %h1= t(".title", name: current_user.name)
+    - if @orders.empty?
+      %p.muted= t(".empty")
+    - else
+      %table.orders
+        - @orders.each do |order|
+          %tr{class: order.paid? ? "paid" : "open"}
+            %td= link_to order.number, order_path(order)
+            %td= number_to_currency(order.total)
+            %td= time_ago_in_words(order.created_at) + " ago"
+      = paginate @orders
+    %footer
+      = render "summary", count: @orders.size
+      :javascript
+        console.log("#{@orders.size} orders");

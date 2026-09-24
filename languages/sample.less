@@ -1,0 +1,31 @@
+// Less: variables, mixins with guards, nesting and operations.
+@primary: #336699;
+@radius: 4px;
+@spacing: 0.75rem;
+@breakpoint: 600px;
+
+.rounded(@r: @radius) { border-radius: @r; }
+
+.button-size(@size) when (@size = large) {
+  padding: @spacing * 1.5;
+  font-size: 1.125rem;
+}
+.button-size(@size) when (default()) {
+  padding: @spacing;
+}
+
+.card {
+  .rounded();
+  color: @primary;
+  background: lighten(@primary, 40%);
+
+  &:hover { border-color: darken(@primary, 10%); }
+  &__title { font-size: 1.25rem; /* block comment */ }
+
+  @media (max-width: @breakpoint) {
+    padding: @spacing / 2;
+  }
+}
+
+.btn-lg { .button-size(large); }
+@import (reference) "mixins.less";

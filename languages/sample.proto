@@ -1,0 +1,41 @@
+// Protocol Buffers: the orders service.
+syntax = "proto3";
+
+package example.orders.v1;
+
+option go_package = "github.com/example/inventory/gen/orders/v1;ordersv1";
+option java_multiple_files = true;
+
+import "google/protobuf/timestamp.proto";
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_PENDING = 1;
+  STATUS_PAID = 2;
+  STATUS_CANCELLED = 3;
+}
+
+message LineItem {
+  string sku = 1;
+  int32 quantity = 2;
+  double unit_price = 3;
+}
+
+message Order {
+  string id = 1;
+  int64 number = 2;
+  Status status = 3;
+  repeated LineItem items = 4;
+  google.protobuf.Timestamp placed_at = 5;
+  map<string, string> tags = 6;
+  oneof payment { string card_token = 7; string invoice_ref = 8; }
+  reserved 9, 10;
+}
+
+service Orders {
+  rpc GetOrder(GetOrderRequest) returns (Order);
+  rpc ListOrders(ListOrdersRequest) returns (stream Order);
+}
+
+message GetOrderRequest { string id = 1; }
+message ListOrdersRequest { Status status = 1; int32 page_size = 2 [deprecated = true]; }

@@ -1,0 +1,32 @@
+# Bazel (Starlark): a library, a binary and a test.
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+load("//tools:version.bzl", "stamp_version")
+
+package(default_visibility = ["//visibility:public"])
+
+VERSION = "1.4.0"
+
+cc_library(
+    name = "inventory",
+    srcs = glob(["src/*.c"], exclude = ["src/main.c"]),
+    hdrs = glob(["include/*.h"]),
+    includes = ["include"],
+    defines = ["VERSION=\\\"%s\\\"" % VERSION],
+    deps = ["@sqlite3"],
+)
+
+cc_binary(
+    name = "inventory_bin",
+    srcs = ["src/main.c"],
+    deps = [":inventory"],
+)
+
+cc_test(
+    name = "stock_test",
+    size = "small",
+    srcs = ["tests/stock_test.c"],
+    deps = [":inventory"],
+    tags = ["unit"] + (["flaky"] if VERSION.startswith("0.") else []),
+)
+
+stamp_version(name = "version", value = VERSION)

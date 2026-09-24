@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Created-By: 21.0.4 (Eclipse Adoptium)
+Build-Jdk-Spec: 21
+Main-Class: com.example.inventory.Application
+Implementation-Title: inventory-api
+Implementation-Version: 1.4.0
+Implementation-Vendor: Example Ltd
+Class-Path: lib/postgresql-42.7.4.jar lib/spring-boot-3.3.4.jar
+Add-Opens: java.base/java.lang java.base/java.util
+Multi-Release: true

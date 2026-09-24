@@ -1,0 +1,4 @@
+{"number": 1, "total": 120.5, "status": "paid", "items": [{"sku": "A-100", "qty": 2}]}
+{"number": 2, "total": 42, "status": "pending", "items": []}
+{"number": 3, "total": 0, "status": "cancelled", "note": "duplicate of #1"}
+{"number": 4, "total": 88.25, "status": "paid", "items": [{"sku": "C-300", "qty": 1}], "tags": {"gift": true}}

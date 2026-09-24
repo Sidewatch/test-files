@@ -1,0 +1,27 @@
+/* PostCSS: nesting, custom media, custom properties and a mixin plugin. */
+@custom-media --narrow (max-width: 600px);
+@import "tokens.pcss";
+
+:root {
+  --primary: #336699;
+  --radius: 4px;
+  --spacing: 0.75rem;
+}
+
+@define-mixin rounded $r: var(--radius) {
+  border-radius: $r;
+}
+
+.card {
+  @mixin rounded;
+  color: var(--primary);
+  padding: var(--spacing);
+  background: color-mix(in srgb, var(--primary) 20%, white);
+
+  &:hover { border-color: color-mix(in srgb, var(--primary), black 10%); }
+  & .card__title { font-size: 1.25rem; }
+
+  @media (--narrow) {
+    padding: calc(var(--spacing) / 2);
+  }
+}

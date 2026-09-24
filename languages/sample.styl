@@ -1,0 +1,28 @@
+// Stylus: variables, mixins, nesting, and interpolation.
+primary = #336699
+radius = 4px
+spacing = 0.75rem
+sizes = { small: 0.875rem, base: 1rem, large: 1.25rem }
+
+rounded(r = radius)
+  border-radius r
+
+.card
+  rounded()
+  color primary
+  background lighten(primary, 40%)
+  padding spacing
+
+  &:hover
+    border-color darken(primary, 10%)
+
+  &__title
+    font-size 1.25rem   /* block comment */
+
+for name, size in sizes
+  .text-{name}
+    font-size size
+
+@media (max-width: 600px)
+  .card
+    padding spacing / 2

@@ -1,0 +1,17 @@
+// JSON5: comments, trailing commas, hex numbers, single quotes.
+{
+  name: 'inventory-api',
+  version: '1.4.0',
+  replicas: 3,
+  timeoutMs: 0x7530,          // 30 000
+  ratio: .75,
+  infinite: Infinity,
+  database: {
+    host: 'db.internal',
+    port: 5432,
+    ssl: true,
+  },
+  motd: 'Welcome to the \
+inventory service.',
+  features: ['search', 'export',],
+}

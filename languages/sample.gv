@@ -1,0 +1,22 @@
+// Graphviz: the build pipeline as a directed graph.
+digraph pipeline {
+    rankdir = LR;
+    node [shape = box, style = "rounded,filled", fillcolor = "#EEF3FF", fontname = "Helvetica"];
+    edge [color = "#555555"];
+
+    subgraph cluster_ci {
+        label = "CI";
+        style = dashed;
+        lint  [label = "Lint"];
+        test  [label = "Test", fillcolor = "#E8F8E8"];
+        build [label = "Build image"];
+    }
+
+    deploy_staging [label = "Deploy\nstaging"];
+    deploy_prod    [label = "Deploy\nprod", fillcolor = "#FFE8E8"];
+
+    lint -> test -> build;
+    build -> deploy_staging [label = "on main"];
+    deploy_staging -> deploy_prod [label = "manual gate", style = bold];
+    test -> lint [style = invis];
+}

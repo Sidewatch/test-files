@@ -1,0 +1,15 @@
+Quick Look: tables as tabs, live filter, archives
+
+The database preview stacked every table; now each is a tab with its
+first 200 rows, and the bar's filter narrows rows as you type.
+
+Fixes #142
+Co-Authored-By: Jane Doe <jane@example.com>
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+#
+# On branch main
+# Changes to be committed:
+#	modified:   Sources/Preview/DatabasePreview.swift
+#	new file:   Sources/Preview/ArchivePreview.swift
+#

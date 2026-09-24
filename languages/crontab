@@ -1,0 +1,16 @@
+# m h dom mon dow   command
+SHELL=/bin/bash
+PATH=/usr/local/bin:/usr/bin:/bin
+MAILTO=ops@example.com
+
+# Nightly database backup at 02:30, keep the log
+30 2 * * *   /usr/local/bin/backup-db --keep 14 >> /var/log/backup.log 2>&1
+
+# Rotate the session store every six hours
+0 */6 * * *  /opt/app/bin/rotate-sessions
+
+# Weekly report on Monday mornings
+15 7 * * 1   cd /opt/app && ./report --week previous | mail -s "Weekly report" team@example.com
+
+# Certificate renewal, first of the month
+@monthly     certbot renew --quiet && systemctl reload nginx

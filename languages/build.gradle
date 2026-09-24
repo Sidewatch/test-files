@@ -1,0 +1,31 @@
+// Gradle (Groovy DSL): a Spring Boot service with a shadow jar.
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.3.4'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+group = 'com.example'
+version = '1.4.0'
+
+java {
+    toolchain { languageVersion = JavaLanguageVersion.of(21) }
+}
+
+repositories { mavenCentral() }
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation "org.postgresql:postgresql:42.7.4"
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
+}
+
+tasks.register('printVersion') {
+    doLast { println "inventory ${project.version}" }
+}

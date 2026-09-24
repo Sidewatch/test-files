@@ -1,0 +1,37 @@
+= Deployment Guide
+Jane Doe <jane@example.com>
+v2.1, 2026-09-24
+:toc:
+:icons: font
+
+== Overview
+
+This guide covers *production* deploys of the `api` service.
+See <<rollback>> when something goes wrong.
+
+.Prerequisites
+* Docker 27 or newer
+* Access to the `prod` cluster
+* An approved change ticket
+
+== Steps
+
+. Build the image:
++
+[source,bash]
+----
+docker build -t api:2.1 .
+----
+. Push and roll out with `kubectl rollout restart deploy/api`.
+
+[[rollback]]
+== Rollback
+
+NOTE: A rollback keeps the database schema; only the image changes.
+
+|===
+| Step | Command | Owner
+
+| 1 | `kubectl rollout undo deploy/api` | on-call
+| 2 | verify `/healthz` | on-call
+|===

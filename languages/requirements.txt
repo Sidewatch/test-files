@@ -1,0 +1,18 @@
+# Runtime dependencies for the inventory service.
+Django==5.1.1
+djangorestframework>=3.15,<4
+psycopg[binary]==3.2.1
+celery[redis]~=5.4.0
+requests>=2.32.3
+python-dotenv==1.0.1
+
+# Pinned for a known regression in 2.x
+markdown-it-py==3.0.0 ; python_version >= "3.11"
+
+# Editable local package
+-e ./packages/shared
+
+# From git
+git+https://github.com/example/inventory-common.git@v1.4.0#egg=inventory-common
+
+--extra-index-url https://pypi.example.com/simple

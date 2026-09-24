@@ -1,0 +1,45 @@
+\input texinfo
+@setfilename inventory.info
+@settitle Inventory Service Manual
+@c A short Texinfo manual.
+
+@titlepage
+@title Inventory Service
+@subtitle Version 1.4.0
+@author Jane Doe
+@end titlepage
+
+@node Top
+@top Inventory Service
+
+The @strong{inventory service} keeps stock levels for every @emph{warehouse}.
+
+@menu
+* Endpoints::     What the API answers.
+* Configuration:: Keys and defaults.
+@end menu
+
+@node Endpoints
+@chapter Endpoints
+
+@table @code
+@item GET /orders
+The orders, newest first.
+@item POST /orders
+Place an order; returns @code{201 Created}.
+@end table
+
+@example
+curl -s https://api.example.com/orders | jq '.[0]'
+@end example
+
+@node Configuration
+@chapter Configuration
+
+@multitable @columnfractions .3 .2 .5
+@headitem Key @tab Default @tab Notes
+@item REORDER_POINT @tab 25 @tab per SKU
+@item LOG_LEVEL @tab info @tab debug, info, warn
+@end multitable
+
+@bye

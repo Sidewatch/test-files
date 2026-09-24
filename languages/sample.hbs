@@ -1,0 +1,20 @@
+{{! Orders list, Handlebars. }}
+<h1>Orders for {{user.name}}</h1>
+
+{{#if orders.length}}
+  <table class="orders">
+    {{#each orders as |order index|}}
+      <tr class="{{#if order.paid}}paid{{else}}open{{/if}}">
+        <td>#{{order.number}}</td>
+        <td>{{money order.total currency="GBP"}}</td>
+        <td>{{formatDate order.placedAt "yyyy-MM-dd"}}</td>
+        {{#if (eq index 0)}}<td><span class="badge">latest</span></td>{{/if}}
+      </tr>
+    {{/each}}
+  </table>
+  {{> pagination page=page total=pages}}
+{{else}}
+  <p class="muted">No orders yet.</p>
+{{/if}}
+
+{{{footerHtml}}}

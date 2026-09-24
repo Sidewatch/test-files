@@ -1,0 +1,26 @@
+# Build products
+.build/
+DerivedData/
+*.o
+*.dSYM/
+
+# Dependencies
+node_modules/
+vendor/
+!vendor/patches/
+
+# Editor and OS noise
+.DS_Store
+.vscode/
+*.swp
+
+# Secrets — never commit these
+.env
+.env.*
+!.env.example
+*.pem
+
+# Logs and caches
+logs/
+*.log
+.cache/

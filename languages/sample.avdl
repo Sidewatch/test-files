@@ -1,0 +1,25 @@
+/** An Avro IDL protocol for an ordering service. */
+@namespace("com.example.orders")
+protocol OrderService {
+  enum Status { PENDING, PAID, SHIPPED, CANCELLED }
+
+  record LineItem {
+    string sku;
+    int quantity = 1;
+    double unitPrice;
+  }
+
+  record Order {
+    string id;
+    long createdAt;
+    Status status = "PENDING";
+    array<LineItem> items;
+    union { null, string } note = null;
+    map<string> tags = {};
+  }
+
+  error NotFound { string id; }
+
+  Order getOrder(string id) throws NotFound;
+  void cancel(string id) oneway;
+}

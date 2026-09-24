@@ -1,0 +1,35 @@
+---
+title: "Weekly revenue"
+author: "Jane Doe"
+date: 2026-09-24
+format:
+  html:
+    toc: true
+    code-fold: true
+execute:
+  echo: false
+---
+
+## Summary
+
+Revenue for the week ending `r format(Sys.Date(), "%d %B")`, from the orders export.
+
+```{r}
+#| label: load
+#| message: false
+library(dplyr)
+orders <- read.csv("orders.csv")
+paid <- orders |> filter(status == "paid")
+```
+
+Paid orders: **`r nrow(paid)`**, revenue **`r sprintf("£%.2f", sum(paid$total))`**.
+
+```{python}
+#| label: plot
+import matplotlib.pyplot as plt
+plt.plot([1, 2, 3], [120.5, 98.0, 143.2]); plt.title("Daily revenue")
+```
+
+::: {.callout-note}
+Cancelled orders are excluded before totalling.
+:::

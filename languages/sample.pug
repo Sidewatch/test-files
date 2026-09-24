@@ -1,0 +1,26 @@
+//- Pug: an orders page with a mixin, a loop and conditionals.
+doctype html
+html(lang="en")
+  head
+    meta(charset="utf-8")
+    title= `${user.name} — Orders`
+    link(rel="stylesheet" href="/orders.css")
+  body
+    h1 Orders for #{user.name}
+
+    mixin badge(status)
+      span.badge(class=status === 'paid' ? 'ok' : 'muted')= status
+
+    if orders.length === 0
+      p.muted No orders yet.
+    else
+      table.orders
+        each order, i in orders
+          tr(class={ paid: order.paid, latest: i === 0 })
+            td #[strong ##{order.number}]
+            td= order.total.toFixed(2)
+            td
+              +badge(order.status)
+    footer
+      | &copy; #{new Date().getFullYear()} Example Ltd
+      != footerHtml

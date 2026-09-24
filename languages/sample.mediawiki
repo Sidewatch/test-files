@@ -1,0 +1,26 @@
+== Inventory service ==
+The '''inventory service''' keeps stock levels for every ''warehouse'' and answers reorder questions.
+
+=== Endpoints ===
+* <code>GET /orders</code> — the orders, newest first
+* <code>POST /orders</code> — place an order
+** returns <code>201 Created</code>
+* <code>GET /healthz</code>
+
+=== Configuration ===
+{| class="wikitable"
+! Key !! Default !! Notes
+|-
+| <code>REORDER_POINT</code> || 25 || per SKU
+|-
+| <code>LOG_LEVEL</code> || info || debug, info, warn
+|}
+
+See also [[Deployment guide]] and [https://example.com/docs the external docs].
+
+<syntaxhighlight lang="bash">
+curl -s https://api.example.com/orders | jq '.[0]'
+</syntaxhighlight>
+
+<!-- an HTML comment -->
+[[Category:Services]]

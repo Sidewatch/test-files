@@ -1,0 +1,24 @@
+## Velocity: an order confirmation email.
+#set($total = 0)
+#macro(money $n)$number.format("#,##0.00", $n)#end
+
+<h1>Thanks, $customer.firstName!</h1>
+
+#if($order.items.isEmpty())
+  <p>Your order is empty.</p>
+#else
+  <table>
+  #foreach($item in $order.items)
+    #set($lineTotal = $item.qty * $item.price)
+    #set($total = $total + $lineTotal)
+    <tr class="#if($velocityCount % 2 == 0)even#{else}odd#end">
+      <td>$item.sku</td>
+      <td>$item.qty &times; #money($item.price)</td>
+      <td>#money($lineTotal)</td>
+    </tr>
+  #end
+  </table>
+  <p>Total: <b>#money($total)</b></p>
+#end
+
+#parse("footer.vm")

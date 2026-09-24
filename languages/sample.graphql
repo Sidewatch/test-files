@@ -1,0 +1,34 @@
+# Schema for the orders API.
+scalar DateTime
+
+enum Status { PENDING PAID SHIPPED CANCELLED }
+
+interface Node { id: ID! }
+
+type Order implements Node {
+  id: ID!
+  number: Int!
+  status: Status!
+  total: Float!
+  items(first: Int = 20): [LineItem!]!
+  placedAt: DateTime!
+}
+
+type LineItem { sku: String!, quantity: Int!, unitPrice: Float! }
+
+input OrderFilter { status: Status, placedAfter: DateTime }
+
+type Query {
+  order(id: ID!): Order
+  orders(filter: OrderFilter, first: Int = 50, after: String): [Order!]!
+}
+
+type Mutation {
+  cancelOrder(id: ID!, reason: String): Order! @deprecated(reason: "use cancel")
+}
+
+"""A client query with a fragment and a variable."""
+query RecentOrders($after: DateTime!) {
+  orders(filter: { placedAfter: $after }) { ...OrderRow }
+}
+fragment OrderRow on Order { number status total }
