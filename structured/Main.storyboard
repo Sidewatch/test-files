@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="23094" targetRuntime="MacOSX.Cocoa" initialViewController="B8D-0N-5wS">
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23094"/>
+    </dependencies>
+    <scenes>
+        <scene sceneID="JPo-4y-FX3">
+            <objects>
+                <application id="hnw-xV-0zn" sceneMemberID="viewController"/>
+                <customObject id="Voe-Tx-rLC" customClass="AppDelegate" customModule="Inventory" customModuleProvider="target"/>
+            </objects>
+        </scene>
+        <scene sceneID="R2V-B0-nI4">
+            <objects>
+                <windowController id="B8D-0N-5wS" sceneMemberID="viewController">
+                    <window key="window" title="Inventory" id="IQv-IB-iLA">
+                        <rect key="contentRect" x="196" y="240" width="480" height="270"/>
+                    </window>
+                </windowController>
+            </objects>
+        </scene>
+    </scenes>
+</document>

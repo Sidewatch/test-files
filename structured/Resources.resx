@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <data name="OrdersTitle" xml:space="preserve">
+    <value>Orders for {0}</value>
+    <comment>Shown at the top of the orders list</comment>
+  </data>
+  <data name="ButtonRetry" xml:space="preserve">
+    <value>Try Again</value>
+  </data>
+</root>

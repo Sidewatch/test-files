@@ -1,0 +1,9 @@
+---
+Checks: 'clang-diagnostic-*,clang-analyzer-*,modernize-*,-modernize-use-trailing-return-type'
+WarningsAsErrors: 'clang-analyzer-*'
+HeaderFilterRegex: 'src/.*'
+CheckOptions:
+  - key: modernize-loop-convert.MinConfidence
+    value: reasonable
+  - key: readability-identifier-naming.ClassCase
+    value: CamelCase

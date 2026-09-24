@@ -1,0 +1,7 @@
+[submodule "Libraries/swift-archive-index"]
+	path = Libraries/swift-archive-index
+	url = https://github.com/Sidewatch/swift-archive-index.git
+	branch = main
+[submodule "Vendor/SwiftTerm"]
+	path = Vendor/SwiftTerm
+	url = https://github.com/migueldeicaza/SwiftTerm.git

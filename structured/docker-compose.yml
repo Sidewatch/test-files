@@ -1,0 +1,12 @@
+services:
+  api:
+    build: .
+    ports: ["3000:3000"]
+    depends_on: [db]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: example

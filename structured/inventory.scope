@@ -1,0 +1,6 @@
+[Unit]
+Description=Inventory batch job scope
+
+[Scope]
+Slice=inventory.slice
+OOMPolicy=kill

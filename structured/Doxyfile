@@ -1,0 +1,11 @@
+# Doxyfile 1.12.0
+PROJECT_NAME           = "Inventory"
+PROJECT_NUMBER         = 1.4.0
+OUTPUT_DIRECTORY       = docs
+INPUT                  = src include
+RECURSIVE              = YES
+EXTRACT_ALL            = YES
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+HAVE_DOT               = YES
+WARN_IF_UNDOCUMENTED   = YES

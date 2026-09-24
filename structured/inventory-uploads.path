@@ -1,0 +1,10 @@
+[Unit]
+Description=Watch the uploads folder
+
+[Path]
+PathExistsGlob=/srv/inventory/uploads/*.csv
+Unit=inventory-import.service
+MakeDirectory=true
+
+[Install]
+WantedBy=multi-user.target

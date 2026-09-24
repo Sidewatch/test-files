@@ -1,0 +1,6 @@
+{
+  "phabricator.uri": "https://phab.example.com/",
+  "repository.callsign": "INV",
+  "base": "git:merge-base(origin/main)",
+  "lint.engine": "ArcanistConfigurationDrivenLintEngine"
+}

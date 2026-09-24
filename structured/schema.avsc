@@ -1,0 +1,35 @@
+{
+  "type": "record",
+  "name": "Order",
+  "namespace": "com.example.inventory",
+  "fields": [
+    {
+      "name": "id",
+      "type": "long"
+    },
+    {
+      "name": "sku",
+      "type": "string"
+    },
+    {
+      "name": "quantity",
+      "type": "int",
+      "default": 1
+    },
+    {
+      "name": "placedAt",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      }
+    },
+    {
+      "name": "note",
+      "type": [
+        "null",
+        "string"
+      ],
+      "default": null
+    }
+  ]
+}

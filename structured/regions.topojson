@@ -1,0 +1,88 @@
+{
+  "type": "Topology",
+  "objects": {
+    "regions": {
+      "type": "GeometryCollection",
+      "geometries": [
+        {
+          "type": "Polygon",
+          "arcs": [
+            [
+              0
+            ]
+          ],
+          "properties": {
+            "name": "North"
+          }
+        },
+        {
+          "type": "Polygon",
+          "arcs": [
+            [
+              1
+            ]
+          ],
+          "properties": {
+            "name": "South"
+          }
+        }
+      ]
+    }
+  },
+  "arcs": [
+    [
+      [
+        0,
+        0
+      ],
+      [
+        10,
+        0
+      ],
+      [
+        10,
+        10
+      ],
+      [
+        0,
+        10
+      ],
+      [
+        0,
+        0
+      ]
+    ],
+    [
+      [
+        10,
+        0
+      ],
+      [
+        20,
+        0
+      ],
+      [
+        20,
+        10
+      ],
+      [
+        10,
+        10
+      ],
+      [
+        10,
+        0
+      ]
+    ]
+  ],
+  "transform": {
+    "scale": [
+      0.001,
+      0.001
+    ],
+    "translate": [
+      -3.0,
+      55.0
+    ]
+  }
+}

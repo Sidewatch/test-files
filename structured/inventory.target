@@ -1,0 +1,8 @@
+[Unit]
+Description=Inventory stack
+Requires=inventory.service inventory.socket
+After=inventory.service
+AllowIsolate=yes
+
+[Install]
+WantedBy=multi-user.target

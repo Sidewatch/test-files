@@ -1,0 +1,13 @@
+[ui]
+username = David Sherlock <david@example.com>
+merge = internal:merge
+
+[extensions]
+rebase =
+histedit =
+
+[paths]
+default = https://hg.example.com/inventory
+
+[alias]
+lg = log --graph --template compact

@@ -1,0 +1,8 @@
+# included from ~/.gitconfig via [includeIf "gitdir:~/work/"]
+[user]
+	email = david@work.example.com
+	signingkey = ABCDEF1234567890
+[commit]
+	gpgsign = true
+[url "git@github.com:example/"]
+	insteadOf = https://github.com/example/
