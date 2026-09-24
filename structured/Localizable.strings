@@ -1,0 +1,17 @@
+/* Localizable.strings — English. Keys are stable identifiers, values are what users see. */
+
+"orders.title" = "Orders for %@";
+"orders.empty" = "No orders yet.";
+"orders.count" = "%d orders"; // a trailing note
+
+/* Buttons */
+"button.cancel" = "Cancel";
+"button.retry" = "Try Again";
+button.close = "Close";           /* a bare key, old-style */
+
+/* A value with an escaped quote and a newline, and a unicode escape */
+"error.gateway" = "The payment gateway said \"try later\".\nYour card was not charged.";
+"cafe" = "Caf\U00E9";
+
+// "commented.out" = "never read";
+"shorthand";                      /* the value is the key */

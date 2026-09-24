@@ -1,0 +1,23 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "inventory"
+version = "1.4.0"
+description = "Inventory API"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.110",
+  "sqlalchemy>=2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff"]
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "I"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

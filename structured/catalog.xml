@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?xml-stylesheet type="text/xsl" href="catalog.xsl"?>
+<!DOCTYPE catalog [
+  <!ELEMENT catalog (book+)>
+  <!ATTLIST book id ID #REQUIRED>
+  <!ENTITY publisher "O'Grady &amp; Sons">
+]>
+<!-- A small book catalog: attributes, namespaces, entities, CDATA, repeats, mixed content, empty elements. -->
+<catalog xmlns:dc="http://purl.org/dc/elements/1.1/" version="2.1">
+  <book id="bk101" available="true">
+    <dc:title>The Emerald Vale</dc:title>
+    <author>Margaret Holt</author>
+    <price currency="USD">29.95</price>
+    <published>2024-11-05</published>
+    <publisher>&publisher;</publisher>
+    <blurb>Fewer than 5 &lt;copies&gt; left &#8212; order soon.</blurb>
+    <review><![CDATA[Raw text: <not-a-tag> & unescaped ampersands allowed here.]]></review>
+    <tags>
+      <tag>fiction</tag>
+      <!-- a comment between repeats -->
+      <tag>fantasy</tag>
+    </tags>
+    <note>Read <em>this</em> first.</note>
+    <cover href="covers/bk101.png" width="320" height="480"/>
+    <errata></errata>
+    <out-of-print/>
+  </book>
+  <book id="bk102" available="false">
+    <dc:title>Harbour Lights</dc:title>
+    <author>Tomás Reyes</author>
+    <price currency="EUR">18.50</price>
+    <tags>
+      <tag>non-fiction</tag>
+    </tags>
+  </book>
+</catalog>

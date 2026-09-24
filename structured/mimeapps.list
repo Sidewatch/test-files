@@ -1,0 +1,7 @@
+[Default Applications]
+text/plain=org.gnome.TextEditor.desktop
+image/png=org.gnome.Loupe.desktop
+application/pdf=org.gnome.Evince.desktop
+
+[Added Associations]
+text/plain=org.gnome.TextEditor.desktop;com.visualstudio.code.desktop;

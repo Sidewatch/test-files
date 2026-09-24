@@ -1,0 +1,15 @@
+[user]
+	name = David Sherlock
+	email = david@example.com
+[core]
+	editor = vim
+	autocrlf = input
+	excludesfile = ~/.gitignore_global
+[alias]
+	co = checkout
+	lg = log --oneline --graph --decorate
+[remote "origin"]
+	url = git@github.com:sidewatch/inventory.git
+	fetch = +refs/heads/*:refs/remotes/origin/*
+[pull]
+	rebase = true

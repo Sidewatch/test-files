@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Every plist value kind, in an order the tree must keep -->
+	<key>CFBundleName</key>
+	<string>Inventory &amp; Co</string>
+	<key>CFBundleVersion</key>
+	<integer>42</integer>
+	<key>Ratio</key>
+	<real>0.5</real>
+	<key>Sandboxed</key>
+	<true/>
+	<key>Debug</key>
+	<false/>
+	<key>Built</key>
+	<date>2026-09-25T10:00:00Z</date>
+	<key>Blob</key>
+	<data>
+	AQID
+	</data>
+	<key>Groups</key>
+	<array>
+		<string>$(AppIdentifierPrefix)com.example</string>
+		<string></string>
+	</array>
+	<key>Nested</key>
+	<dict>
+		<key>z</key>
+		<integer>1</integer>
+		<key>a</key>
+		<integer>2</integer>
+	</dict>
+</dict>
+</plist>

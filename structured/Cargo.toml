@@ -1,0 +1,22 @@
+[package]
+name = "inventory"
+version = "1.4.0"
+edition = "2021"
+authors = ["David Sherlock <david@example.com>"]
+description = "Inventory API"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+tokio = { version = "1.40", features = ["full"] }
+axum = "0.7"
+
+[dev-dependencies]
+insta = "1"
+
+[profile.release]
+lto = true
+codegen-units = 1
+
+[[bin]]
+name = "inventory"
+path = "src/main.rs"

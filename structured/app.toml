@@ -1,0 +1,56 @@
+# app.toml — every TOML construct the tree reads
+title = "Sidewatch \"Service\" Config"       # basic string with escapes
+motto = 'C:\Users\app\literal'                 # literal string, backslashes kept
+enabled = true
+max_connections = 1_000
+hex = 0xDEADBEEF
+oct = 0o755
+bin = 0b1010
+negative = -17
+ratio = 30.5
+big = 1.5e3
+infinite = +inf
+released = 1979-05-27T07:32:00Z              # offset date-time
+day = 1979-05-27                             # local date
+clock = 07:32:00                             # local time
+ports = [8080, 8443, 9090]
+hosts = ["alpha.local", 'beta.local', ]
+matrix = [[1, 2], ["a", "b"]]
+point = { x = 1, y = "two", nested = { deep = true } }
+site."google.com" = 42                       # a dotted key with a quoted segment
+bio = """
+Multi-line basic string. A backslash \
+    joins these two lines.
+Second paragraph.
+"""
+regex = '''
+raw \d{3}-\d{4} stays as written
+'''
+
+[database]
+server = "192.168.1.1"
+port = 5432
+enabled = false
+
+[servers]
+
+  [servers.primary]
+  ip = "10.0.0.1"
+  weight = 1.5
+
+  [servers.replica]
+  ip = "10.0.0.2"
+
+[[products]]
+name = "Hammer"
+sku = 738594937
+price = 9.99
+
+[[products]]
+name = "Nail"
+color = "gray"
+
+[owner]
+name = "David Sherlock"
+dob.year = 1990
+dob.month = 1
