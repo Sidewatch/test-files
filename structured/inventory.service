@@ -1,0 +1,21 @@
+# A systemd unit: [Section] key=value, repeated keys, a comment
+[Unit]
+Description=Inventory API
+Documentation=https://example.com/docs/inventory
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=notify
+User=inventory
+Group=inventory
+WorkingDirectory=/opt/inventory
+Environment=RAILS_ENV=production
+Environment=PORT=3000
+ExecStart=/opt/inventory/bin/server --port 3000
+Restart=on-failure
+RestartSec=5s
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

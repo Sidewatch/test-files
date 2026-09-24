@@ -1,0 +1,17 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Inventory
+GenericName=Stock Manager
+Comment=Track stock levels and orders
+Exec=inventory %U
+Icon=inventory
+Terminal=false
+Categories=Office;Finance;
+MimeType=application/x-inventory;
+StartupNotify=true
+Keywords=stock;orders;warehouse;
+
+[Desktop Action NewOrder]
+Name=New Order
+Exec=inventory --new-order
