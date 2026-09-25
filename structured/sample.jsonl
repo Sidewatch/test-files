@@ -1,0 +1,4 @@
+{"type":"user","timestamp":"2026-09-26T09:00:00Z","message":{"role":"user","content":"run the tests"}}
+{"type":"assistant","timestamp":"2026-09-26T09:00:04Z","model":"claude-opus-5","usage":{"input":1204,"output":88},"message":{"role":"assistant","content":[{"type":"tool_use","name":"Bash","input":{"command":"swift test"}}]}}
+{"type":"user","timestamp":"2026-09-26T09:00:31Z","message":{"role":"user","content":[{"type":"tool_result","is_error":false,"content":"Executed 110 tests, with 0 failures"}]}}
+{"type":"assistant","timestamp":"2026-09-26T09:00:35Z","model":"claude-opus-5","usage":{"input":2410,"output":31},"message":{"role":"assistant","content":"All 110 tests passed."}}
