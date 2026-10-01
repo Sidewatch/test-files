@@ -1,3 +1,4 @@
+/ Slim 5.2 — syntax showcase (Ruby template language)
 / ── Comments ──
 / Slim code comment: not rendered in the HTML output.
 / The inventory page; @items, @warehouse and current_user come from the controller.
@@ -156,3 +157,143 @@ html lang="en"
         = f.text_field :q
         = f.submit "Search", class: "btn"
       small &copy; Acme Warehousing — 2026 → ünïcödé ✓
+
+    / ── Doctype alternatives (only one doctype per document; these are shown as comments) ──
+    / doctype html
+    / doctype xml
+    / doctype xml ISO-8859-1
+    / doctype transitional
+    / doctype strict
+    / doctype frameset
+    / doctype 5
+    / doctype 1.1
+    / doctype basic
+    / doctype mobile
+    / doctype svg
+
+    / ── Attribute delimiters and values ──
+    a(href="/p" class="x") Parens
+    a[href="/b" class="y"] Brackets
+    a{href="/c" class="z"} Braces
+    a href='/single' title='single quoted' Single quotes
+    a href="/mixed" data-x=1 data-y="two" data-z=:three Mixed values
+    p data-count=@items.size data-ok=(@items.any? ? "yes" : "no") Ruby values
+    input type="radio" checked=true disabled=false hidden=nil value=""
+    input type="text" value=(params[:q] || "none")
+    p class=:symbol_class id="x-#{1 + 1}" Symbol and interpolated values
+    p class=["one", "two"] id=["a", "b"] Array values joined
+    p.first class="second" Class shortcut plus attribute merge
+    p data={ role: "note", info: { deep: 1 } } Nested hash data
+    div.a.b.c#unique data-role="x"
+    / Whitespace control on tags (leading and trailing)
+    a> href="/prev" Previous
+    a< href="/next" Next
+
+    / ── Output forms ──
+    =  @warehouse.name
+    =< @warehouse.name
+    => @warehouse.name
+    == @warehouse.html_notes
+    ==< @warehouse.html_notes
+    ==> @warehouse.html_notes
+    p = "spaced"
+    p== "<b>raw</b>"
+
+    / ── Control code forms ──
+    - unless @items.empty?
+      p There are items.
+    - until total <= 0
+      - total -= 1
+    - @items.each do |item|
+      p = item.name
+    - for item in @items
+      p = item.sku
+    - loop do
+      - break
+    = link_to new_item_path do
+      | New item
+    = render "form" do |f|
+      = f.label :name
+    - result = capture do
+      p Captured block
+    == result
+    - items = [1, 2, 3].map { |n| n * 2 }
+    - hash = { a: 1, "b" => 2 }
+
+    / ── Inline HTML and text variants ──
+    <p>Inline raw html line, passed through as-is.</p>
+    <span class="raw">still <b>HTML</b></span>
+    p Text directly after the tag name.
+    p
+      | Text on a pipe line.
+      |  Extra leading space kept after the pipe.
+    p
+      ' Apostrophe adds a trailing space.
+      '  Extra leading space kept.
+    p
+      = "Output on its own line"
+      == "<em>raw output</em>"
+    p text with trailing # hash and "quotes" and 'apostrophes' and \ backslash
+    p Unicode text: ünïcödé ✓ — “quotes” 日本語
+
+    / ── Shortcuts ──
+    .just-a-class
+    #just-an-id
+    .a.b#c.d
+    div: span: em Nested inline tags via colon
+    ul.list
+      li.item: a.link href="#" Link inside list item
+    / Tag shortcuts defined via the :shortcut option (@ becomes role=…, & becomes type=…)
+    /   @main
+    /     p Shortcut attribute from an option
+    /   &submit
+    /     | Typed shortcut
+
+    / ── Embedded engines ──
+    javascript:
+      document.title = "#{@warehouse.name}";
+    css:
+      body { margin: 0 }
+    ruby:
+      a = 1
+      b = a + 1
+    markdown:
+      Plain **markdown** with `code` and a [link](https://example.com).
+    textile:
+      h1. Textile heading
+    less:
+      @c: red;
+      .l { color: @c; }
+    sass:
+      $c: red
+      .s
+        color: $c
+    scss:
+      $c: red;
+      .t { color: $c; }
+    coffee:
+      square = (x) -> x * x
+    erb:
+      <%= 1 + 1 %>
+    rdoc:
+      = RDoc heading
+    nokogiri:
+      doc.text "from nokogiri"
+    plain:
+      Plain text, no processing, #{but_interpolated}.
+    slim:
+      p Embedded slim
+
+    / ── Inline interpolation and escaping ──
+    p Escaped interpolation: #{"<b>x</b>"} and raw: #{{ "<b>x</b>" }}
+    p Backslash-escaped: \#{not_code} and \\ double
+    p = "A call with trailing comma", \
+      "second argument"
+
+    / ── Comments, again ──
+    /! Rendered as an HTML comment
+    /[if lt IE 9]
+      script src="html5shiv.js"
+    /
+      Block comment: the whole indented body is ignored.
+      p Not rendered.

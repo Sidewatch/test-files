@@ -1,3 +1,4 @@
+# gitignore (Git 2.5x pattern syntax) — syntax showcase
 # ── Comments ──
 # Git ignore: every pattern form for a warehouse project.
 # A line starting with # is a comment; blank lines are skipped.
@@ -210,3 +211,26 @@ Package.resolved
 .netrwhist
 *.sublime-workspace
 .history/
+
+# ── Current toolchain caches ──
+.zig-cache/
+zig-out/
+.pnpm-store/
+.yarn/cache/
+!.yarn/releases/
+.ruff_cache/
+.pixi/
+.direnv/
+.terraform.lock.hcl
+.bun/
+.deno/
+.expo/
+.cargo/registry/
+*.rs.bk
+*.tsbuildinfo
+.eslintcache
+.stylelintcache
+.swiftpm/xcode/
+.vs/
+*.user
+*.suo

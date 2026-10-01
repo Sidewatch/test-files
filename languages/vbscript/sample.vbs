@@ -1,3 +1,4 @@
+' VBScript 5.8 — syntax showcase
 ' ── Comments ───────────────────────────────────────────────
 ' VBScript: stock report for the warehouse. TODO: email the report. FIXME: locale.
 REM Old-style remark comment
@@ -302,3 +303,53 @@ Set value = Server.CreateObject("Scripting.FileSystemObject")
 Response.Write "ASP-style: " & Request.QueryString("sku")
 Session("count") = 1
 Application.Lock : Application.UnLock
+
+' ── Additions: remaining built-ins, class forms and statements ──
+Class Counter
+    Private m_count
+    Public Name
+    Private Property Get Count()
+        Count = m_count
+    End Property
+    Public Property Let Count(ByVal v)
+        m_count = v
+    End Property
+    Public Sub Increment()
+        m_count = m_count + 1
+    End Sub
+    Public Function Total(ByVal extra)
+        Total = m_count + extra
+    End Function
+End Class
+
+Dim c2, grid2(1, 2, 3), lvl
+Set c2 = New Counter
+c2.Increment
+c2.Name = "tally"
+Stop
+lvl = ScriptEngine & ScriptEngineMajorVersion & ScriptEngineMinorVersion & ScriptEngineBuildVersion
+lvl = RGB(255, 0, 0) & IsNull(Null) & VarType(1) & CVar(1) & Len(Null & "x")
+lvl = Left("abc", 1) & LenB("abc") & LeftB("abc", 1) & MidB("abc", 1) & RightB("abc", 1) & InStrB("abc", "b") & AscB("a") & ChrB(65)
+lvl = Join(Array(1, 2), ",") & UBound(grid2, 2) & IsArray(grid2) & CDate("1/1/2026") & Now
+lvl = Int(Rnd * 6) + 1
+Set lvl = CreateObject("Scripting.FileSystemObject").GetFolder(".")
+Set lvl = GetObject("winmgmts:\\.\root\cimv2")
+Set lvl = Wscript.CreateObject("WScript.Shell", "Event_")
+WScript.ConnectObject lvl, "Event_"
+WScript.DisconnectObject lvl
+Err.Clear
+Err.Raise 5
+
+Do
+    lvl = lvl + 1
+    If lvl > 3 Then Exit Do
+Loop
+
+Select Case TypeName(lvl)
+    Case "Integer", "Long"
+        WScript.Echo "number"
+    Case "String"
+        WScript.Echo "text"
+    Case Else
+        WScript.Echo "other"
+End Select

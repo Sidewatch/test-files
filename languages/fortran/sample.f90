@@ -1,3 +1,4 @@
+! Fortran 2023 — syntax showcase (gfortran is not installed locally; `assign`/`pause` removed forms dropped)
 ! ── Comments ──
 ! Line comment. TODO: parallelise the loops. FIXME: check array bounds.
 !> Doxygen-style comment for the module.
@@ -348,7 +349,6 @@ program sample
      print *, 'other'
   end select
   if (n > 0) goto 20
-  assign 20 to k
 20 continue
   arith: if (k > 0) then
      k = k - 1
@@ -387,3 +387,196 @@ subroutine legacy_routine(n)
   n = n + 1
   return
 end subroutine legacy_routine
+
+! ── Fortran 2008-2023 and legacy forms ──
+module extras_m
+  use, intrinsic :: iso_fortran_env, only: team_type, event_type, lock_type, atomic_int_kind
+  use, intrinsic :: iso_c_binding, only: c_ptr, c_funptr, c_f_pointer, c_loc, c_int, c_double
+  implicit none
+  private
+  public :: shape_t, simple_add, procedure_pointer_demo, teams_demo, stmt_demo
+
+  abstract interface
+     real function binary_op(a, b)
+       real, intent(in) :: a, b
+     end function binary_op
+  end interface
+
+  type, abstract :: shape_t
+     real :: scale = 1.0
+   contains
+     procedure(area_i), deferred :: area
+     procedure, non_overridable :: name => shape_name
+  end type shape_t
+
+  abstract interface
+     function area_i(self) result(a)
+       import :: shape_t
+       class(shape_t), intent(in) :: self
+       real :: a
+     end function area_i
+  end interface
+
+  interface
+     module function sub_total(x) result(r)
+       real, intent(in) :: x(:)
+       real :: r
+     end function sub_total
+  end interface
+
+  integer, protected :: protected_count = 0
+  real, contiguous, pointer :: window(:) => null()
+  integer, parameter :: wide = selected_int_kind(18)
+  common /legacy_block/ legacy_a, legacy_b
+  real :: legacy_a, legacy_b
+  equivalence (legacy_a, alias_a)
+  real :: alias_a
+  save :: protected_count
+  parameter (legacy_limit = 10)
+
+contains
+
+  function shape_name(self) result(n)
+    class(shape_t), intent(in) :: self
+    character(len=:), allocatable :: n
+    n = 'shape'
+  end function shape_name
+
+  ! F2023: SIMPLE procedures
+  simple function simple_add(a, b) result(c)
+    real, intent(in) :: a, b
+    real :: c
+    c = a + b
+  end function simple_add
+
+  subroutine procedure_pointer_demo()
+    procedure(binary_op), pointer :: op => null()
+    procedure(real), pointer :: unary => null()
+    op => plus
+    print *, op(1.0, 2.0)
+  contains
+    real function plus(a, b)
+      real, intent(in) :: a, b
+      plus = a + b
+    end function plus
+  end subroutine procedure_pointer_demo
+
+  subroutine teams_demo()
+    type(team_type) :: team
+    type(event_type) :: ev[*]
+    type(lock_type) :: lk[*]
+    integer(atomic_int_kind) :: counter[*]
+    integer :: value, status
+    character(len=128) :: msg
+    form team (1 + mod(this_image(), 2), team, stat=status, errmsg=msg)
+    change team (team, stat=status)
+       sync team (team)
+    end team
+    event post (ev[1])
+    event wait (ev, until_count=1)
+    lock (lk[1])
+    unlock (lk[1])
+    sync images (*)
+    sync images ([1, 2], stat=status)
+    call atomic_define(counter[1], 5)
+    call atomic_ref(value, counter[1])
+    if (failed_images_exist()) fail image
+    error stop 'quiet', quiet=.true.
+  contains
+    logical function failed_images_exist()
+      failed_images_exist = size(failed_images()) > 0
+    end function failed_images_exist
+  end subroutine teams_demo
+
+  subroutine stmt_demo(x, n)
+    integer, intent(in) :: n
+    real, intent(inout) :: x(n)
+    real :: poly, t
+    integer :: i
+    poly(t) = 1.0 + t * (2.0 + t * 3.0)   ! statement function
+    do i = 1, n
+       x(i) = poly(x(i))
+    end do
+    ! F2023: reduce locality spec on DO CONCURRENT
+    block
+      real :: acc
+      acc = 0.0
+      do concurrent (i = 1:n) local(t) local_init(acc) reduce(+: acc)
+         t = x(i)
+      end do
+    end block
+    where (x > 10.0)
+       x = 10.0
+    elsewhere (x < 0.0)
+       x = 0.0
+    elsewhere
+       x = x
+    end where
+    forall (i = 1:n) x(i) = x(i) + 1
+    write(*, 100) n
+100 format('n = ', I0)
+    write(*, '(A)') 'format edit descriptors: '
+    write(*, '(I5.3, F8.2, E12.4, ES10.2, EN10.2, D12.4, G12.4, L3, A5, Z8, O8, B8, 3X, T20, TL2, TR2, /, SP, SS, S, BN, BZ, DC, DP, RU, RD, RZ, RN, RC, RP)') &
+         1, 2.0, 3.0, 4.0, 5.0, 6.0d0, 7.0, .true., 'abc', 255, 8, 5
+  end subroutine stmt_demo
+
+end module extras_m
+
+submodule (extras_m) extras_impl
+contains
+  module function sub_total(x) result(r)
+    real, intent(in) :: x(:)
+    real :: r
+    r = sum(x)
+  end function sub_total
+end submodule extras_impl
+
+block data legacy_data
+  common /legacy_block/ la, lb
+  real :: la, lb
+  data la /1.0/, lb /2.0/
+end block data legacy_data
+
+subroutine entry_demo(a)
+  real a, b
+  entry other_entry(b)
+  a = 0.0
+  return
+end subroutine entry_demo
+
+subroutine c_interop(arr, n) bind(c, name="c_interop")
+  use, intrinsic :: iso_c_binding
+  integer(c_int), value :: n
+  real(c_double), intent(inout) :: arr(*)
+  type(*), dimension(..) :: anything
+  arr(1:n) = 0.0_c_double
+end subroutine c_interop
+
+subroutine ftn_misc(x)
+  real :: x
+  integer :: i
+  logical :: l
+  character(len=20) :: s
+  import_demo: block
+    implicit none (type, external)
+  end block import_demo
+  i = 5
+  if (i > 0) then; x = 1.0; end if
+  if (i < 0) x = -1.0; x = x + 1.0
+  s = "double ""quoted"" and 'single'"
+  l = (x .gt. 0.0) .and. (x .lt. 5.0)
+  select case (s(1:1))
+  case ('a':'m')
+     x = 1.0
+  case ('n':)
+     x = 2.0
+  end select
+  ! computed goto and arithmetic if are obsolescent but valid
+  goto (10, 20), i
+10 continue
+20 continue
+  if (x) 30, 40, 50
+30 continue
+40 continue
+50 continue
+end subroutine ftn_misc

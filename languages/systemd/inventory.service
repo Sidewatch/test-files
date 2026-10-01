@@ -1,3 +1,4 @@
+# systemd 258 — unit file syntax showcase
 # ── Comments ──
 # systemd unit for the inventory API, exercising every section and value form.
 ; Semicolon comments are accepted as well.
@@ -87,7 +88,7 @@ TimeoutSec=2min 30s
 WatchdogSec=30
 RuntimeMaxSec=1d 12h
 SuccessExitStatus=0 143 SIGTERM
-RestartPreventExitStatus=64 EX_USAGE
+RestartPreventExitStatus=64 USAGE
 RestartForceExitStatus=75
 KillMode=mixed
 KillSignal=SIGTERM
@@ -193,3 +194,229 @@ DefaultInstance=main
 ExecStart=
 ExecStart=/opt/inventory/bin/inventory --port 8081
 Environment="OVERRIDE=1"
+
+# ── More [Unit] directives: dependencies, conditions, assertions, actions ──
+[Unit]
+DefaultDependencies=no
+Upholds=inventory-worker.service
+PropagatesStopTo=inventory-cache.service
+PropagatesReloadTo=inventory-cache.service
+ReloadPropagatedFrom=inventory.target
+JoinsNamespaceOf=nginx.service
+OnSuccess=inventory-report.service
+OnSuccessJobMode=replace
+OnFailureJobMode=isolate
+StopWhenUnneeded=no
+RefuseManualStart=no
+RefuseManualStop=no
+AllowIsolate=no
+IgnoreOnIsolate=no
+CollectMode=inactive-or-failed
+FailureAction=none
+SuccessAction=none
+SuccessActionExitStatus=0
+JobRunningTimeoutSec=10min
+JobTimeoutAction=none
+JobTimeoutRebootArgument=safe-mode
+ConditionKernelVersion=>=6.1
+ConditionKernelCommandLine=!debug
+ConditionArchitecture=x86-64
+ConditionVirtualization=!container
+ConditionFirmware=uefi
+ConditionSecurity=selinux
+ConditionCapability=CAP_NET_ADMIN
+ConditionControlGroupController=cpu memory
+ConditionMemory=>=2G
+ConditionCPUs=>=2
+ConditionEnvironment=REGION=eu-west
+ConditionFirstBoot=no
+ConditionNeedsUpdate=|/etc
+ConditionUser=inventory
+ConditionGroup=inventory
+ConditionCredential=inventory.token
+ConditionOSRelease=ID=debian
+ConditionFileIsExecutable=/opt/inventory/bin/inventory
+ConditionFileNotEmpty=/etc/inventory/config.toml
+ConditionDirectoryNotEmpty=/etc/inventory/conf.d
+ConditionPathExistsGlob=/etc/inventory/*.toml
+ConditionPathIsMountPoint=/var/lib/inventory
+ConditionPathIsReadWrite=/var/lib/inventory
+ConditionPathIsSymbolicLink=/etc/inventory/current
+ConditionPathIsEncrypted=/var/lib/inventory
+ConditionPathExists=|/etc/inventory/a.toml
+ConditionPathExists=|/etc/inventory/b.toml
+AssertPathExists=/etc/inventory
+AssertACPower=yes
+AssertSecurity=apparmor
+AssertVirtualization=no
+Description=Inventory API on %H (%i)
+
+# ── More [Service] directives: process types, namespaces, credentials ──
+[Service]
+Type=exec
+ExitType=main
+RestartMode=normal
+OOMPolicy=stop
+FileDescriptorStoreMax=16
+FileDescriptorStorePreserve=restart
+BusName=com.example.Inventory
+ExecSearchPath=/opt/inventory/bin:/usr/local/bin
+MemoryPressureWatch=auto
+MemoryPressureThresholdSec=200ms
+OpenFile=/var/lib/inventory/db.sock:db:read-only
+RootImage=/var/lib/machines/inventory.raw
+RootImageOptions=root:ro,noatime
+RootHash=0123456789abcdef
+RootVerity=/var/lib/machines/inventory.verity
+MountImages=/var/lib/data.raw:/data:ro
+ExtensionImages=/var/lib/extensions/tools.raw
+ExtensionDirectories=/var/lib/extensions/extra
+MountAPIVFS=yes
+BindLogSockets=yes
+PrivateIPC=yes
+PrivatePIDs=yes
+PrivateBPF=yes
+ProtectHostname=private:inventory
+ProtectSystem=full
+ProtectHome=read-only
+ProtectHome=tmpfs
+LogNamespace=inventory
+LogFilterPatterns=~noisy line
+LogLevelMax=debug
+SetCredentialEncrypted=api_key:Zm9v
+LoadCredentialEncrypted=db_password:/etc/inventory/credentials/db.enc
+NetworkNamespacePath=/run/netns/inventory
+IPAccounting=yes
+IPIngressFilterPath=/sys/fs/bpf/inventory-in
+IPEgressFilterPath=/sys/fs/bpf/inventory-out
+CPUAffinity=0-3 8
+NUMAPolicy=local
+NUMAMask=0
+CPUAccounting=yes
+MemoryAccounting=yes
+IOAccounting=yes
+TasksAccounting=yes
+MemoryMin=256M
+MemoryLow=512M
+MemoryZSwapMax=1G
+StartupMemoryMax=3G
+ManagedOOMSwap=kill
+ManagedOOMMemoryPressure=kill
+ManagedOOMMemoryPressureLimit=60%
+DisableControllers=io
+DelegateSubgroup=supervisor
+CoredumpReceive=no
+RestrictFileSystems=ext4 tmpfs
+RestrictNetworkInterfaces=eth0
+RestrictNamespaces=~user pid
+KeyringMode=private
+LimitRTPRIO=0
+LimitRTTIME=infinity
+LimitCPU=10min
+LimitAS=4G
+LimitDATA=infinity
+LimitFSIZE=1G
+LimitLOCKS=100
+LimitMSGQUEUE=819200
+LimitNICE=0
+LimitRSS=infinity
+LimitSIGPENDING=63000
+LimitSTACK=8M
+DeviceAllow=char-tty rw
+DeviceAllow=block-sd r
+DeviceAllow=/dev/net/tun rwm
+IPAddressAllow=
+SystemCallFilter=~@mount:EPERM
+SystemCallLog=@debug
+SystemCallArchitectures=x86 x86-64
+LockPersonality=yes
+ProtectProc=ptraceable
+ProcSubset=all
+ReadWriteDirectories=/var/lib/inventory
+ExecPaths=/opt/inventory
+NoExecPaths=/tmp
+ExecStartPre=+-/bin/true
+ExecStartPre=-!/bin/true
+ExecStartPre=!!-/bin/true
+ExecStart=/bin/echo one ; /bin/echo two
+ExecStart=/bin/sh -c 'echo "quoted $$HOME and %%"'
+ExecStart=/bin/echo "escapes: \x41 \n \t \\ \" \101 \u00e9 \U0001F3ED"
+ExecStart=/bin/echo ${LOG_LEVEL} ${WAREHOUSE_ID} $MAINPID $INVOCATION_ID $$
+ExecStart=/bin/echo $EXIT_CODE $EXIT_STATUS $SERVICE_RESULT $MONITOR_UNIT $CREDENTIALS_DIRECTORY
+ExecStart=/bin/echo $RUNTIME_DIRECTORY $STATE_DIRECTORY $CACHE_DIRECTORY $LOGS_DIRECTORY $CONFIGURATION_DIRECTORY
+ExecStart=/bin/echo $NOTIFY_SOCKET $WATCHDOG_PID $WATCHDOG_USEC $LISTEN_FDS $LISTEN_PID $LISTEN_FDNAMES
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
+StandardInput=tty-force
+StandardOutput=file:/var/log/inventory.log
+StandardError=append:/var/log/inventory.err
+StandardOutput=truncate:/var/log/inventory.out
+StandardOutput=socket
+StandardError=journal+console
+StandardOutput=fd:stdout
+StandardInputText=hello\n
+StandardInputData=SGVsbG8K
+SyslogLevel=debug
+Sockets=inventory.socket
+WatchdogSignal=SIGABRT
+NotifyAccess=all
+TimeoutStartFailureMode=terminate
+TimeoutStopFailureMode=abort
+EnvironmentFile=-/etc/inventory/env.d/*.env
+PassEnvironment=
+Environment=PATH=/usr/local/bin:/usr/bin
+Environment=ESCAPED="a \"quoted\" word" SPACED=two\ words
+Environment=SPECIFIER=%t/%N/%p/%P/%i/%I/%f/%S/%C/%L/%E/%T/%V/%h/%U/%u/%G/%g/%s/%m/%b/%H/%l/%v/%a/%o/%w/%W/%M/%A/%B/%q/%j/%J/%d
+
+# ── Time spans, sizes, booleans, and numeric forms ──
+[Service]
+TimeoutStartSec=1h 30min 5us
+TimeoutStopSec=infinity
+RuntimeMaxSec=1w 2d 3h 4min 5s 6ms 7us
+RestartSec=0.5s
+WatchdogSec=1month 1y
+MemoryMax=infinity
+MemoryHigh=512K
+MemoryLow=1T
+MemorySwapMax=50%
+LimitMEMLOCK=1P
+LimitCORE=0
+CPUWeight=idle
+IOWeight=100
+Nice=19
+UMask=0077
+ProtectKernelTunables=on
+ProtectClock=off
+NoNewPrivileges=1
+PrivateTmp=0
+PrivateUsers=full
+PrivateTmp=disconnected
+RemainAfterExit=y
+SendSIGHUP=n
+SendSIGKILL=True
+Delegate=cpu memory pids
+TasksMax=infinity
+TasksMax=10%
+AmbientCapabilities=~
+CapabilityBoundingSet=
+SupplementaryGroups=
+OOMScoreAdjust=1000
+Environment=ONE=1 \
+    TWO=2 \
+# a comment line inside a continuation is skipped
+    THREE=3
+
+# ── [Install] extras, vendor extension section, and template instances ──
+[Install]
+UpheldBy=multi-user.target
+WantedBy=inventory@main.service inventory@%i.service
+Alias=inventory.service
+Also=inventory-reload.path inventory-reload.timer
+DefaultInstance=main
+
+[X-Inventory]
+; Sections whose name starts with X- are ignored by systemd and kept for other tools.
+Owner=platform@example.com
+Tier=api

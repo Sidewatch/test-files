@@ -1,3 +1,4 @@
+/* Flex 2.6.4 — syntax showcase (checked with flex 2.6.4) */
 /* ── Definitions section: C prologue, options, named patterns, start conditions ── */
 %{
 /* Lex/Flex: a tokenizer for a small stock-query language. */
@@ -57,6 +58,9 @@ static char *dup(const char *s) { return strdup(s); }
 %option bison-locations
 %option noyyalloc noyyrealloc noyyfree
 %option nodefault
+%option noline nounistd
+%option nodebug
+%pointer
 %xs RARE_EXCL
 %s RARE_INCL
 %x RARE_A RARE_B

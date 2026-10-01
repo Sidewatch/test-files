@@ -1,5 +1,5 @@
 -- ── Comments ───────────────────────────────────────────────
--- VHDL-2008: a warehouse stock counter, a package and a testbench.
+-- VHDL-2019 (IEEE 1076-2019) — syntax showcase: a warehouse stock counter, a package and a testbench.
 -- TODO: add parity checking. FIXME: reset polarity.
 /* VHDL-2008 delimited
    comment spanning lines */
@@ -481,3 +481,98 @@ package ifc_pkg is
     end view master_view;
     alias slave_view is master_view'converse;
 end package ifc_pkg;
+
+-- ── Additions: VHDL-2008/2019 forms ────────────────────────
+-- Conditional analysis (VHDL-2019)
+`if VHDL_VERSION = "2019" then
+-- 2019 tool-version-specific declarations would go here
+`elsif VHDL_VERSION = "2008" then
+-- 2008 fallback
+`else
+`warning "unsupported language version"
+`end if
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+entity extras is
+    generic (
+        type data_t;
+        package fixed_ops is new work.generic_stack generic map (<>);
+        constant DEPTH : natural := 4
+    );
+    port (
+        clk  : in  std_logic;
+        d    : in  data_t;
+        q    : out data_t;
+        sel  : in  std_logic_vector(1 downto 0)
+    );
+end entity extras;
+
+architecture rtl of extras is
+    signal word : std_logic_vector(7 downto 0);
+    signal elem : word'element;
+    subtype word_t is word'subtype;
+    constant UB  : bit_vector := UB"1010_1010";
+    constant SB  : bit_vector := SB"1010";
+    constant UXV : std_logic_vector := 8UX"F?";
+    constant SXV : std_logic_vector := 12SX"7FF";
+    constant DB  : bit_vector := 10D"1023";
+begin
+    -- sequential conditional / selected assignment in a process (2008)
+    proc : process (all)
+    begin
+        word <= x"00" when sel = "00" else
+                x"FF" when sel = "01" else
+                (others => '0');
+        with sel select
+            word(0) <= '1' when "10",
+                       '0' when others;
+        with sel select?
+            word(1) <= '1' when "1-",
+                       '0' when others;
+        case? sel is
+            when "1-" => null;
+            when others => null;
+        end case?;
+        if word(0) then   -- implicit ?? in conditions (2008)
+            null;
+        end if;
+    end process proc;
+
+    -- if-generate with elsif / else (2008)
+    gen : if DEPTH > 8 generate
+        signal a : std_logic;
+    begin
+        a <= '1';
+    elsif DEPTH > 4 generate
+        signal b : std_logic;
+    begin
+        b <= '1';
+    else generate
+        signal c : std_logic;
+    begin
+        c <= '1';
+    end generate gen;
+
+    -- external names with relative path and package path
+    process
+    begin
+        report to_string(<<constant ^.^.counter.WIDTH : natural>>);
+        report to_string(<<variable @work.counter_types.shared_count : integer>>);
+        wait;
+    end process;
+end architecture rtl;
+
+-- Simulation-control and force/release at the sequential level
+architecture test of extras is
+begin
+    process
+    begin
+        q <= force in d;
+        q <= force out d;
+        q <= release;
+        wait;
+    end process;
+end architecture test;

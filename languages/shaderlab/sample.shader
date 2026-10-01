@@ -1,3 +1,4 @@
+// ShaderLab — Unity 6.2 (6000.2) syntax showcase, with HLSL program blocks
 // Unity ShaderLab: a warehouse hologram shader — scrolling texture, rim light,
 // stock-level tint, a shadow caster and a surface-shader fallback.
 /* Block comment: ShaderLab wraps
@@ -31,6 +32,22 @@ Shader "Warehouse/StockHologram"
         [Normal] _Detail ("Detail normal", 2D) = "bump" {}
         [HideInInspector] _Internal ("Internal", Float) = 0
         [Space(10)] [IntRange] _Level ("Level", Range(0, 10)) = 5
+        [MainTexture] _BaseMap ("Base map", 2D) = "white" {}
+        [MainColor] _BaseColor ("Base colour", Color) = (1, 1, 1, 1)
+        [PerRendererData] _RendererTint ("Renderer tint", Color) = (1, 1, 1, 1)
+        [ToggleUI] _ShowOutline ("Outline", Float) = 0
+        [Gamma] _GammaTint ("Gamma tint", Color) = (1, 1, 1, 1)
+        [NoScaleOffset] [Normal] _NormalMap ("Normal", 2D) = "bump" {}
+        [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlend ("Src blend", Float) = 5
+        [Enum(UnityEngine.Rendering.BlendMode)] _DstBlend ("Dst blend", Float) = 10
+        [Enum(UnityEngine.Rendering.CompareFunction)] _ZTest ("ZTest", Float) = 4
+        [HDR] [Gamma] _HdrGamma ("HDR gamma", Color) = (1, 1, 1, 1)
+        [Header(Stencil)] [Space] _StencilRef ("Ref", Range(0, 255)) = 0
+        _Smoothness ("Smoothness", Range(0.0, 1.0)) = 0.5
+        _Tiling ("Tiling", Vector) = (1, 1, 0, 0)
+        _Array ("Texture array", 2DArray) = "" {}
+        _Cutoff ("Alpha cutoff", Range(0, 1)) = 0.5
+        _Neg ("Negative", Float) = -1.5e-2
     }
 
     // ── Shared HLSL ──
@@ -289,9 +306,193 @@ Shader "Warehouse/StockHologram"
         ENDCG
     }
 
+    // ── SubShader: modern HLSL pass (URP-style) with per-target state ──
+    SubShader
+    {
+        Tags { "RenderType" = "Opaque" "RenderPipeline" = "UniversalPipeline" "Queue" = "Geometry" "UniversalMaterialType" = "Lit" }
+        LOD 300
+
+        Pass
+        {
+            Name "UniversalForward"
+            Tags { "LightMode" = "UniversalForward" }
+
+            Blend [_SrcBlend] [_DstBlend]
+            Blend 1 One One
+            Blend 2 Off
+            BlendOp 0 Add
+            BlendOp Max, Min
+            Cull Back
+            ZClip True
+            ZTest [_ZTest]
+            ZWrite On
+            ColorMask 0
+            ColorMask RGB 1
+            Conservative True
+            Offset [_OffsetFactor], [_OffsetUnits]
+            AlphaToMask On
+            Stencil
+            {
+                Ref [_StencilRef]
+                Comp [_StencilComp]
+                Pass IncrSat
+                Fail DecrWrap
+                ZFail Invert
+                CompFront Equal
+                PassFront Zero
+                FailFront IncrWrap
+                ZFailFront DecrSat
+                CompBack NotEqual
+                PassBack Keep
+                FailBack Replace
+                ZFailBack Zero
+            }
+
+            HLSLPROGRAM
+            #pragma target 4.5
+            #pragma use_dxc
+            #pragma vertex Vert
+            #pragma fragment Frag
+            #pragma hull Hull
+            #pragma domain Domain
+            #pragma geometry Geom
+            #pragma require geometry tessellation
+            #pragma only_renderers d3d11 vulkan metal
+            #pragma exclude_renderers gles
+            #pragma multi_compile_instancing
+            #pragma multi_compile_local _ _ALPHATEST_ON
+            #pragma multi_compile_local_fragment _ _SHADOWS_SOFT
+            #pragma shader_feature_local_fragment _NORMALMAP
+            #pragma shader_feature_local_vertex _WIND
+            #pragma instancing_options renderinglayer
+            #pragma skip_variants FOG_EXP FOG_EXP2
+            #pragma editor_sync_compilation
+            #pragma enable_d3d11_debug_symbols
+            #pragma warning disable 3557
+            #pragma once
+            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+            #line 1 "WarehouseForward"
+            #if SHADER_API_D3D11 || SHADER_API_VULKAN
+                #define HAS_COMPUTE 1
+            #elif !defined(SHADER_API_METAL)
+                #error "Unsupported platform"
+            #else
+                #warning "Metal path"
+            #endif
+
+            TEXTURE2D(_BaseMap);
+            SAMPLER(sampler_BaseMap);
+            Texture2D<float4> _Tex2;
+            SamplerState sampler_Tex2;
+            Texture2DArray _Array;
+            StructuredBuffer<float4> _Points;
+            RWStructuredBuffer<uint> _Counters;
+
+            cbuffer Params : register(b0)
+            {
+                float4 _Params;
+                row_major float4x4 _World;
+                column_major float3x3 _Basis;
+            }
+
+            typedef float3 Colour;
+            static const float kEpsilon = 1e-5;
+            static uint s_counter = 0u;
+            groupshared float g_shared[64];
+
+            struct Attributes
+            {
+                float4 positionOS : POSITION;
+                float3 normalOS   : NORMAL;
+                float2 uv         : TEXCOORD0;
+                uint   vertexID   : SV_VertexID;
+                uint   instanceID : SV_InstanceID;
+            };
+
+            struct Varyings
+            {
+                float4 positionCS : SV_POSITION;
+                nointerpolation float3 flat : TEXCOORD0;
+                noperspective float2 uv : TEXCOORD1;
+                linear float3 smooth : TEXCOORD2;
+                centroid float3 cen : TEXCOORD3;
+                bool front : SV_IsFrontFace;
+            };
+
+            Varyings Vert(Attributes IN)
+            {
+                Varyings OUT = (Varyings)0;
+                OUT.positionCS = TransformObjectToHClip(IN.positionOS.xyz);
+                OUT.uv = IN.uv;
+                OUT.flat = float3(1, 0, 0);
+                return OUT;
+            }
+
+            [maxvertexcount(3)]
+            void Geom(triangle Varyings input[3], inout TriangleStream<Varyings> stream)
+            {
+                [unroll] for (int i = 0; i < 3; ++i) { stream.Append(input[i]); }
+                stream.RestartStrip();
+            }
+
+            half4 Frag(Varyings IN, bool isFront : SV_IsFrontFace, out float depth : SV_Depth) : SV_Target0
+            {
+                half4 c = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, IN.uv);
+                float3x3 m = float3x3(1, 0, 0, 0, 1, 0, 0, 0, 1);
+                half2x2 h = half2x2(1, 0, 0, 1);
+                matrix<float, 4, 4> mm = (matrix<float, 4, 4>)0;
+                vector<float, 3> v3 = float3(1, 2, 3);
+                int4 iv = int4(1, 2, 3, 4);
+                uint2 uv2 = uint2(1u, 2u);
+                min16float mf = 1.0;
+                double dd = 1.0;
+                float swz = v3.zyx.x + c.rgba.a + c.xyzw.w;
+                int sel = (int)floor(IN.uv.x * 3.0) % 3;
+                switch (sel)
+                {
+                    case 0: c.r = 1.0; break;
+                    case 1: { c.g = 1.0; break; }
+                    default: c.b = 1.0; break;
+                }
+                [flatten] if (isFront) { c.a *= 0.5; }
+                [fastopt] do { s_counter++; } while (s_counter < 4u);
+                for (uint k = 0u; k < 2u; k += 1u) { c.rgb *= 0.9; }
+                float t = isFront ? 1.0 : -1.0;
+                t = (t > 0 && t < 2) || !(t == 3) ? t : -t;
+                t += 1; t -= 1; t *= 2; t /= 2; t %= 5;
+                uint bits = (1u << 3) | (2u >> 1) ^ 0xFu & ~0u;
+                depth = IN.positionCS.z;
+                #if defined(_ALPHATEST_ON)
+                    clip(c.a - _Cutoff);
+                #endif
+                return c;
+            }
+            ENDHLSL
+        }
+    }
+
+    // ── Deprecated fixed-function SubShader (still parsed by Unity) ──
+    SubShader
+    {
+        Pass
+        {
+            Material { Diffuse [_Tint] Ambient (0.2, 0.2, 0.2, 1) Shininess [_Gloss] Specular (1, 1, 1, 1) Emission [_Emission] }
+            Lighting On
+            SeparateSpecular On
+            ColorMaterial AmbientAndDiffuse
+            Fog { Color (0, 0, 0, 0) }
+            AlphaTest Greater 0.5
+            SetTexture [_MainTex] { constantColor (1, 1, 1, 0.5) combine texture * primary DOUBLE, texture * constant }
+            SetTexture [_BumpMap] { combine previous + texture }
+        }
+    }
+
     // ── Package-level fallbacks and editor hooks ──
     Fallback "Diffuse"
+    // Fallback Off  (alternative: disable the fallback)
     CustomEditor "WarehouseShaderGUI"
+    CustomEditorForRenderPipeline "WarehouseURPGUI" "UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset"
     Dependency "BaseMapShader" = "Hidden/Warehouse/Base"
     Category
     {

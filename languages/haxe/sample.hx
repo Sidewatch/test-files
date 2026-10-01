@@ -1,3 +1,4 @@
+// Haxe 4.3 — syntax showcase
 // ── Comments ──
 // Haxe: generic containers, abstracts, macros and conditional compilation.
 /* Block comment. TODO: split into modules. FIXME: expiry drift. */
@@ -300,6 +301,7 @@ abstract Stack(Array<Int>) from Array<Int> {
     @:resolve function resolve(name:String):Dynamic return null;
 }
 
+// deprecated: @:enum abstract; use `enum abstract`
 @:enum abstract Flag(Int) {
     var A = 1;
     var B = 2;
@@ -354,7 +356,7 @@ extern class ExternExample {
 
 // ── Structures, interfaces, extends and implements ──
 typedef Base = { id:Int };
-typedef Derived = { > Base, name:String };
+typedef Derived = { > Base, name:String }; // deprecated: structure extension; use Base & { name:String }
 typedef Readonly = { final id:Int; final name:String };
 typedef WithMethods = { function run():Void; var value(default, null):Int; };
 typedef Generic<T:{ id:Int }> = { item:T };
@@ -490,3 +492,63 @@ class MoreLiterals {
         var typecheck = (dyn : Int);
     }
 }
+
+// ── Haxe 4.3 forms: intersection types, operators on abstracts, pattern matching extras ──
+typedef Intersected = Base & { name:String } & { ?tag:String };
+
+abstract Range(Int) {
+    public inline function new(i:Int) this = i;
+    @:op(A...B) static function interval(a:Range, b:Range):IntIterator return (cast a : Int)...(cast b : Int);
+    @:op(A == B) static function eq(a:Range, b:Range):Bool;
+    @:op(A++) function inc():Range return new Range(this + 1);
+    @:op(++A) function preInc():Range return new Range(this + 1);
+    @:op(!A) function not():Bool return this == 0;
+    @:op([]) function arrayRead(i:Int):Int return this + i;
+}
+
+class Patterns {
+    static function run(opt:Option<String>, pair:Array<Int>, o:{ name:String, ?qty:Int }) {
+        final tupleLike = switch [pair.length, opt] {
+            case [0, None]: "empty";
+            case [n, Some(s)] if (n > 1 && s != ""): "many " + s;
+            case [_, Some(_.length => 3)]: "three letters";
+            case [1 | 2, _]: "one or two";
+            default: "other";
+        }
+        switch pair {
+            case []: trace("none");
+            case [x]: trace(x);
+            case [x, y] | [y, x]: trace(x + y);
+            case [x, _, _]: trace(x);
+            case _: trace("many");
+        }
+        switch o {
+            case { name: "w", qty: null }: trace("no qty");
+            case { name: n, qty: q } if (q > 0): trace(n + q);
+            case _:
+        }
+        var guarded = switch opt { case Some(v) if (v.length > 2): v; case _: ""; };
+        var tried = try Std.parseInt("x") catch (e:Dynamic) null;
+        var typed = $type(tupleLike);
+        return tupleLike;
+    }
+}
+
+// ── Null safety, final and static extension ──
+@:nullSafety(Strict)
+class Safe {
+    final name:String;
+    var maybe:Null<String> = null;
+    public function new(n:String) name = n;
+    public function len():Int {
+        final m = maybe;
+        if (m != null) return m.length;
+        return maybe?.length ?? 0;
+    }
+}
+
+class Extensions {
+    public static function double(i:Int):Int return i * 2;
+    public static function shout(s:String):String return s.toUpperCase() + "!";
+}
+

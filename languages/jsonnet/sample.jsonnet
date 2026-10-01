@@ -1,4 +1,4 @@
-// Jsonnet: warehouse deployment templates exercising the whole language.
+// Jsonnet 0.21 — syntax showcase (no jsonnet binary installed here; checked against the language reference)
 # Hash comment form
 /* Block comment
    across lines */
@@ -180,7 +180,7 @@ local access_forms = {
   n: (function(x=1, y) x + y)(y=2),
 };
 local tailstrict_demo(n, acc=0) = if n == 0 then acc else tailstrict_demo(n - 1, acc + n) tailstrict;
-local more_numbers = [0, 1.5, 1e2, 1E2, 1e+2, 1e-2, 0.0, 100, 1_000_000];
+local more_numbers = [0, 1.5, 1e2, 1E2, 1e+2, 1e-2, 0.0, 100, 1000000];
 local more_strings = [
   'single \' \" \\ \/ \b \f \n \r \t \u0041 \u00e9',
   "double \' \" \\ \/ \b \f \n \r \t \u0041",
@@ -231,8 +231,53 @@ local std_more = {
   h: std.assertEqual(1, 1),
   i: std.manifestIni({ sections: { s: { k: 'v' } } }),
   j: std.escapeStringJson('a"b'),
-  k: std.ext_vars_missing_ok_demo,
+  k: std.get({ a: 1 }, 'b', default=0),
 };
+
+// ── Jsonnet 0.20 / 0.21 additions ──
+local newer_std = {
+  a: std.xor(true, false),
+  b: std.xnor(true, false),
+  c: std.trim('  padded  '),
+  d: std.objectRemoveKey({ a: 1, b: 2 }, 'a'),
+  e: std.sum([1, 2, 3]) + std.avg([1, 2, 3]),
+  f: std.minArray([3, 1, 2]) + std.maxArray([3, 1, 2]),
+  g: std.all([true, true]) && std.any([false, true]),
+  h: std.contains([1, 2], 2),
+  i: std.isEmpty(''),
+  j: std.equalsIgnoreCase('A', 'a'),
+  k: std.splitLimitR('a,b,c', ',', 1),
+  l: std.stripChars('xxhixx', 'x'),
+  m: std.sha256('abc') + std.sha1('abc') + std.sha512('abc'),
+  n: std.decodeUTF8([104, 105]),
+  o: std.manifestTomlEx({ a: 1 }, '  '),
+  p: std.parseYaml('a: 1'),
+  q: std.xmlEscape('<a>'),
+  r: std.reverse([1, 2, 3]),
+  s: std.member('abc', 'b'),
+  t: std.clamp(15, 0, 10),
+  u: std.deepJoin(['a', ['b']]),
+  v: std.manifestPython({ a: [1, true, null] }),
+  w: std.mod(7, 3),
+  x: std.round(2.5) + std.floor(2.5) + std.ceil(2.5),
+  y: std.exponent(8) + std.mantissa(8),
+};
+local more_comprehensions = {
+  withLocal: { local y = x * 2, ['k' + y]: y for x in [1, 2, 3] },
+  filtered: { [k]: 1 for k in ['a', 'b', 'c'] if k != 'b' },
+  doubleLoop: [[x, y] for x in [1, 2, 3] if x > 1 for y in [x, x + 1] if y != 3],
+  empty: [x for x in []],
+};
+local super_forms = { a: 1, b: 2 } + { c: super.a, d: super['b'], e: 'a' in super };
+local self_forms = { a: 1, b: self.a, c: self['a'], d: $.a };
+local trailing_commas = [1, 2, 3,];
+local trailing_obj = { a: 1, b: 2, };
+local trailing_params(a, b,) = a + b;
+local comment_forms = [
+  1, # hash comment after a value
+  2, // line comment after a value
+  3, /* block comment */ 4,
+];
 
 // ── Top-level arguments and the output ──
 function(environment='staging', region='eu-west-1')

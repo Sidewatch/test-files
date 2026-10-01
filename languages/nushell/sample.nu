@@ -1,5 +1,5 @@
 #!/usr/bin/env nu
-# Nushell showcase: summarise a CSV of orders and report the top SKUs.
+# Nushell 0.106 — syntax showcase: summarise a CSV of orders and report the top SKUs.
 # TODO: stream large files instead of loading them
 # FIXME: money() rounds half-even
 
@@ -278,3 +278,49 @@ print --no-newline "no newline"
 print -e "to stderr"
 input "prompt: " | str trim
 exit 0
+
+# ── Jobs, generators, plugins and other recent commands ──
+plugin use gstat
+let job_id = job spawn { sleep 1sec; print "background" }
+job send $job_id "message"
+job recv --timeout 1sec
+job list | where type == frozen
+job kill $job_id
+let fib = generate {|state = {a: 0, b: 1}| {out: $state.a, next: {a: $state.b, b: ($state.a + $state.b)}} } | first 10
+let counted = 1.. | each while {|i| if $i < 5 { $i } }
+let formatted = {name: "x", n: 2} | format pattern "{name}-{n}"
+let converted = "5" | into value
+let tmp = mktemp --directory
+exec echo replaced
+if (is-terminal --stdin) { print "interactive" }
+input list --fuzzy ["a" "b" "c"]
+watch . --glob=**/*.rs {|op, path, new_path| print $"($op) ($path)" }
+const compile_time = (1 + 2)
+const names = [alpha beta]
+export const DEFAULTS = {retries: 3, timeout: 5sec}
+def "str shout" []: string -> string { $in | str upcase | $"($in)!" }
+def --env --wrapped wrap [...args: string] { ^env ...$args }
+alias gs = git status
+alias "my alias" = echo aliased
+export alias gl = git log --oneline
+$env.config = {
+    show_banner: false
+    history: {max_size: 10_000, file_format: "sqlite"}
+    keybindings: [{name: reload, modifier: control, keycode: char_r, mode: emacs, event: {send: executehostcommand, cmd: "exec nu"}}]
+    hooks: {pre_prompt: [{|| null }], env_change: {PWD: [{|before, after| print $after }]}}
+}
+$env.PATH = ($env.PATH | split row (char esep) | prepend "/opt/bin" | uniq)
+$env.ENV_CONVERSIONS = {PATH: {from_string: {|s| $s | split row (char esep) }, to_string: {|v| $v | str join (char esep) }}}
+$env.PROMPT_COMMAND = {|| $"(pwd | path basename)> " }
+let regex_split = "a1b2" | split row --regex '\d'
+let parsed = "k=v" | parse "{key}={value}"
+let rows = ls | each {|f| {name: $f.name, kb: ($f.size / 1kb)} }
+let first_col = $rows | get 0.name
+let optional_col = $rows | get -i 99.name
+let deep_update = {a: {b: [1 2]}} | update a.b.0 99
+let merged_rec = {a: 1} | merge {b: 2} | merge deep {c: {d: 3}}
+let spread_args = [1 2] | each {|x| [...$list_commas $x] }
+let all_any = [true false] | all {|b| $b }
+let optional_chain = {a: null}.a?.b?
+# Comments with trailing text # still a comment
+# Last line.

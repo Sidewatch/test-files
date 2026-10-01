@@ -1,3 +1,4 @@
+/* Reason 3.17 (OCaml 5.x syntax tree) — syntax showcase */
 /* ── Comments ── */
 /* Reason showcase: warehouse inventory — OCaml with a JS-flavoured syntax.
    /* block comments nest */
@@ -316,3 +317,189 @@ let orders = [
 
 List.iter(o => print_endline(describe(o)), orders);
 Printf.printf("revenue: %.2f\n", revenue(orders));
+
+/* ── More type forms ── */
+type privateRecord = pri {id: int};
+type privateVariant = pri | A | B;
+type withConstraint('a) = list('a) constraint 'a = int;
+type recA = {b: recB}
+and recB = {a: option(recA)};
+type objectType = {. "x": int, "y": string};
+type openObject('a) = {.. "x": int} as 'a;
+type labelled = (~a: int, ~b: string=?, ~c: float=?) => unit;
+type higherOrder = ((int, int) => int, list(int)) => int;
+type tupleType = (int, string, (float, bool));
+type arrayType = array(int);
+type optionType = option(list(array(string)));
+type functorType = (module Priced);
+type recordWithAttr = {
+  [@bs.as "type"] kind: string,
+  [@optional] maybe: int,
+};
+type inlineRecord = Rec({x: int, mutable y: int}) | Other;
+type lazyType = Lazy.t(int);
+type recursive('a) = [ | `Leaf('a) | `Node(recursive('a), recursive('a))];
+type nonrec status = status;
+type extensibleMore += Extra(int) | More;
+type t = M.t = {a: int};
+type u = M.u = A | B;
+
+/* ── First-class modules, functors, signatures ── */
+module type S = {
+  type t;
+  let make: int => t;
+  let show: t => string;
+  module Sub: {let value: int;};
+  exception Oops(string);
+  external prim: int => int = "%identity";
+  include Priced;
+  open Belt;
+  let x: 'a. 'a => 'a;
+};
+
+module rec Even: {let isEven: int => bool;} = {
+  let isEven = n => n == 0 ? true : Odd.isOdd(n - 1);
+}
+and Odd: {let isOdd: int => bool;} = {
+  let isOdd = n => n == 0 ? false : Even.isEven(n - 1);
+};
+
+module F = (X: S, Y: S) => {
+  type t = (X.t, Y.t);
+};
+module Applied = F(Money, Money);
+module Constrained: S with type t := int = {
+  type t = int;
+  let make = x => x;
+  let show = string_of_int;
+  module Sub = {let value = 1;};
+  exception Oops(string);
+  external prim: int => int = "%identity";
+  type extra = int;
+  let x = y => y;
+};
+module Alias = Constrained;
+module TypeOf: module type of Money = Money;
+module Local = {
+  open Money;
+  let local = zero;
+};
+
+let firstClass = (module Money: Priced);
+let unpack = (m: (module Priced)) => {
+  module M = (val m);
+  M.price;
+};
+let localOpen = Money.(add(zero, zero));
+let localOpen2 = Money.{...someRecord};
+let letModule = {
+  module Temp = Money;
+  Temp.zero;
+};
+let letOpen = {
+  open Money;
+  zero;
+};
+
+/* ── Functions: fun, labelled, optional, defaults, recursion ── */
+let funCase = fun
+  | Pending => 0
+  | Paid(_) => 1
+  | Cancelled(_) => 2
+  | Shipped(_) => 3;
+
+let multiArg = (a, b, c) => a + b + c;
+let partial = multiArg(1, 2);
+let labelled = (~a, ~b as bb, ~c=3, ~d: int=4, ~e: option(int)=?, ~f as ff: int=5, ()) => a + bb + c + d + ff;
+let _ = labelled(~a=1, ~b=2, ~c=3, ());
+let _ = labelled(~a=1, ~b=2, ~e=?Some(1), ());
+let unitArg = () => 1;
+let tupleArg = ((a, b)) => a + b;
+let recordArg = ({number, total, _}) => number;
+let wildcard = (_, _unused) => 0;
+let locallyAbstract = (type a, x: a) => x;
+let pipelineLast = List.map(x => x * 2) @@ [1, 2, 3];
+let compose = (f, g, x) => f(g(x));
+let sequence = {
+  print_string("a");
+  print_string("b");
+  1;
+};
+let letAnd = {
+  let a = 1
+  and b = 2;
+  a + b;
+};
+let patternBinding = {
+  let (a, b) = (1, 2);
+  let {number, total, _} = List.hd(orders);
+  let [first, ...rest] = [1, 2, 3];
+  let [|x, y|] = [|1, 2|];
+  (a, b, number, total, first, rest, x, y);
+};
+
+/* ── Operators, attributes, extension points ── */
+let infixOps = (1 + 2) * 3 - 4 / 2 mod 3;
+let chained = a => a |> f |> g;
+let custom = (a, b) => a @@ b;
+let append = [1] @ [2];
+let physical = a === b;
+let notPhysical = a !== b;
+let structural = a <> b;
+let unary = !r + (- 1) - (-. 1.0);
+let (+++) = (a, b) => a ++ b;
+
+[@@@warning "-32"]
+[@@deriving (show, eq)] type derived = {a: int};
+[%%raw "var x = 1"];
+let ext = [%bs.raw "1"];
+let extStr = [%string "a"];
+let%lwt value = Lwt.return(1);
+let%expect_test _ = print_endline("x");
+switch%ext (x) { | _ => () };
+[@attr] let attributed = 1;
+let attributedExpr = (1 [@attr]);
+module M = {
+  [@@@ocaml.warning "-27"]
+  [@@ocaml.deprecated "use other"] let deprecated = 1;
+};
+
+/* ── Classes and objects (OCaml object system) ── */
+class counter = {
+  as self;
+  val mutable n = 0;
+  pri secret = 1;
+  pub incr = () => {
+    n = n + 1;
+    self#get();
+  };
+  pub get = () => n;
+  initializer { print_string("created") };
+};
+let c = new counter;
+let _ = c#incr();
+class type counterType = {
+  pub incr: unit => int;
+  pub get: unit => int;
+};
+class virtual abstractShape = {
+  pub virtual area: float;
+};
+class circle = (r: float) => {
+  inherit (class abstractShape);
+  pub area = 3.14 *. r *. r;
+};
+
+/* ── JSX: every form ── */
+let jsxForms =
+  <div id="a" className="b" onClick={_ => ()} hidden=true data-x="1" key="k" ref={ReactDOM.Ref.domRef(r)}>
+    "text child"->React.string
+    <Comp.Nested a=1 b="two" c={3 + 4} d=?{Some(5)} {...props} />
+    <></>
+    {React.string("expr")}
+    <input value={string_of_int(1)} onChange={e => ReactEvent.Form.target(e)["value"]} />
+  </div>;
+
+/* ── Comments and strings inside ── */
+let stringsAndComments = "not /* a comment */" ++ {|nor /* this */|}; /* but /* this */ is */
+// final line comment

@@ -1,3 +1,4 @@
+{{! Handlebars 4.7 — syntax showcase }}
 {{! ── Comments ── }}
 {{! Short Handlebars comment: orders list. TODO: paginate. }}
 {{!-- Long comment that may contain }} braces and {{mustaches}} safely. --}}
@@ -200,3 +201,30 @@
 
 {{{footerHtml}}}
 {{!-- Non-ASCII: café 日本語 ☕ --}}
+
+{{!-- ── Chained else with any helper, numeric path segments, include-zero ── --}}
+{{#if first}}
+  first
+{{else if second}}
+  second
+{{else with fallbackObject}}
+  {{name}} from with
+{{else each fallbackList}}
+  {{this}} from each
+{{else unless disabled}}
+  enabled
+{{else}}
+  nothing
+{{/if}}
+{{#if count includeZero=true}}Zero counts as truthy here{{/if}}
+{{array.0}} {{array.1.name}} {{items.[2].sku}} {{object.[key with spaces]}} {{@root.items.0}}
+{{#each items as |item idx|}}{{idx}}:{{item}}{{/each}}
+{{#each obj as |value key|}}{{key}}={{value}}{{/each}}
+{{#with (lookup people 0) as |first|}}{{first.name}}{{/with}}
+{{#each (sort items "name") as |sorted|}}{{sorted.name}}{{/each}}
+{{lookup (lookup . "nested") "key"}}
+{{#blockHelperMissing}}fallback{{/blockHelperMissing}}
+{{helperMissing arg}}
+{{!-- hash arguments may use data variables and subexpressions --}}
+{{link to=(concat "/orders/" id) label=@index class=(if active "on" "off")}}
+

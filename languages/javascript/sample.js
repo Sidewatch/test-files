@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// ECMAScript 2025 — syntax showcase (checked with node v26; `using` is ES2026)
 // @ts-check
 "use strict";
 
@@ -269,3 +270,50 @@ new Foo;
 (() => {})?.();
 a: b: c: for (;;) break a;
 export const VERSION = "1.0.0";
+
+// ── ES2025 / ES2026 additions ──
+const shortHand = { sku, qty, name };
+const genExpr = function* () { yield 1; yield* [2, 3]; };
+const namedGenExpr = function* counter(limit) { for (let i = 0; i < limit; i++) yield i; };
+const modulo = 17 % 5;
+let shifts = 1 << 4;
+shifts = shifts >> 1;
+shifts = shifts >>> 1;
+shifts %= 3;
+
+class Accessors {
+  static get instanceCount() { return 0; }
+  static set instanceCount(v) {}
+  static get() { return 1; } // a static method literally named get
+  static async load() {}
+  static *walk() {}
+  static async *stream() {}
+  static #hidden = 1;
+  static get #privateGetter() { return Accessors.#hidden; }
+}
+
+// Iterator helpers (ES2025)
+const firstSquares = genExpr().map((x) => x * x).filter((x) => x > 1).take(2).toArray();
+// Set methods (ES2025)
+const union = new Set([1, 2]).union(new Set([2, 3]));
+const common = new Set([1, 2]).intersection(new Set([2, 3]));
+// RegExp modifiers and duplicate named groups (ES2025)
+const modifiers = /(?i:ab)c/;
+const dupNames = /(?<y>\d{4})-\d\d|\d\d-(?<y>\d{4})/;
+// Promise.try, Object.groupBy, Array.fromAsync
+const attempt = Promise.try(() => JSON.parse("{}"));
+const grouped = Object.groupBy([1, 2, 3], (x) => (x % 2 ? "odd" : "even"));
+const { promise, resolve: done } = Promise.withResolvers();
+const half = Math.f16round(1.337);
+// JSON modules with import attributes
+const config = await import("./config.json", { with: { type: "json" } });
+
+// Explicit resource management (ES2026)
+{
+  using handle = { [Symbol.dispose]() { console.log("closed"); } };
+  console.log(handle);
+}
+async function withResource() {
+  await using conn = { async [Symbol.asyncDispose]() { console.log("async closed"); } };
+  return conn;
+}

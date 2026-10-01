@@ -1,4 +1,4 @@
-// OpenCL C showcase: vector kernels, reductions, images, atomics and vector types.
+// OpenCL C 3.0 — syntax showcase: vector kernels, reductions, images, atomics and vector types.
 /* A block comment
    over several lines. */
 /// Documentation comment.
@@ -251,3 +251,106 @@ kernel void ternary_and_goto(global uint* x) {
 out:
     x[1] = v;
 }
+
+// ── OpenCL C 3.0: feature-test macros, optional features and attributes ──
+#if __OPENCL_C_VERSION__ >= 300
+#define CL3 1
+#endif
+#ifdef __opencl_c_fp64
+#define HAS_DOUBLE 1
+#endif
+#if defined(__opencl_c_images) && defined(__opencl_c_3d_image_writes)
+#define HAS_IMAGES_3D 1
+#elif defined(__opencl_c_read_write_images)
+#define HAS_RW_IMAGES 1
+#elifdef __opencl_c_pipes
+#define HAS_PIPES 1
+#elifndef __opencl_c_device_enqueue
+#define NO_DEVICE_ENQUEUE 1
+#endif
+#if defined(__opencl_c_generic_address_space) && defined(__opencl_c_program_scope_global_variables)
+global int g_counter = 0;
+#endif
+#if defined(__opencl_c_work_group_collective_functions) && defined(__opencl_c_subgroups)
+#define HAS_COLLECTIVES 1
+#endif
+#pragma OPENCL EXTENSION cl_khr_subgroups : enable
+#pragma OPENCL EXTENSION cl_khr_3d_image_writes : enable
+#pragma OPENCL EXTENSION cl_khr_byte_addressable_store : enable
+#pragma OPENCL EXTENSION cl_khr_local_int32_extended_atomics : enable
+
+typedef float float4_ext __attribute__((ext_vector_type(4)));
+typedef struct __attribute__((packed, aligned(4))) { uchar a; uint b; } PackedAligned;
+typedef int int_endian __attribute__((endian(host)));
+
+__attribute__((intel_reqd_sub_group_size(16)))
+__attribute__((reqd_work_group_size(64, 1, 1)))
+__attribute__((work_group_size_hint(64, 1, 1)))
+__attribute__((vec_type_hint(float)))
+__attribute__((nosvm))
+kernel void attributes_demo(global float* restrict out, global const float* restrict in, const int n) {
+    size_t i = get_global_id(0);
+    if (i < n) out[i] = in[i];
+}
+
+atomic_flag g_flag = ATOMIC_FLAG_INIT;
+
+kernel void memory_model(global atomic_int* counter, global atomic_uint* flags, local atomic_int* lcl) {
+    atomic_flag_test_and_set_explicit(&g_flag, memory_order_acquire, memory_scope_work_group);
+    atomic_flag_clear(&g_flag);
+    int old = atomic_exchange_explicit(counter, 1, memory_order_acq_rel, memory_scope_device);
+    atomic_store(counter, old);
+    int loaded = atomic_load_explicit(counter, memory_order_acquire, memory_scope_all_svm_devices);
+    atomic_fetch_or(flags, 1u);
+    atomic_fetch_and(flags, 3u);
+    atomic_fetch_xor(flags, 2u);
+    atomic_fetch_min(counter, loaded);
+    atomic_fetch_max(counter, loaded);
+    atomic_work_item_fence(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE, memory_order_release, memory_scope_work_item);
+    (void)lcl;
+}
+
+kernel void query_builtins(global ulong* out, global void* svm_ptr) {
+    size_t lsz = get_enqueued_local_size(0);
+    size_t gid_lin = get_global_linear_id();
+    size_t lid_lin = get_local_linear_id();
+    size_t ngroups = get_enqueued_num_sub_groups();
+    out[0] = lsz + gid_lin + lid_lin + ngroups + vec_step(float4) + sizeof(long);
+    size_t gws2[2] = {8, 8};
+    ndrange_t nd2 = ndrange_2D(gws2);
+    ndrange_t nd3 = ndrange_1D(8, 2);
+    (void)nd2; (void)nd3;
+    uint wgsz = get_kernel_work_group_size(^{});
+    uint pref = get_kernel_preferred_work_group_size_multiple(^{});
+    (void)wgsz; (void)pref;
+    float f = as_float((uint)0x3F800000);
+    float g = __builtin_astype((uint)0x3F800000, float);
+    out[1] = (ulong)(f + g);
+    out[2] = work_group_scan_exclusive_add(1) + work_group_scan_inclusive_max(2) + work_group_any(1) + work_group_all(1);
+    ulong8 big = (ulong8)(1, 2, 3, 4, 5, 6, 7, 8);
+    long2 l2 = (long2)(1L, 2L);
+    char16 c16 = (char16)(1);
+    short3 s3 = (short3)(1, 2, 3);
+    (void)big; (void)l2; (void)c16; (void)s3;
+}
+
+// Cast and literal forms
+kernel void literals(global float* out) {
+    const float a = 1.0f, b = 1.0, c = 1e3f, d = 0x1p-2f, e = 0.f;
+    const half h = (half)1.5f;
+    const double dd = 1.0L;
+    const uint u = 4294967295u;
+    const ulong ul = 0xFFFFFFFFFFFFFFFFul;
+    const char ch = '\0';
+    const char oct = '\101';
+    const char hex = '\x41';
+    const float4 v = (float4)(1.0f);
+    const float4 w = (float4)(1.0f, 2.0f, 3.0f, 4.0f);
+    const float4 z = (float4){1.0f, 2.0f, 3.0f, 4.0f};
+    const float4 lit = {1, 2, 3, 4};
+    constant char* s = "string literal";
+    out[0] = a + b + c + d + e + (float)h + (float)dd + (float)u + (float)ul + (float)ch + (float)oct + (float)hex + v.x + w.y + z.z + lit.w + (float)s[0];
+}
+
+#pragma OPENCL EXTENSION cl_khr_fp64 : disable
+#pragma OPENCL EXTENSION all : disable

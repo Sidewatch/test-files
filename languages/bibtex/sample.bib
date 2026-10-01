@@ -1,3 +1,4 @@
+% BibTeX / BibLaTeX 3.21 (Biber 2.21 data model) — syntax showcase
 % Bibliography for the Warehouse Operations Handbook.
 % Keys are author-year; a percent sign starts a comment line.
 % TODO: add DOIs for the grey literature entries.
@@ -419,3 +420,343 @@
   year      = {2022}
 }
 % TODO: normalise the month fields to biblatex dates.
+
+% ── BibLaTeX 3.x: remaining entry types ──────────────────────────────
+@mvcollection{mvcollection-entry,
+  editor    = {Editor, Chief},
+  title     = {Complete Warehouse Studies},
+  volumes   = {3},
+  publisher = {Example Press},
+  date      = {2010/2016}
+}
+
+@mvproceedings{mvproceedings-entry,
+  editor     = {Chair, Program},
+  title      = {Logistics Day Proceedings, Collected},
+  eventtitle = {Logistics Day},
+  volumes    = {2},
+  year       = {2023}
+}
+
+@mvreference{mvreference-entry,
+  editor    = {Compiler, Lead},
+  title     = {Encyclopedia of Logistics},
+  volumes   = {4},
+  publisher = {Example Press},
+  year      = {2019}
+}
+
+@reference{reference-entry,
+  editor    = {Compiler, Lead},
+  title     = {Dictionary of Warehousing Terms},
+  edition   = {2},
+  publisher = {Example Press},
+  year      = {2018},
+  isbn      = {978-0-00-000000-0}
+}
+
+@bookinbook{bookinbook-entry,
+  author    = {Writer, Wanda},
+  title     = {The Dock Door Story},
+  maintitle = {Collected Stories},
+  booktitle = {The Dock Door Story},
+  publisher = {Example Press},
+  year      = {2005}
+}
+
+@suppcollection{suppcollection-entry,
+  author    = {Foreword, Fiona},
+  title     = {Foreword},
+  booktitle = {Warehouse Studies},
+  editor    = {Editor, Chief},
+  year      = {2016},
+  pages     = {ix--xi}
+}
+
+@periodical{periodical-entry,
+  editor    = {Editor, Chief},
+  title     = {Journal of Dock Operations},
+  issuetitle = {Special Issue on Automation},
+  volume    = {12},
+  number    = {3},
+  year      = {2024},
+  issn      = {1234-5679}
+}
+
+@suppperiodical{suppperiodical-entry,
+  author    = {Letters, Lee},
+  title     = {Letters to the Editor},
+  journaltitle = {Journal of Dock Operations},
+  volume    = {12},
+  number    = {3},
+  year      = {2024}
+}
+
+@review{review-entry,
+  author     = {Critic, Chris},
+  title      = {Review of Warehouse Studies},
+  journaltitle = {Logistics Review},
+  year       = {2017},
+  related    = {collection-entry},
+  relatedtype = {reviewof},
+  relatedstring = {Review of Warehouse Studies}
+}
+
+@commentary{commentary-entry,
+  author    = {Glossator, Gwen},
+  title     = {Commentary on the Receiving Standard},
+  year      = {2020},
+  publisher = {Example Press}
+}
+
+@artwork{artwork-entry,
+  author    = {Painter, Pat},
+  title     = {The Loading Dock at Dawn},
+  type      = {oil on canvas},
+  note      = {Example Museum},
+  date      = {1998}
+}
+
+@audio{audio-entry,
+  author    = {Speaker, Sam},
+  title     = {Interview on Slotting},
+  type      = {podcast episode},
+  organization = {Example Radio},
+  date      = {2022-03-14},
+  url       = {https://example.com/audio},
+  urldate   = {2024-01-02}
+}
+
+@video{video-entry,
+  author    = {Filmmaker, Fay},
+  title     = {Inside a Distribution Centre},
+  date      = {2021-09-01},
+  url       = {https://example.com/video},
+  urldate   = {2024-01-02}
+}
+
+@movie{movie-entry,
+  author    = {Director, Dana},
+  title     = {The Last Pallet},
+  date      = {2015},
+  publisher = {Example Pictures}
+}
+
+@image{image-entry,
+  author    = {Photographer, Pam},
+  title     = {Racking Aisle 4},
+  date      = {2023-07-04},
+  url       = {https://example.com/image.png}
+}
+
+@music{music-entry,
+  author    = {Composer, Cody},
+  title     = {Forklift Sonata},
+  booktitle = {Warehouse Suite},
+  date      = {2012}
+}
+
+@performance{performance-entry,
+  author    = {Ensemble, The},
+  title     = {Forklift Sonata, live},
+  venue     = {Example Hall},
+  eventdate = {2019-11-02},
+  location  = {Springfield}
+}
+
+@letter{letter-entry,
+  author    = {Sender, Sam},
+  recipient = {Receiver, Robin},
+  title     = {On the Subject of Reorder Points},
+  date      = {1999-04-01},
+  type      = {Letter}
+}
+
+@legislation{legislation-entry,
+  title     = {Warehouse Safety Act},
+  shorttitle = {Safety Act},
+  number    = {42},
+  date      = {2001-06-01},
+  journaltitle = {Example Statutes}
+}
+
+@legal{legal-entry,
+  title     = {Acme v. Example},
+  journaltitle = {Example Law Reports},
+  volume    = {7},
+  pages     = {101},
+  year      = {2003}
+}
+
+@jurisdiction{jurisdiction-entry,
+  title     = {Acme v. Example},
+  institution = {Example Court},
+  number    = {2003-01},
+  date      = {2003-05-05}
+}
+
+@bibnote{bibnote-entry,
+  note      = {General note printed in the bibliography}
+}
+
+@customa{customa-entry, author = {Custom, Alex}, title = {Custom type A}, year = {2020}}
+@customb{customb-entry, author = {Custom, Bob}, title = {Custom type B}, year = {2020}}
+@customc{customc-entry, author = {Custom, Cy}, title = {Custom type C}, year = {2020}}
+@customd{customd-entry, author = {Custom, Di}, title = {Custom type D}, year = {2020}}
+@custome{custome-entry, author = {Custom, Ed}, title = {Custom type E}, year = {2020}}
+@customf{customf-entry, author = {Custom, Fay}, title = {Custom type F}, year = {2020}}
+
+% ── Aliases and legacy types ─────────────────────────────────────────
+@electronic{electronic-alias, author = {Web, Will}, title = {Alias of online}, url = {https://example.com}, year = {2020}}
+@www{www-alias, author = {Web, Will}, title = {Another alias of online}, url = {https://example.com}, year = {2020}}
+@conference{conference-alias, author = {Doe, Jane}, title = {Alias of inproceedings}, booktitle = {Workshop}, year = {2020}}
+@mastersthesis{masters-alias, author = {Roe, Rae}, title = {Alias of thesis}, school = {Example University}, year = {2020}}
+@techreport{techreport-alias, author = {Roe, Rae}, title = {Alias of report}, institution = {Example Institute}, number = {TR-1}, year = {2020}}
+
+% ── Fields: dates, names, identifiers, related entries ───────────────
+@article{fields-demo,
+  author       = {Smith, Alex and Jones, Pat and others},
+  author+an    = {1=corresponding},
+  editor       = {given=Dana, family=Lee, prefix=van der, suffix=Jr and Roe, Rae},
+  editortype   = {collaborator},
+  translator   = {Translator, Tom},
+  title        = {Main Title},
+  subtitle     = {A Subtitle},
+  titleaddon   = {Add-on},
+  shorttitle   = {Main},
+  indextitle   = {Main Title, A},
+  journaltitle = {Journal of Dock Operations},
+  journalsubtitle = {Quarterly},
+  shortjournal = {J. Dock Ops.},
+  issuetitle   = {Special Issue},
+  series       = {ser. 4},
+  volume       = {12},
+  number       = {3},
+  eid          = {e1234},
+  issue        = {Autumn},
+  pages        = {10--20},
+  pagetotal    = {11},
+  date         = {2024-05-03},
+  origdate     = {1999~01~01},
+  eventdate    = {2024-05-01/2024-05-03},
+  urldate      = {2024-06-01T12:30:00Z},
+  year         = {2024},
+  month        = {5},
+  language     = {english and french},
+  langid       = {english},
+  langidopts   = {variant=american},
+  doi          = {10.1000/example.doi},
+  eprint       = {2401.00001},
+  eprinttype   = {arxiv},
+  eprintclass  = {cs.DS},
+  isbn         = {978-3-16-148410-0},
+  issn         = {0000-0000},
+  isrn         = {ISRN-EX-0001},
+  isan         = {0000-0000-0000-0000-A-0000-0000-X},
+  ismn         = {979-0-9016791-7-7},
+  iswc         = {T-034.524.680-1},
+  pubstate     = {inpress},
+  version      = {1.0},
+  note         = {Footnote text},
+  addendum     = {Extra text appended to the entry},
+  annotation   = {A reader's note},
+  abstract     = {Summary with math $x^2 + y^2$ and \textbf{markup}.},
+  keywords     = {primary, secondary},
+  file         = {:papers/fields-demo.pdf:PDF},
+  library      = {Personal Library},
+  label        = {Dem99},
+  shorthand    = {FD},
+  shorthandintro = {Intro},
+  sortname     = {Smith, Alex},
+  sortkey      = {smith2024},
+  sorttitle    = {main title},
+  sortyear     = {2024},
+  presort      = {a},
+  options      = {useprefix=true, dataonly=false, skipbib},
+  ids          = {fields-alias,another-alias},
+  entryset     = {set-demo},
+  crossref     = {proceedings-biblatex},
+  xref         = {collection-entry},
+  xdata        = {xdata-entry},
+  related      = {harlow1913economic,wallace1934inventory},
+  relatedtype  = {multivolume},
+  relatedoptions = {extrayear},
+  gender       = {sm},
+  execute      = {\usebibmacro{custom}},
+  entrysubtype = {intro},
+  hyphenation  = {english},
+  url          = {https://example.com/a?b=c&d=e#f},
+  nameaddon    = {pseud.},
+  usera        = {user field a},
+  userb        = {user field b},
+  verba        = {verbatim a},
+  verbb        = {verbatim b},
+  verbc        = {verbatim c},
+  location     = {Springfield and Shelbyville},
+  institution  = {Example Institute and Another Institute},
+  publisher    = {Example Press and Other Press},
+  organization = {Example Society},
+  origlanguage = {german},
+  origtitle    = {Originaltitel},
+  origlocation = {Berlin},
+  origpublisher = {Beispiel Verlag},
+  library      = {Local},
+  type         = {Research Note},
+  chapter      = {3},
+  part         = {II},
+  maintitle    = {Collected Works},
+  mainsubtitle = {Volume Subtitle},
+  volumes      = {5},
+  edition      = {3},
+  howpublished = {Distributed by mail},
+  holder       = {Example Holder},
+  venue        = {Example Hall},
+  reprinttitle = {Reprint Title},
+  bookauthor   = {Book, Author},
+  booksubtitle = {Book Subtitle},
+  booktitleaddon = {Book Add-on},
+  commentator  = {Commentator, Cam},
+  annotator    = {Annotator, Ann},
+  foreword     = {Foreword, Fiona},
+  afterword    = {Afterword, Al},
+  introduction = {Introducer, Ivy},
+  namea        = {Name, A},
+  nameb        = {Name, B},
+  namec        = {Name, C},
+  editora      = {Editor, A},
+  editorb      = {Editor, B},
+  editorc      = {Editor, C}
+}
+
+@xdata{xdata-entry,
+  publisher = {Shared Publisher},
+  location  = {Shared City}
+}
+
+@set{set-demo, entryset = {harlow1913economic,wallace1934inventory}}
+
+% ── Syntax variants: delimiters, concatenation, macros, escapes ──────
+@STRING{ MixedCase = "Mixed case entry type and key" }
+@Article{CaseInsensitive:Key.With-Punct_1+2,
+  AUTHOR  = "Quoted, Author and {Braced Group, Inc.}",
+  Title   = "Quoted with {Nested {Braces}} and a \"quoted\" word",
+  journal = "Concatenated " # "pieces " # jscm # " and more",
+  YEAR    = 2024,
+  month   = jan # "~1",
+  note    = {Accents: M{\"u}ller, Garc{\'\i}a, \c{c}, \ss, \o, \aa, {\L}, \~n, \v{s}, \H{o}},
+  pages   = 1 # {--} # 9,
+  volume  = 007,
+  doi     = "10.1000/quoted"
+}
+
+@misc(paren-delimited,
+  title = {Entries may use parentheses instead of braces},
+  year  = {2024}
+)
+
+@comment(Parenthesised comments are ignored too)
+
+@preamble({\newcommand{\sku}[1]{\texttt{#1}}})
+
+junk text between entries is ignored by BibTeX, as long as it
+contains no at sign. % comments here are free text as well

@@ -1,3 +1,4 @@
+      *> COBOL 2023 (ISO/IEC 1989:2023) with common vendor extensions - syntax showcase
       *> ===============================================================
       *> Warehouse stock summary in free-reference-style fixed format.
       *> Column 7 holds the indicator: '*' comment, '-' continuation,
@@ -401,3 +402,231 @@
        HELPER-EXIT.
            EXIT SECTION.
        END PROGRAM HELPER-PROG.
+
+      *> ── COBOL 2002 – 2023: functions, classes, dynamic-length, floats ─
+       IDENTIFICATION DIVISION.
+       FUNCTION-ID. ADD-TAX AS "add-tax".
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       REPOSITORY.
+           FUNCTION ALL INTRINSIC.
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01  LK-AMOUNT          PIC 9(7)V99.
+       01  LK-RATE            PIC V999.
+       01  LK-TOTAL           PIC 9(7)V99.
+       PROCEDURE DIVISION USING LK-AMOUNT LK-RATE RETURNING LK-TOTAL.
+           COMPUTE LK-TOTAL ROUNDED MODE NEAREST-EVEN
+                 = LK-AMOUNT * (1 + LK-RATE)
+           GOBACK.
+       END FUNCTION ADD-TAX.
+
+       IDENTIFICATION DIVISION.
+       INTERFACE-ID. SHAPE.
+       PROCEDURE DIVISION.
+       METHOD-ID. AREA.
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01  RESULT             FLOAT-LONG.
+       PROCEDURE DIVISION RETURNING RESULT.
+       END METHOD AREA.
+       END INTERFACE SHAPE.
+
+       IDENTIFICATION DIVISION.
+       CLASS-ID. CIRCLE INHERITS FROM BASE-SHAPE IMPLEMENTS SHAPE FINAL.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       REPOSITORY.
+           CLASS BASE-SHAPE
+           INTERFACE SHAPE
+           CLASS CIRCLE AS "Circle".
+       FACTORY.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  INSTANCE-COUNT     PIC 9(4) COMP VALUE ZERO.
+       PROCEDURE DIVISION.
+       METHOD-ID. NEW.
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01  LK-RADIUS          FLOAT-LONG.
+       01  LK-OBJECT          OBJECT REFERENCE CIRCLE.
+       PROCEDURE DIVISION USING LK-RADIUS RETURNING LK-OBJECT.
+           INVOKE SELF "create" RETURNING LK-OBJECT
+           ADD 1 TO INSTANCE-COUNT
+           GOBACK.
+       END METHOD NEW.
+       END FACTORY.
+       OBJECT.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  RADIUS             FLOAT-LONG PROPERTY.
+       PROCEDURE DIVISION.
+       METHOD-ID. AREA OVERRIDE.
+       DATA DIVISION.
+       LINKAGE SECTION.
+       01  AREA-RESULT        FLOAT-LONG.
+       PROCEDURE DIVISION RETURNING AREA-RESULT.
+           COMPUTE AREA-RESULT = FUNCTION PI * RADIUS ** 2
+           GOBACK.
+       END METHOD AREA.
+       END OBJECT.
+       END CLASS CIRCLE.
+
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. MODERN-FEATURES.
+       ENVIRONMENT DIVISION.
+       CONFIGURATION SECTION.
+       REPOSITORY.
+           FUNCTION ALL INTRINSIC
+           FUNCTION ADD-TAX
+           CLASS CIRCLE AS "Circle".
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       01  MF-DYNAMIC         PIC X ANY LENGTH.
+       01  MF-DYN-LEN         PIC X DYNAMIC LENGTH.
+       01  MF-FLOAT-BIN-32    USAGE FLOAT-BINARY-32.
+       01  MF-FLOAT-BIN-64    USAGE FLOAT-BINARY-64.
+       01  MF-FLOAT-BIN-128   USAGE FLOAT-BINARY-128.
+       01  MF-FLOAT-DEC-16    USAGE FLOAT-DECIMAL-16.
+       01  MF-FLOAT-DEC-34    USAGE FLOAT-DECIMAL-34.
+       01  MF-UTF8            PIC U(10) USAGE UTF-8.
+       01  MF-BOOL            PIC 1(8) USAGE BIT.
+       01  MF-ENUM            PIC 9 VALUE 1.
+           88  MF-ACTIVE         VALUE 1.
+           88  MF-RANGE          VALUE 1 THRU 5.
+       01  MF-TABLE.
+           05  MF-ROW         OCCURS 3 TIMES.
+               10  MF-COL     PIC 9 OCCURS 4 TIMES.
+       01  MF-GROUP-TYPEDEF.
+           05  MF-A           PIC X(4).
+           05  MF-B           PIC 9(4).
+       01  MF-TYPED-ITEM      TYPE MF-GROUP-TYPEDEF.
+       01  MF-CONST-1         CONSTANT AS 100.
+       01  MF-CONST-2         CONSTANT AS MF-CONST-1 * 2.
+       01  MF-ADDRESS         USAGE POINTER.
+       01  MF-LINES           PIC 9(4).
+       01  MF-ANY-DATE        PIC 9(8).
+       01  MF-OBJECT          USAGE OBJECT REFERENCE CIRCLE.
+       01  MF-RESULT-TEXT     PIC X(60).
+       PROCEDURE DIVISION.
+       MAIN-LOGIC.
+           MOVE 5.0 TO MF-FLOAT-BIN-64
+           MOVE FUNCTION ADD-TAX(100.00, 0.200) TO MF-FLOAT-DEC-16
+           MOVE FUNCTION CONCATENATE("a", "b", "c") TO MF-RESULT-TEXT
+           MOVE FUNCTION SUBSTITUTE("hello" "l" "L") TO MF-RESULT-TEXT
+           MOVE FUNCTION REVERSE("abc") TO MF-RESULT-TEXT
+           MOVE FUNCTION LOWER-CASE("ABC") TO MF-RESULT-TEXT
+           MOVE FUNCTION BYTE-LENGTH("ab") TO MF-LINES
+           MOVE FUNCTION ORD("A") TO MF-LINES
+           MOVE FUNCTION CHAR(66) TO MF-RESULT-TEXT
+           MOVE FUNCTION WHEN-COMPILED TO MF-RESULT-TEXT
+           MOVE FUNCTION LOCALE-DATE("20260101") TO MF-RESULT-TEXT
+           MOVE FUNCTION FORMATTED-CURRENT-DATE("YYYY-MM-DDThh:mm:ss") TO MF-RESULT-TEXT
+           MOVE FUNCTION INTEGER-OF-FORMATTED-DATE("YYYYMMDD" "20260101") TO MF-LINES
+           MOVE FUNCTION E TO MF-FLOAT-BIN-64
+           MOVE FUNCTION SUM(1, 2, 3) TO MF-LINES
+           MOVE FUNCTION MEDIAN(1, 2, 3) TO MF-LINES
+           MOVE FUNCTION RANGE(1, 2, 3) TO MF-LINES
+           MOVE FUNCTION VARIANCE(1, 2, 3) TO MF-LINES
+           MOVE FUNCTION STANDARD-DEVIATION(1, 2, 3) TO MF-LINES
+           MOVE FUNCTION ANNUITY(0.05, 10) TO MF-FLOAT-BIN-64
+           MOVE FUNCTION PRESENT-VALUE(0.05, 100, 100) TO MF-FLOAT-BIN-64
+           MOVE FUNCTION EXCEPTION-STATUS TO MF-RESULT-TEXT
+           MOVE FUNCTION BOOLEAN-OF-INTEGER(5, 8) TO MF-BOOL
+           MOVE FUNCTION HEX-OF("A") TO MF-RESULT-TEXT
+           MOVE FUNCTION TRIM(MF-RESULT-TEXT TRAILING) TO MF-RESULT-TEXT
+
+      *> Inline PERFORM forms, loop control, and scope terminators
+           PERFORM VARYING MF-LINES FROM 1 BY 1 UNTIL MF-LINES > 5
+               IF MF-LINES = 2
+                   EXIT PERFORM CYCLE
+               END-IF
+               IF MF-LINES = 4
+                   EXIT PERFORM
+               END-IF
+               DISPLAY MF-LINES
+           END-PERFORM
+           PERFORM WITH TEST BEFORE VARYING MF-LINES FROM 1 BY 1
+                   UNTIL MF-LINES > 3
+               DISPLAY MF-LINES
+           END-PERFORM
+           PERFORM FOREVER
+               EXIT PERFORM
+           END-PERFORM
+           PERFORM 3 TIMES
+               DISPLAY "tick"
+           END-PERFORM
+
+      *> Table handling and subscripts, reference modification
+           MOVE 7 TO MF-COL(1, 2)
+           MOVE "ab" TO MF-RESULT-TEXT(1:2)
+           MOVE MF-RESULT-TEXT(LENGTH OF MF-RESULT-TEXT:1) TO MF-RESULT-TEXT(1:1)
+           SET MF-ACTIVE TO TRUE
+           SET ADDRESS OF MF-DYN-LEN TO MF-ADDRESS
+           SET MF-ADDRESS TO ADDRESS OF MF-TYPED-ITEM
+
+      *> Object-oriented invocation
+           INVOKE CIRCLE "NEW" USING 2.5 RETURNING MF-OBJECT
+           INVOKE MF-OBJECT "AREA" RETURNING MF-FLOAT-BIN-64
+           MOVE MF-OBJECT::"AREA" TO MF-FLOAT-BIN-64
+
+      *> Structured error handling (exception conditions)
+           RAISE EXCEPTION EC-DATA-INCOMPATIBLE
+           >>TURN EC-ALL CHECKING ON
+           ADD 1 TO MF-LINES
+               ON SIZE ERROR DISPLAY "size"
+               NOT ON SIZE ERROR DISPLAY "ok"
+           END-ADD
+           CALL "UNKNOWN" ON EXCEPTION DISPLAY "missing" END-CALL
+           CALL STATIC "KNOWN" USING BY REFERENCE MF-LINES
+           CALL "OTHER" USING BY CONTENT "literal"
+           CALL "FN" USING BY VALUE 3 RETURNING MF-LINES
+           SET MF-ADDRESS TO ENTRY "KNOWN"
+
+      *> VALIDATE and data-driven statements
+           VALIDATE MF-TYPED-ITEM
+           INITIALIZE MF-TYPED-ITEM TO VALUE
+           INITIALIZE MF-TABLE WITH FILLER ALL TO VALUE THEN TO DEFAULT
+           UNSTRING MF-RESULT-TEXT DELIMITED BY ALL "," INTO MF-A OF MF-TYPED-ITEM
+           MOVE CORRESPONDING MF-TYPED-ITEM TO MF-GROUP-TYPEDEF
+
+      *> Conditions: class, sign, relation abbreviations
+           IF MF-LINES > 1 AND < 10 OR = 20
+               DISPLAY "abbreviated relation"
+           END-IF
+           IF MF-RESULT-TEXT IS NUMERIC OR ALPHABETIC-LOWER
+               DISPLAY "class test"
+           END-IF
+           IF MF-BOOL = B"00000001"
+               DISPLAY "boolean literal"
+           END-IF
+           IF MF-LINES IS GREATER THAN OR EQUAL TO 5
+               DISPLAY "relation"
+           END-IF
+           NEXT SENTENCE.
+       MODERN-EXIT.
+           GOBACK.
+       END PROGRAM MODERN-FEATURES.
+
+      *> ── Free-format source and compiler directives ───────────────────
+      >>SOURCE FORMAT IS FREE
+IDENTIFICATION DIVISION.
+PROGRAM-ID. FREE-FORMAT.
+DATA DIVISION.
+WORKING-STORAGE SECTION.
+01 ff-counter PIC 9(4) VALUE 0.
+01 ff-text    PIC X(40) VALUE "free-format continued " &
+                              "with the concatenation operator".
+01 ff-hex     PIC X(4) VALUE X"DEADBEEF".
+01 ff-nat     PIC N(3) VALUE N"abc".
+01 ff-zero    PIC X(4) VALUE ZEROS.
+PROCEDURE DIVISION.
+main.
+    *> Comment in free format
+    PERFORM VARYING ff-counter FROM 1 BY 1 UNTIL ff-counter > 3
+        DISPLAY ff-counter ", " ff-text
+    END-PERFORM
+    IF ff-counter NOT = 0 THEN DISPLAY "done" END-IF
+    STOP RUN.
+END PROGRAM FREE-FORMAT.
+>>SOURCE FORMAT IS FIXED

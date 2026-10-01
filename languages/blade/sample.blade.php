@@ -1,3 +1,4 @@
+{{-- Blade (Laravel 12, PHP 8.4 templates) — syntax showcase --}}
 {{-- Blade template for the warehouse orders page. --}}
 {{--
     A multi-line Blade comment.
@@ -322,3 +323,140 @@
 @{{ not parsed }} @@csrf @@if
 
 {{-- TODO: replace inline Alpine with Livewire. --}}
+
+{{-- ── Laravel 10 – 12 additions ───────────────────────────────────── --}}
+
+{{-- Short attribute syntax and attribute-bag helpers --}}
+<x-profile :$user :$title :$items />
+<x-card ::class="{ danger: isDanger }" :class="['p-4', 'rounded' => $rounded]" :data-id="$id" />
+<x-package::widget name="sidebar" />
+<x-forms.inputs.text name="first" />
+<x-slot:footer class="mt-2">Slot with attributes</x-slot>
+<span {{ $attributes->whereStartsWith('wire:model') }} {{ $attributes->whereDoesntStartWith('wire:') }}
+      {{ $attributes->only(['class', 'id']) }} {{ $attributes->except('class') }}
+      {{ $attributes->has('disabled') ? 'disabled' : '' }} {{ $attributes->get('id') }}
+      {{ $attributes->filter(fn ($value, $key) => $key !== 'class') }}>
+</span>
+<div {{ $attributes->class(['flex', 'items-center' => $centered])->merge(['role' => 'group']) }}>
+    {{ $slot }} {{ $header ?? '' }} {{ $footer->attributes->get('class') }}
+</div>
+
+{{-- Conditional-class and style helpers, form-state directives --}}
+<div @class(['p-4', 'font-bold' => $active, 'bg-red' => $errors->has('sku')])
+     @style(['background-color: red' => $isActive, 'display: none' => ! $visible])>
+</div>
+<input type="checkbox" @checked($active) @disabled($locked) @readonly($frozen) @required($mandatory)>
+<option value="1" @selected(old('choice') == 1)>One</option>
+
+{{-- Authorisation helpers --}}
+@canany(['update', 'view', 'delete'], $post)
+    <p>Has some permission.</p>
+@elsecanany(['create'], App\Models\Post::class)
+    <p>May create.</p>
+@endcanany
+
+@cannotany(['update', 'delete'], $post)
+    <p>No write access.</p>
+@endcannotany
+
+{{-- Environment, sessions and sections --}}
+@session('flash.message')
+    <div class="flash">{{ $value }}</div>
+@endsession
+
+@pushIf($loaded, 'scripts')
+    <script src="/loaded.js"></script>
+@endPushIf
+
+@hasSection('hero')
+    @yield('hero')
+@else
+    @include('partials.default-hero')
+@endif
+
+{{-- Stacks, once variants and fragments --}}
+@pushOnce('head')
+    <meta name="once" content="1">
+@endPushOnce
+
+@prependOnce('foot')
+    <script>window.once = true;</script>
+@endPrependOnce
+
+@fragment('rows')
+    @foreach ($rows as $row)
+        <tr><td>{{ $row->name }}</td></tr>
+    @endforeach
+@endfragment
+
+{{-- Vite, Inertia, Livewire, Ziggy --}}
+@vite('resources/js/app.js')
+@vite(['resources/css/app.css', 'resources/js/app.js'], 'build')
+@viteReactRefresh
+@inertia
+@inertiaHead
+@routes
+@livewireStyles
+@livewireScripts
+@livewire('stock-table', ['warehouse' => $warehouse], key($warehouse->id))
+<livewire:stock-row :wire:key="$row->id" :row="$row" lazy />
+
+{{-- Custom directives (registered with Blade::directive) --}}
+@datetime($order->created_at)
+@money($order->total, 'USD')
+@role('admin') Admin only @endrole
+@feature('beta') New UI @endfeature
+
+{{-- Raw PHP: @php blocks, short form, and PHP tags --}}
+@php
+    $totalQty = $items->sum(fn (array|object $i): int => (int) ($i['qty'] ?? $i->qty));
+    $status = Status::from($code)->label();
+    [$first, $second] = [$items->first(), $items->last()];
+    ['sku' => $sku, 'qty' => $qty] = $row;
+    $label = $qty > 0 ? __('in stock') : __('sold out');
+    $url = route('stock.show', compact('sku'));
+    readonly_demo(new Money(amount: 100, currency: 'USD'));
+    $obj = new class { public function __invoke(): string { return 'invoked'; } };
+@endphp
+@php($single = $items->count())
+<?php $legacy = strtoupper('php tag'); ?>
+<?= $legacy ?>
+
+{{-- Echo forms: escaped, raw, defaults, ternaries, nullsafe, JSON --}}
+{{ $name ?: 'anonymous' }} {{ $a <=> $b }} {{ $items?->first()?->sku }}
+{{ __('Hello :name', ['name' => e($name)]) }} {{ trans('auth.failed') }} {{ Str::of($text)->slug()->upper() }}
+{!! Purifier::clean($html) !!} {!! $markdown !!} {{ Js::from(['a' => 1]) }} @json(['a' => 1], JSON_THROW_ON_ERROR)
+@{{ escaped }} @@escapedDirective @{!! rawEscaped !!}
+<a href="{{ route('stock.show', ['sku' => $sku]) }}" title="{{ __('Open :sku', ['sku' => $sku]) }}">{{ $sku }}</a>
+
+{{-- Verbatim and JavaScript frameworks --}}
+@verbatim
+    <div x-data="{ open: false }">
+        <span x-text="message"></span> {{ vueExpression }}
+    </div>
+@endverbatim
+
+{{-- Loops with loop variable properties --}}
+@foreach ($users as $user)
+    @if ($loop->first) First @endif
+    @if ($loop->last) Last @endif
+    {{ $loop->index }} {{ $loop->iteration }} {{ $loop->remaining }} {{ $loop->count }} {{ $loop->even }} {{ $loop->odd }} {{ $loop->depth }}
+    @foreach ($user->posts as $post)
+        {{ $loop->parent->iteration }}.{{ $loop->iteration }}
+    @endforeach
+@endforeach
+
+@for ($i = 0, $j = 10; $i < $j; $i++, $j--)
+    {{ $i }}-{{ $j }}
+@endfor
+
+{{-- Includes with data and the first-available form --}}
+@include('partials.nav', ['active' => 'stock', 'user' => $user])
+@includeFirst(['custom.nav', 'default.nav'], ['active' => 'stock'])
+@each('partials.item', $items, 'item', 'partials.no-items')
+
+{{-- Comments: PHP-style inside @php, HTML, Blade --}}
+<!-- HTML comment visible in output -->
+{{-- Blade comment removed from output --}}
+@php /* PHP block comment */ // line comment
+@endphp

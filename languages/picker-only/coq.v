@@ -1,4 +1,4 @@
-(* Coq showcase: an inventory model with proofs.
+(* Rocq 9.1 (formerly Coq) — syntax showcase: an inventory model with proofs.
    This file DETECTS AS VERILOG (.v is Verilog's extension) — pick Coq from the language picker. *)
 
 (* ── Comments ── *)
@@ -7,9 +7,9 @@
 (* TODO: prove the reorder invariant. FIXME: tighten bounds. *)
 
 (* ── Imports and settings ── *)
-From Coq Require Import Arith List String Lia Bool QArith ZArith Ascii.
-Require Import Coq.Program.Basics.
-Require Export Coq.Init.Nat.
+From Stdlib Require Import Arith List String Lia Bool QArith ZArith Ascii.
+Require Import Stdlib.Program.Basics.
+From Coq Require Import Sorting. (* deprecated prefix: Coq is now Stdlib *)
 Import ListNotations.
 Open Scope string_scope.
 Set Implicit Arguments.
@@ -295,12 +295,9 @@ Print Grammar constr.
 Print Hint *.
 Print LoadPath.
 Show.
-Back.
-Drop.
 Restart.
 Abort.
 Reset Initial.
-Quit.
 Timeout 5 Check 1.
 Time Compute 1 + 1.
 Redirect "out.txt" Check 1.
@@ -364,11 +361,11 @@ Proof.
   destruct a eqn:Ea; destruct (a =? b) eqn:Hab; destruct H as [H1 [H2 H3]]; destruct l as [| h t].
   induction a as [| a' IH] using nat_ind; induction l; elim a; case a.
   functional induction (div2 a).
-  intuition. tauto. firstorder. lia. nia. omega. ring. field. ring_simplify. psatz. btauto. decide equality. 
+  intuition. tauto. firstorder. lia. nia. ring. field. ring_simplify. btauto. decide equality. 
   repeat (try split; auto). do 3 intro. progress simpl. first [ reflexivity | assumption ].
   solve [ auto | eauto ]. now auto. time auto. timeout 2 auto. idtac "message". fail. constructor 2. econstructor.
   refine (fun x => _). unshelve eapply plus_n_O. shelve. admit. give_up.
-  tryif assumption then idtac else fail. any_destruct. abstract lia. exact I. trivial. easy. ltac:(auto). 
+  tryif assumption then idtac else fail. abstract lia. exact I. trivial. easy. ltac:(auto). 
   match goal with
   | [ H : ?x = ?y |- _ ] => rewrite H
   | |- context [?a + 0] => rewrite Nat.add_0_r
@@ -379,11 +376,319 @@ Proof.
   let t := type of a in idtac t.
   let x := fresh "x" in intros x. 
   assert_succeeds auto. assert_fails fail.
-  all: auto. 1,2: auto. 2: { auto. } { auto. } par: auto. Focus 1. 
-  Show Existentials. Unfocus. Undo. 
+  all: auto. 1,2: auto. 2: { auto. } { auto. } par: auto. Show Existentials. Undo. 
 Admitted.
 
 Ltac my_tac t := t; try reflexivity || (simpl; auto).
 Ltac rec_tac := repeat match goal with | H : _ /\ _ |- _ => destruct H end.
 Tactic Notation "foo" tactic(t) := t.
 Declare Scope my_scope.
+
+(* ── Rocq 9: attributes, universes, primitives ── *)
+Set Primitive Projections.
+#[projections(primitive=yes)] Record Cfg := { cfg_name : string; cfg_size : nat }.
+#[universes(polymorphic)] Definition id_poly (A : Type) (a : A) := a.
+Polymorphic Definition id_poly2@{u | } (A : Type@{u}) (a : A) := a.
+Polymorphic Cumulative Inductive Box@{u} (A : Type@{u}) : Type@{u} := box : A -> Box A.
+Monomorphic Universe m1 m2.
+Universes p q.
+Constraint m1 < m2.
+Definition with_constraint@{a b | a < b} (A : Type@{a}) : Type@{b} := A.
+Definition sprop_ex (P : SProp) := P.
+Definition prop_ex : Prop := True.
+Definition set_ex : Set := nat.
+Definition type_ex : Type := Type.
+Print Universes.
+Check Type@{m1}.
+#[local] Set Warnings "-deprecated".
+#[export] Hint Resolve plus_n_O : core.
+#[deprecated(since="9.0", note="use fits")] Notation old_fits := fits.
+#[reversible] Coercion bool_to_nat := nat_of_bool.
+#[refine] Instance refined : Priced unit := { price := fun _ => 0 }.
+#[canonical=no] Record NoCanon := { nc : nat }.
+#[warnings="-notation-overridden"] Notation "x +!+ y" := (x + y) (at level 50).
+
+(* ── Terms: match, fix, cofix, patterns ── *)
+Definition match_full (n : nat) : nat :=
+  match n as m in nat return nat with
+  | 0 => 1
+  | S k => k
+  end.
+Definition match_or (n : nat) : bool :=
+  match n with
+  | 0 | 1 | 2 => true
+  | _ => false
+  end.
+Definition match_nested (p : nat * option nat) : nat :=
+  match p with
+  | (a, Some b) => a + b
+  | (a, None) => a
+  end.
+Definition destruct_pat '((a, b) : nat * nat) : nat := a + b.
+Definition let_pat (p : nat * nat) := let '(a, b) := p in a * b.
+Definition lam_pat := fun '(a, b) => a + b.
+Definition lam_multi := fun (x : nat) (y : bool) => if y then x else 0.
+Definition fix_term := fix f (n : nat) : nat := match n with 0 => 0 | S k => S (f k) end.
+Definition cofix_term := cofix cf : Stream nat := Cons 0 cf.
+Definition struct_fix := fix g (n m : nat) {struct n} : nat := match n with 0 => m | S k => g k (S m) end.
+Definition impl_args {A B : Type} (a : A) (b : B) := (a, b).
+Definition strict_impl {A : Type} `{Priced A} (a : A) := price a.
+Definition explicit_app := @impl_args nat bool 1 true.
+Definition named_arg := impl_args (A := nat) (B := bool) 1 true.
+Definition typed_hole : nat := _.
+Definition num_scopes := ((1 + 2)%nat, (3 - 4)%Z, (5 # 6)%Q, 7%positive, 8%N).
+Definition pair_ex := (1, 2, 3).
+Definition list_ex : list nat := [1; 2; 3].
+Definition cons_ex := 1 :: 2 :: nil.
+Definition app_ex := [1] ++ [2].
+Definition proj_ex (c : Cfg) := c.(cfg_size).
+Definition record_ex := {| cfg_name := "a"; cfg_size := 1 |}.
+Definition record_upd (c : Cfg) := {| c with cfg_size := 2 |}.
+Definition sigma_ex : { n : nat | n > 0 } := exist _ 1 (le_n 1).
+Definition sumbool_ex (n : nat) : {n = 0} + {n <> 0} := Nat.eq_dec n 0.
+Definition exists_unique := exists! n : nat, n = 0.
+Definition forall_multi := forall (a b : nat) (P : nat -> Prop), P a -> P b.
+Definition arrow_ex : nat -> nat -> nat := fun a b => a + b.
+Definition logic_ex := forall P Q : Prop, ~ (P /\ Q) \/ (P -> Q) <-> True.
+Definition cmp_ex := (1 <= 2, 1 < 2, 2 >= 1, 2 > 1, 1 <> 2, 1 = 1, 1 =? 1, 1 <=? 2, 1 <? 2).
+Definition arith_ex := (1 + 2 * 3 - 4, 7 / 2, 7 mod 2, 2 ^ 3).
+Definition bool_ex := (true && false || negb true, andb true false, orb true false, xorb true false).
+Definition ascii_ex := ("a"%char, "b"%char :: nil).
+Definition str_ex := ("abc" ++ "def", String.length "abc", "a"%string).
+Definition float_ex := 1.5e3.
+Definition hex_ex := 0xFF.
+
+(* ── Inductives: parameters, indices, notations, records ── *)
+Inductive vec (A : Type) : nat -> Type :=
+  | vnil : vec A 0
+  | vcons : forall n, A -> vec A n -> vec A (S n).
+Inductive le_ex (n : nat) : nat -> Prop :=
+  | le_ex_n : le_ex n n
+  | le_ex_S : forall m, le_ex n m -> le_ex n (S m).
+Inductive expr : Type :=
+  | Num (n : nat)
+  | Add (a b : expr)
+  | Mul (a b : expr) where "a +. b" := (Add a b) and "a *. b" := (Mul a b).
+Inductive empty_ex : Type := .
+Inductive unit_ex : Type := tt_ex.
+Inductive wrapper (A : Type) := wrap { unwrap : A }.
+#[universes(template)] Inductive tmpl (A : Type) := t1 | t2.
+Variant opt (A : Type) : Type := Nope | Yep (a : A).
+Record point3 : Set := mk3 { px : nat; py : nat; pz : nat }.
+Class Eq (A : Type) := { eqb : A -> A -> bool; eqb_refl : forall a, eqb a a = true }.
+Class Monoid (A : Type) := { mempty : A; mappend : A -> A -> A }.
+Instance monoid_nat : Monoid nat := { mempty := 0; mappend := Nat.add }.
+Instance eq_nat : Eq nat.
+Proof. refine {| eqb := Nat.eqb; eqb_refl := Nat.eqb_refl |}. Defined.
+Declare Instance dummy : Priced unit.
+#[global] Instance anon_inst : Priced string := {| price := fun _ => 1 |}.
+Inductive cofin : nat -> Type := .
+CoInductive colist (A : Type) := conil | cocons (a : A) (l : colist A).
+CoInductive stream_rec (A : Type) := { hd : A; tl : stream_rec A }.
+Definition sr_ex : stream_rec nat := cofix s := {| hd := 0; tl := s |}.
+
+(* ── Notation forms ── *)
+Notation "'IF' c 'THEN' a 'ELSE' b" := (if c then a else b) (at level 200, c at level 100, right associativity).
+Notation "x ⊕ y" := (xorb x y) (at level 50, left associativity) : bool_scope.
+Notation "{{ x }}" := (S x) (format "{{ x }}", at level 0).
+Notation "'λ' x .. y , t" := (fun x => .. (fun y => t) ..) (at level 200, x binder, y binder, right associativity).
+Notation "∑ x , f" := (fold_right plus 0 (map f x)) (at level 45, only parsing).
+Notation "x ≤ y" := (le x y) (only printing, at level 70).
+Notation succ := S (only parsing).
+Local Notation "# x" := (S x) (at level 1).
+Number Notation nat Nat.of_num_uint Nat.to_num_uint : nat_scope.
+Declare Custom Entry stack.
+Notation "<{ e }>" := e (e custom stack at level 99).
+Declare Scope cmd_scope.
+Delimit Scope cmd_scope with cmd.
+Bind Scope cmd_scope with nat.
+Reserved Infix "<=>" (at level 70, no associativity).
+Infix "<+>" := Nat.add (at level 50, left associativity) : nat_scope.
+Arguments mk3 {_ _ _}.
+Arguments vcons {A n} _ _.
+Arguments Leaf : clear implicits.
+Arguments plus n m /.
+Arguments plus : extra scopes.
+Arguments impl_args {A B} a b : rename.
+Implicit Type n : nat.
+Strategy opaque [fib].
+Strategy 10 [plus].
+Typeclasses Opaque Eq.
+Typeclasses Transparent Eq.
+
+(* ── Modules and functors ── *)
+Module Type ORD.
+  Parameter t : Type.
+  Parameter le : t -> t -> Prop.
+  Axiom le_refl : forall x, le x x.
+End ORD.
+Module Type SORT (O : ORD).
+  Parameter sort : list O.t -> list O.t.
+End SORT.
+Module Nat_ord <: ORD.
+  Definition t := nat.
+  Definition le := Nat.le.
+  Lemma le_refl : forall x, le x x. Proof. apply Nat.le_refl. Qed.
+End Nat_ord.
+Module Sorter (O : ORD) : SORT O.
+  Definition sort (l : list O.t) := l.
+End Sorter.
+Module NatSorter := Sorter Nat_ord.
+Module Opaque_ord : ORD with Definition t := nat.
+  Definition t := nat.
+  Definition le := Nat.le.
+  Lemma le_refl : forall x, le x x. Proof. apply Nat.le_refl. Qed.
+End Opaque_ord.
+Import NatSorter.
+Import Nat_ord (le).
+Require Import Stdlib.Lists.List.
+Local Open Scope list_scope.
+Export Stdlib.Arith.Arith.
+Print Module Type ORD.
+Print Module Sorter.
+
+(* ── Proof-mode commands and bullets ── *)
+Theorem mutual_a : forall n, n = n
+with mutual_b : forall m, m + 0 = m.
+Proof.
+  - intros. reflexivity.
+  - intros. apply plus_n_O.
+Qed.
+Proposition prop_ex2 : True. Proof. trivial. Qed.
+Property prop_ex3 : True. Proof. trivial. Qed.
+Lemma bullets : (True /\ True) /\ (True /\ True).
+Proof.
+  split.
+  - split.
+    + exact I.
+    + exact I.
+  - split.
+    * exact I.
+    * exact I.
+Qed.
+Lemma bullets_deep : (True /\ True) /\ True.
+Proof.
+  split.
+  -- split.
+     ++ exact I.
+     ++ exact I.
+  -- exact I.
+Qed.
+Lemma bullets_triple : True /\ True /\ True.
+Proof.
+  repeat split.
+  --- exact I.
+  +++ exact I.
+  *** exact I.
+Qed.
+Lemma selectors : True /\ True.
+Proof.
+  split; [ | ].
+  all: exact I.
+Qed.
+Lemma named_goals : forall n : nat, n = n.
+Proof.
+  intro n. induction n as [ | k IH ] eqn:E.
+  [Zero]: reflexivity.
+  [Succ]: reflexivity.
+Qed.
+Lemma using_ex : True.
+Proof using Type. exact I. Qed.
+Lemma abort_ex : False.
+Proof. Abort.
+Lemma save_ex : True.
+Proof. exact I. Save.
+Lemma admitted_ex : False.
+Proof. Admitted.
+Set Default Goal Selector "!".
+Set Default Proof Using "Type".
+Unset Default Goal Selector.
+Obligation Tactic := intuition.
+Hint Resolve le_n : core arith.
+Hint Rewrite <- plus_n_O : core.
+Remove Hints le_n : core.
+Create HintDb mydb discriminated.
+Hint Opaque fib : mydb.
+Hint Transparent fib : mydb.
+Derive Inversion inv_even with (forall n, even n) Sort Prop.
+Derive Dependent Inversion inv_even2 with (forall n, even n) Sort Prop.
+Print Coercions.
+Print Instances Priced.
+Print Canonical Projections.
+Print Libraries.
+Print Visibility.
+Print Scope nat_scope.
+Print Scopes.
+Test Printing Width.
+Add Printing Constructor wrapper.
+Remove Printing Let wrapper.
+Add Search Blacklist "internal".
+Search nat -bool.
+Search "plus" "comm" inside Nat.
+SearchPattern (_ + _ = _).
+SearchRewrite (_ + 0).
+Show Proof.
+Show Conjectures.
+Info 1 auto.
+Comments "just a comment" 1 "number".
+Check let x := 1 in x.
+Eval simpl in 1 + 1.
+Eval lazy in 1 + 1.
+Eval hnf in 1 + 1.
+Eval cbn in 1 + 1.
+Eval unfold plus in 1 + 1.
+Eval red in 1 + 1.
+Eval vm_compute in 1 + 1.
+Eval native_compute in 1 + 1.
+Print Assumptions classical.
+Section Using.
+  Variable A : Type.
+  Variables (a : A) (b : A).
+  Hypotheses (H1 : a = a) (H2 : b = b).
+  Let x := a.
+  Definition d (n : nat) := a.
+  Lemma lemma_using : a = a. Proof using a. reflexivity. Qed.
+End Using.
+
+(* ── Ltac2 ── *)
+From Ltac2 Require Import Ltac2.
+Ltac2 Type color := [ Red | Green | Blue (int) ].
+Ltac2 Type rec tree := [ Leaf | Branch (tree, tree) ].
+Ltac2 Type ('a) box := { mutable contents : 'a }.
+Ltac2 mutable counter := 0.
+Ltac2 rec fact (n : int) : int := if Int.equal n 0 then 1 else Int.mul n (fact (Int.sub n 1)).
+Ltac2 greet () := Message.print (Message.of_string "hello").
+Ltac2 Notation "my_split" := split.
+Ltac2 Notation "twice" t(tactic) := t; t.
+Ltac2 Eval fact 5.
+Ltac2 Set counter := 1.
+Ltac2 match_ex (c : color) : int :=
+  match c with
+  | Red => 0
+  | Green => 1
+  | Blue n => n
+  end.
+Ltac2 ex_tac () :=
+  let x := Fresh.in_goal @h in
+  let t := '(1 + 1) in
+  let c := constr:(2 + 2) in
+  let l := [1; 2; 3] in
+  let (a, b) := (1, 2) in
+  let arr := Array.make 3 0 in
+  let r := { contents := 0 } in
+  r.(contents) := 1;
+  Array.set arr 0 5;
+  for i := 0 to 2 do Message.print (Message.of_int i) done;
+  while Bool.neg false do () done;
+  lazy_match! goal with
+  | [ |- ?g ] => Message.print (Message.of_constr g)
+  end;
+  match! constr:(1 + 1) with
+  | ?a + ?b => ()
+  end;
+  assert (True) by (exact I);
+  ltac1:(auto);
+  Control.enter (fun () => ());
+  Control.zero (Tactic_failure None);
+  ().
+Ltac2 @ external my_ext : int -> int := "plugin" "name".

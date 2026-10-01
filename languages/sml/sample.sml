@@ -1,3 +1,4 @@
+(* Standard ML '97 (Revised Definition) with the Basis Library — syntax showcase *)
 (* ── Comments ── *)
 (* Standard ML: a warehouse stock model.
    (* Comments nest, so this inner one is still inside. *)
@@ -18,6 +19,8 @@ val str_plain = "plain string"
 val str_escapes = "tab\there\nnewline \"quoted\" back\\slash \065 A \^A"
 val str_gap = "a long string \
               \continued across lines"
+val str_more_escapes = "alarm\a backspace\b formfeed\f return\r vtab\v nul\000 ctrl\^Z unicode\u00E9"
+val str_empty = ""
 val chr_a = #"a"
 val chr_nl = #"\n"
 val unit_value = ()
@@ -246,6 +249,179 @@ abstype counter_t = C of int with
 end
 open List
 val _ = hd [1]
+
+(* ── More literals and patterns ── *)
+val real_exp_pos = 6.02E23
+val real_small = 1e~9
+val int_negative_hex = ~0xFF
+val word_binary_ops = (0w5 + 0w3, 0wxF)
+val list_literal = [1, 2, 3]
+val nested_tuple = ((1, 2), (3, [4, 5]))
+val flexible = (fn ({ sku, ... } : item) => sku)
+val first_two = (fn [a, b] => a + b | _ => 0)
+val typed_value = (42 : int)
+val typed_fun = (fn (x : int) => x + 1)
+val as_pattern = (fn (all as x :: _) => (x, all) | [] => (0, []))
+val eq_tyvar : ''a list -> ''a -> bool = fn l => fn x => List.exists (fn y => y = x) l
+
+(* ── Explicit type variables ── *)
+fun 'a identity (x : 'a) : 'a = x
+val 'a pair_up : 'a -> 'a * 'a = fn x => (x, x)
+fun ('a, 'b) swap (x : 'a, y : 'b) : 'b * 'a = (y, x)
+
+(* ── Type expressions ── *)
+type fn_type = int -> int -> int
+type tuple_type = int * string * real
+type record_type = { a : int, b : string list }
+type app_type = (int, string) assoc
+type nested_type = (int * int) list option
+type unit_type = unit
+type ''a eqt = ''a list
+
+(* ── Datatype forms: replication, withtype, op constructors, mutual recursion ── *)
+datatype color = Red | Green | Blue
+datatype shade = datatype color
+datatype 'a rose = Rose of 'a * 'a forest
+and 'a forest = Forest of 'a rose list
+datatype named = Named of name_t withtype name_t = string
+datatype opcons = op Cons of int | Plain
+val list_via_op = op:: (1, [2, 3])
+val cons_pairs = ListPair.map op:: ([1, 2], [[3], [4]])
+val plus_op = op+ (1, 2)
+val minus_op = (op - (5, 3), op * (2, 3))
+
+(* ── Exceptions: renaming, generative and carrying values ── *)
+exception Missing = Empty
+exception Wrapped of exn
+exception Pair of int * int
+val raised = (raise Fail "boom") handle Fail m => m | Pair (a, b) => Int.toString (a + b)
+val chained = (Option.valOf NONE) handle Option => 0 | Match => 1 | Bind => 2 | Div => 3 | Overflow => 4 | Subscript => 5 | Size => 6 | Chr => 7 | Domain => 8
+val named_handler = (1 div 0) handle e => (print (General.exnName e ^ ": " ^ General.exnMessage e ^ "\n"); 0)
+
+(* ── Declaration sequences with and, val rec and fun with infix definition ── *)
+val a1 = 1 and b1 = 2 and c1 = 3
+val rec even = fn 0 => true | n => odd (n - 1)
+and odd = fn 0 => false | n => even (n - 1)
+fun even' 0 = true | even' n = odd' (n - 1)
+and odd' 0 = false | odd' n = even' (n - 1)
+infix 4 ++
+fun a ++ b = a + b
+fun (a ++ b) = a + b
+fun op ++ (a, b) = a + b
+infix 7 **
+fun x ** y = x * y
+infixr 0 $
+fun f $ x = f x
+val dollar_use = Int.toString $ 1 + 2 ** 3 ++ 4
+infixr 5 @@
+val (op @@) = fn (a, b) => a @ b
+fun curried_infix (x : int) (y : int) : int = x + y
+fun tupled_clausal (0, _) = "zero"
+  | tupled_clausal (_, 0) = "zero"
+  | tupled_clausal _ = "nonzero"
+
+(* ── Expression forms: sequence, case nesting, if chains, while with refs ── *)
+val sequence_expr = (print "a"; print "b"; 3)
+val nested_case = case (1, "x") of
+    (0, _) => "zero"
+  | (n, "x") => (case n of 1 => "one-x" | _ => "other-x")
+  | _ => "other"
+val if_chain = if true then 1 else if false then 2 else 3
+val let_sequence = let val x = 1 in print "in"; x + 1; x + 2 end
+val let_multi = let val x = 1 val y = 2; fun f z = z + x + y in f 3 end
+val local_in_let = let local val k = 5 in val m = k * 2 end in m end
+val selector_fn = (#a { a = 1, b = 2 }, #1 ("x", 2))
+val record_update_style = let val { sku, ... } = hd [{ sku = "a", n = 1 }] in { sku = sku, n = 2 } end
+val ref_cell = ref 10
+val deref_assign = (ref_cell := !ref_cell + 1; !ref_cell)
+val negation = ~ 5 + abs ~3
+val unit_pattern = (fn () => "unit") ()
+val wildcard_val = (fn _ => 0) "ignored"
+val bool_ops = (true andalso false) orelse (not false)
+val chars = (Char.ord #"a", Char.chr 98, Char.isDigit #"7", Char.toString #"z", str #"q")
+val reals = (Real.floor 2.5, Real.round 2.5, Real.trunc ~2.5, Real.fromInt 3, Math.sqrt 16.0, Math.pi)
+val strings = (String.size "abc", String.substring ("hello", 1, 3), String.explode "hi", String.implode [#"o", #"k"], String.concat ["a", "b"], String.tokens Char.isSpace "a b  c")
+val options = (SOME 1, NONE : int option, Option.getOpt (NONE, 5), Option.map (fn x => x + 1) (SOME 1))
+val vectors = (Vector.fromList [1, 2, 3], Vector.sub (Vector.fromList [10, 20], 0))
+val arrays = let val arr = Array.array (3, 0) in Array.update (arr, 0, 9); Array.sub (arr, 0) end
+val word_math = (Word.toInt (Word.andb (0wxFF, 0w15)), Word.toString (Word.<< (0w1, 0w4)))
+val tuple_projection = (#1 (1, 2), #2 (1, 2))
+val text_io = (TextIO.output (TextIO.stdOut, "out\n"); TextIO.flushOut TextIO.stdOut)
+val time_now = Time.toSeconds (Time.now ())
+val cmd_line = CommandLine.arguments ()
+
+(* ── Structures: nested, transparent and opaque ascription, where type, signature with exception ── *)
+signature COUNTER =
+sig
+  type t
+  val zero : t
+  val inc : t -> t
+  val toInt : t -> int
+  exception Overflow_
+  datatype ('a) wrapper = W of 'a
+  structure Sub : sig type u val make : unit -> u end
+  sharing type t = Sub.u
+end
+
+structure Transparent : ORDERED = IntOrd
+structure Opaque :> ORDERED where type t = int = IntOrd
+structure Alias = IntOrd
+structure Nested =
+struct
+  structure Deep = struct val v = 1 end
+  val w = Deep.v + 1
+  open Deep
+  local val hidden = 3 in val shown = hidden end
+end
+val nested_access = Nested.Deep.v + Nested.w + Nested.shown + Nested.v
+
+(* ── Functors: all parameter forms, applications, transparent and opaque result ── *)
+functor Pairing (type a type b val show_a : a -> string val show_b : b -> string) =
+struct
+  fun show (x : a, y : b) = show_a x ^ "/" ^ show_b y
+end
+functor Twice (X : sig val f : int -> int end) :> sig val twice : int -> int end =
+struct
+  fun twice n = X.f (X.f n)
+end
+functor Sorted (Elt : ORDERED) : sig val sort : Elt.t list -> Elt.t list end =
+struct
+  fun sort [] = []
+    | sort (p :: rest) =
+        let
+          val (lo, hi) = List.partition (fn y => Elt.compare (y, p) = LESS) rest
+        in
+          sort lo @ [p] @ sort hi
+        end
+end
+structure IntPairing = Pairing (type a = int type b = string val show_a = Int.toString val show_b = fn s => s)
+structure Doubler = Twice (struct fun f n = n * 2 end)
+structure IntSorted = Sorted (IntOrd)
+structure SortedBody = Sorted (struct type t = int val compare = Int.compare end)
+
+(* ── Signature specs: val, type with definition, eqtype, datatype replication, exception, structure ── *)
+signature RICH =
+sig
+  eqtype key
+  type 'a table
+  type name = string
+  type ('a, 'b) pair2 = 'a * 'b
+  datatype shape = Circle of real | Square of real
+  datatype color_copy = datatype color
+  exception NotFound of key
+  val empty : 'a table
+  val insert : key * 'a * 'a table -> 'a table
+  val lookup : key * 'a table -> 'a option
+  structure Util : sig type t val id : t -> t end
+  sharing type key = Util.t
+end
+signature LOCAL_SIG = RICH where type key = int where type 'a table = 'a list
+signature WITH_INCLUDE = sig include ORDERED val extra : t end
+
+(* ── Top-level expressions and the it binding ── *)
+1 + 2;
+print "top-level expression\n";
+val it_use = it
 
 (* ── Main ── *)
 val items : item list =

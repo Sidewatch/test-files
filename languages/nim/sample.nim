@@ -1,5 +1,5 @@
 #!/usr/bin/env nim r
-## Nim showcase: a typed inventory with procs, iterators, templates and macros.
+## Nim 2.2 — syntax showcase: a typed inventory with procs, iterators, templates and macros.
 ##
 ## This is a module-level doc comment. It supports *emphasis*, ``code`` and
 ## `links <https://example.com>`_ in reStructuredText.
@@ -377,3 +377,228 @@ else:
   discard
 finally:
   discard
+
+##[
+  A multi-line documentation comment (Nim 2).
+  It may span lines and contain ``code``.
+]##
+
+# ── Imports: every form ──
+import std/strutils except toUpperAscii
+import std/[tables as tbl, sets]
+import pkg/[chronos, results]
+from std/os import nil
+from std/times import Duration, initDuration
+import std/sequtils as sq
+import "mod with spaces" as spaced
+export strutils except join
+
+# ── Experimental switches and global pragmas ──
+{.experimental: "strictDefs".}
+{.experimental: "strictFuncs".}
+{.experimental: "views".}
+{.experimental: "dotOperators".}
+{.push inline, checks: off.}
+proc fastAdd(a, b: int): int = a + b
+{.pop.}
+{.warning: "this is a user warning".}
+{.hint: "this is a user hint".}
+{.passC: "-O2".}
+{.passL: "-lm".}
+{.compile: "helper.c".}
+{.link: "libx.a".}
+{.pragma: myCdecl, cdecl, exportc.}
+{.deadCodeElim: on.}
+
+# ── Enums with string values, ordinals and pure enums ──
+type
+  Color = enum
+    Red = "red"
+    Green = "green"
+    Blue = (3, "blue")
+  Dir {.pure.} = enum North, East, South, West
+  Level = enum lo = 1, mid = 5, hi = 10
+  Bits {.size: 4.} = enum b0, b1
+  Packed {.packed.} = object
+    flag {.bitsize: 3.}: cint
+    rest {.bitsize: 5.}: cint
+  U = object {.union.}
+    i: int32
+    f: float32
+  Req {.requiresInit.} = object
+    id: int
+  ByRef {.byref.} = object
+    v: int
+  Aligned {.align: 16.} = object
+    data: array[4, float32]
+  Natural2 = Natural
+  Pos = Positive
+  Vec2[T: SomeNumber] = object
+    x, y: T
+  OptRef = ref int not nil
+  Proc3 = proc (a: int, b: string): bool {.noSideEffect, raises: [].}
+  Arr = array[Dir, int]
+  OpenA = openArray[int]
+  Ptr2 = ptr UncheckedArray[byte]
+  Tup = tuple[a: int, b: string]
+  Either2 = int | string
+  NotNil = not nil
+  SeqOf[T] = seq[T]
+
+# ── Lifecycle hooks (Nim 2) ──
+type Handle = object
+  fd: int
+proc `=destroy`(h: Handle) = discard h.fd
+proc `=copy`(dst: var Handle; src: Handle) {.error.}
+proc `=sink`(dst: var Handle; src: Handle) = dst.fd = src.fd
+proc `=wasMoved`(h: var Handle) = h.fd = -1
+proc `=dup`(h: Handle): Handle = Handle(fd: h.fd)
+proc `=trace`(h: var Handle; env: pointer) = discard
+proc `=init`(h: out Handle) = h.fd = 0
+
+# ── Custom operators, dot-calls, command syntax and sugar ──
+proc `|>`[T, U](x: T; f: proc (a: T): U): U = f(x)
+proc `.`(o: Handle; field: string): int = 0
+proc `.=`(o: var Handle; field: string; v: int) = discard
+proc `[]=`(o: var Vec2[int]; i: int; v: int) = discard
+proc `{}`(o: Vec2[int]; i: int): int = 0
+proc `<=>`(a, b: int): int = cmp(a, b)
+proc `%%`(a, b: int): int = a mod b
+proc `@@`(x: int): int = x
+proc `∘`(a, b: int): int = a + b
+proc `and`(a, b: Req): bool = true
+proc `$`(c: Color): string = $ord(c)
+proc `<`(a, b: Req): bool = a.id < b.id
+proc `-`(v: Vec2[int]): Vec2[int] = Vec2[int](x: -v.x, y: -v.y)
+proc `+=`(v: var Vec2[int]; o: Vec2[int]) = v.x += o.x; v.y += o.y
+echo 1 |> (x => x + 1)
+echo "a,b".split(',').len, "x".repeat(3), "abc".len, "%s" % ["a"], "$1" % "x"
+echo(1, 2, 3)
+echo 5.toHex(4), 5.addr.repr, @[1].len
+let sugar: (int) -> int = x => x * 2
+let lam = proc (x: int): int = x + 1
+let lam2 = proc (x, y: int): int {.closure.} = x * y
+let lam3 = func (x: int): int = x
+let doBlock = sq.map(@[1, 2], proc (x: int): int = x * 2)
+proc withDo(f: proc (x: int): int) = discard f(1)
+withDo do (x: int) -> int:
+  x + 1
+proc withBody(body: proc ()) = body()
+withBody:
+  echo "body"
+let `type` = 5
+let `my var` = 6
+var semi = 1; var colon = 2
+let multi = [
+  1, 2,
+  3, 4]
+let longExpr = 1 +
+  2 +
+  3
+let tupleSugar = (a: 1, b: "x")
+let (ta, tb) = tupleSugar
+let (_, onlyB) = (1, 2)
+var x3, y3, z3 = 0
+let nested = @[@[1, 2], @[3]]
+let table = {1: "a", 2: "b"}.toTable
+let strTab = {"k": @[1]}.toTable
+let arr3: array[3, int] = [1, 2, 3]
+let arrIdx = [Red: 1, Green: 2, Blue: 3]
+let chars = {'a'..'z', '0'..'9'}
+let setOfDir: set[Dir] = {North, South}
+let nilRef: ref int = nil
+let ptrCast = cast[ptr int](nil)
+let backslash = "a\\b\q\z"
+let fmtDemo = fmt"{3.14159:.2f} {42:05} {x3:>8} {\"q\"}"
+let bracketed = @[1, 2, 3][0 .. ^1]
+let bounded = @[1, 2, 3][^2 .. ^1]
+let hexChars = "\x41\u0042\U00000043"
+let ops2 = 1 ..< 3
+let ops3 = 1 .. 3
+let ops4 = a..b
+let neg3 = -1
+let pos3 = +1
+let sizes = (sizeof(int), alignof(int), offsetOf(Packed, rest))
+
+# ── Statements ──
+proc ctrl(n: int): int =
+  if n > 0: return 1
+  elif n < 0: return -1
+  result = 0
+  # `while` / `for` with labels, `continue`, `break`
+  block outer:
+    var i = 0
+    while true:
+      inc i
+      if i > 3: break outer
+  for i in 0 ..< n:
+    if i == 2: continue
+  # pattern: case with ranges, sets and strings
+  case "abc"
+  of "a", "b": discard
+  of "abc": discard
+  else: discard
+  case n
+  of 0 .. 9: discard
+  of 10, 20, 30: discard
+  else: discard
+  # try/except/else/finally and raise
+  try:
+    raise newException(ValueError, "x")
+  except ValueError as e:
+    discard e
+  except:
+    raise
+  else:
+    discard
+  finally:
+    discard
+  # defer and when/elif
+  defer:
+    discard
+  when sizeof(int) == 8: discard
+  elif sizeof(int) == 4: discard
+  else: discard
+  # yield inside iterators, discard of values
+  discard n
+  # assignment forms
+  var v = 1
+  v = 2
+  v += 1
+  v -= 1
+  v *= 2
+  v = v div 2
+  (v, result) = (result, v)
+  # static and const blocks
+  const k = block:
+    var t = 0
+    for i in 0 .. 3: t += i
+    t
+  static:
+    discard k
+
+# ── Generics, concepts, templates, macros: extra forms ──
+proc genericFn[T, U](a: T; b: U): (T, U) = (a, b)
+proc constrained[T: int | float](a: T): T = a
+proc withStatic[N: static int](a: array[N, int]): int = N
+proc defaultT[T = int](x: T): T = x
+iterator pairsOf[T](s: seq[T]): (int, T) =
+  for i, v in s: yield (i, v)
+iterator fwd(): int {.inline.} =
+  yield 1
+template tmpl(a: int; b: untyped = 0): untyped = a + b
+template dirty() {.dirty.} = discard injectedName
+template tmplWithBlock(body: untyped): untyped = body
+macro mac(args: varargs[untyped]): untyped =
+  result = newStmtList()
+  for a in args: result.add a
+macro withTyped(x: typed): untyped = x
+macro buildTypes(): untyped =
+  quote do:
+    type Gen1 = object
+      a: int
+macro pragmaMacro(x: untyped): untyped {.deprecated.} = x
+proc annotated() {.pragmaMacro.} = discard
+proc customPragma() {.myCdecl.} = discard
+let genericCall = genericFn[int, string](1, "a")
+let explicit = constrained[float](1.5)

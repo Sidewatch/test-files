@@ -1,3 +1,4 @@
+-- Agda 2.8.0 — syntax showcase (pragmas and sections are illustrative, not one compilable module)
 {-# OPTIONS --safe --without-K #-}
 {-# OPTIONS --allow-unsolved-metas #-}
 {-
@@ -356,3 +357,165 @@ quoted = quote ℕ
 
 -- TODO: derive Show for Item.
 -- FIXME: prove associativity of _+_.
+
+-- ── Agda 2.6.3 – 2.8: newer constructs ──────────────────────────────
+
+-- with-abstraction that remembers the equation
+lookup-eq : (n : ℕ) → ℕ
+lookup-eq n with double n in eq
+... | zero  = zero
+... | suc k = k
+
+-- opaque blocks and unfolding
+opaque
+  secret-value : ℕ
+  secret-value = 42
+
+opaque
+  unfolding secret-value
+  reveal : secret-value ≡ 42
+  reveal = refl
+
+-- erasure and runtime irrelevance
+{-# OPTIONS --erasure #-}
+erasedFn : (@0 n : ℕ) → ℕ
+erasedFn _ = zero
+
+erasedRecord : Set₁
+erasedRecord = Set
+
+data Erased (@0 A : Set) : Set where
+  [_] : @0 A → Erased A
+
+-- polarity and modality annotations on arguments
+modalFn : (@irr A : Set) (@erased B : Set) (@plenty n : ℕ) → ℕ
+modalFn _ _ n = n
+
+-- records: all forms
+record Pt : Set where
+  constructor pt
+  eta-equality
+  inductive
+  field
+    px py : ℕ
+  norm : ℕ
+  norm = px + py
+
+record Wrapper (A : Set) : Set where
+  constructor wrap
+  field
+    unwrap : A
+  instance
+    wrapShow : Show A
+    wrapShow = record { show = λ _ → nil }
+
+module PtModule = Pt
+open Pt public renaming (px to xCoord; py to yCoord)
+open Pt using (norm) public
+
+-- copattern definitions and record updates
+origin : Pt
+px origin = zero
+py origin = zero
+
+moved : Pt → Pt
+moved p = record p { px = suc (px p) }
+
+-- mutual blocks with explicit signatures and definitions
+mutual
+  data Tree : Set where
+    leaf : Tree
+    node : Forest → Tree
+  data Forest : Set where
+    empty : Forest
+    _,_   : Tree → Forest → Forest
+
+-- sized types and coinduction
+{-# OPTIONS --sized-types #-}
+record Stream (A : Set) (i : Size) : Set where
+  coinductive
+  field
+    hd : A
+    tl : {j : Size< i} → Stream A j
+
+-- Cubical Agda
+{-# OPTIONS --cubical #-}
+open import Agda.Primitive.Cubical
+open import Agda.Builtin.Cubical.Path
+open import Agda.Builtin.Cubical.Sub using (Sub; inS; outS)
+open import Agda.Builtin.Cubical.Glue
+
+refl′ : {A : Set} {x : A} → x ≡ x
+refl′ {x = x} = λ i → x
+
+funExt′ : {A B : Set} {f g : A → B} → (∀ x → f x ≡ g x) → f ≡ g
+funExt′ p i x = p x i
+
+transportExample : {A B : Set} → A ≡ B → A → B
+transportExample p a = transp (λ i → p i) i0 a
+
+hcompExample : {A : Set} {x y : A} → x ≡ y → x ≡ y
+hcompExample {x = x} p i = hcomp (λ j → λ { (i = i0) → x ; (i = i1) → p j }) (p i0)
+
+faceFormula : I → I → I
+faceFormula i j = (i ∧ j) ∨ (~ i)
+
+partialElt : (i : I) → Partial (i ∨ ~ i) ℕ
+partialElt i (i = i0) = zero
+partialElt i (i = i1) = suc zero
+
+-- tactic arguments, reflection, and macros
+open import Agda.Builtin.Reflection
+tacticArg : (@(tactic quote-goal-tactic) x : ℕ) → ℕ
+tacticArg x = x
+
+quoteTermExample : Term
+quoteTermExample = quoteTerm (suc zero)
+
+quoteContextExample : TC ⊤
+quoteContextExample = quoteTC ℕ >>= λ t → unify t t
+
+unquoteExample : ℕ
+unquoteExample = unquote (λ goal → unify goal (quoteTerm zero))
+
+unquoteDecl declared =
+  declareDef (vArg declared) (quoteTerm ℕ)
+
+unquoteDef declared = defineFun declared [ clause [] [] (quoteTerm zero) ]
+
+-- instance search control and pragmas
+{-# OVERLAPPABLE #-}
+{-# OVERLAPPING #-}
+{-# OPTIONS --instance-search-depth=5 --overlapping-instances #-}
+{-# OPTIONS --cubical=compatible --no-import-sorts --warning=noUnsupportedIndexedMatch #-}
+
+-- import forms
+import Data.List.Base
+import Data.List.Base as L
+open import Data.List.Base as L′ hiding (map) renaming (length to len) public
+open import Data.Maybe.Base using (Maybe; just; nothing) renaming (map to mmap)
+module Alias = Data.List.Base
+open module Alias′ = Data.List.Base using (_++_)
+
+-- forall, Π-types, telescopes and implicit lambdas
+forallStyle : ∀ {A : Set} {B : A → Set} → ((x : A) → B x) → (x : A) → B x
+forallStyle f = f
+forallAlt : forall {A : Set} (x : A) → A
+forallAlt x = x
+implicitLam : {A : Set} → A → A
+implicitLam = λ {A} a → a
+telescope : (A B : Set) (f : A → B) {x y : A} → ℕ
+telescope _ _ _ = zero
+absurdLam : {A : Set} → ⊥' → A
+absurdLam = λ ()
+
+-- Unicode operators, subscripts, mixfix with underscores
+_⟨_⟩_ : ℕ → ℕ → ℕ → ℕ
+a ⟨ b ⟩ c = a + b + c
+if_then_else′_ : {A : Set} → Bool → A → A → A
+if true  then a else′ _ = a
+if false then _ else′ b = b
+x₁ x₂ x₃ : ℕ
+x₁ = zero
+x₂ = x₁
+x₃ = x₂

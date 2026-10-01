@@ -1,3 +1,4 @@
+// Stylus 0.64 — syntax showcase
 // ── Comments ──
 // Line comment: warehouse UI tokens in Stylus.
 /* Multi-line comment
@@ -324,3 +325,130 @@ for item, index in colours
   q trace()
   r json('data.json', { hash: true })
   s use('plugin.js')
+
+// ── Alternate syntaxes: braces, colons and semicolons are all optional ──
+.braced {
+  color: red;
+  background: blue;
+  &:hover { color: green }
+}
+
+.colon-style
+  color: red
+  margin: 0 auto;
+
+.semicolons { color red; margin 0 }
+
+// ── Modern at-rules (passed through as generic at-rules) ──
+@layer base, components
+@layer components
+  .btn
+    padding spacing
+
+@container card (min-width: 30rem)
+  .card
+    display grid
+
+@scope (.card) to (.footer)
+  img
+    border 1px solid primary
+
+@property --angle
+  syntax '<angle>'
+  inherits false
+  initial-value 0deg
+
+@namespace svg url(http://www.w3.org/2000/svg)
+@viewport
+  width device-width
+
+// ── Modern CSS values ──
+.modern
+  color color-mix(in oklch, primary 30%, white)
+  background oklch(60% 0.15 250)
+  inset-inline 0
+  aspect-ratio 16 / 9
+  width clamp(10rem, 50vw, 40rem)
+  height min(100dvh, 60rem)
+  &:has(> img)
+    padding 0
+  &:where(.a, .b)
+    margin 0
+  &::part(label)
+    color red
+  @media (prefers-color-scheme: dark)
+    color white
+  @media (400px <= width <= 800px)
+    display none
+
+// ── More built-ins, collection and string functions ──
+.more-builtins
+  a keys(sizes)
+  b values(sizes)
+  c push(colours, 'cyan')
+  d pop(colours)
+  e unshift(colours, 'cyan')
+  f shift(colours)
+  g typeof(primary)
+  h list-separator(colours)
+  i basename('a/b.css') extname('a/b.css') dirname('a/b.css')
+  j pathjoin('a', 'b')
+  k math(4, 'sqrt') pow(2, 3)
+  l hsl(210, 50%, 40%) hsla(210, 50%, 40%, .5) rgba(0, 0, 0, .5) transparentify(#000)
+  m contrast(primary) tint(primary, 20%) shade(primary, 20%) invert(primary)
+  n blend(rgba(0,0,0,.5), white) lightness(primary) 
+  o replace('a', 'b', 'abc') match('b', 'abc') split(',', 'a,b') substr('abc', 1, 2)
+  p range(1, 5) clone(sizes)
+  q define('answer', 42) answer
+  r merge(sizes, { huge: 3rem }) remove(sizes, 'small') last(colours) first(colours)
+  s add-property('border', 1px)
+  t luminosity(primary) math(2, 'sqrt') operate('+', 1, 2)
+  u -webkit-gradient(linear, 0 0, 0 100%, from(#fff), to(#000))
+
+// ── Functions: return, early return, named args, rest args ──
+clamp-px(v, lo = 0, hi = 100)
+  return lo if v < lo
+  return hi if v > hi
+  return v
+
+named-args(a, b = 2, c = 3)
+  a + b + c
+
+.fn-calls
+  width clamp-px(150)
+  height named-args(1, c: 10)
+  margin pad(10)
+  z-index sum(1, 2, 3)
+
+// ── Property lookup, @block, mixin with block and selector() ──
+.lookups
+  width 100px
+  height @width
+  margin-top (@width / 2)
+  padding-left @height + 5px
+  border-width unit(@width, 'em')
+
+mixin-with-block()
+  .inner
+    {block}
+
++mixin-with-block()
+  color red
+
+// ── Hashes: literals, iteration, access ──
+config = {
+  name: 'inventory',
+  sizes: { s: 1px, m: 2px },
+  'quoted-key': true
+}
+for k, v in config
+  .cfg-{k}
+    content '%s' % v
+.hash-access
+  width config.sizes.s
+  height config['sizes'].m
+
+// ── Misc ──
+@import url('https://example.com/theme.css')
+.escaped
+  filter progid:DXImageTransform.Microsoft.gradient(startColorstr='#80000000', endColorstr='#80000000')

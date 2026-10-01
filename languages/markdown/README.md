@@ -7,7 +7,7 @@ author: Acme Logistics
 date: 2026-01-31
 ---
 
-<!-- HTML comment: TODO document the REST API. FIXME: broken badge. -->
+<!-- CommonMark 0.31 + GitHub Flavored Markdown 0.29 (plus common extensions) — syntax showcase. HTML comment: TODO document the REST API. FIXME: broken badge. -->
 
 # Warehouse Inventory
 
@@ -467,7 +467,9 @@ $$
      HTML comment -->
 <?php echo "processing instruction"; ?>
 <!DOCTYPE html>
-<![CDATA[ cdata ]]>
+<![CDATA[
+raw cdata section with <tags> & ampersands
+]]>
 <style>
   .x { color: red; }
 </style>

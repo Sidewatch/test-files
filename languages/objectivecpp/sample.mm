@@ -1,4 +1,4 @@
-// Objective-C++ showcase: C++ templates, lambdas and the STL behind Objective-C classes.
+// Objective-C++ (Objective-C 2.0 + C++23 / C++26 as accepted by clang 21) — syntax showcase: C++ templates, lambdas and the STL behind Objective-C classes.
 /* A block comment
    over several lines. */
 /// Documentation comment.
@@ -304,3 +304,90 @@ void (Vec::*method_ptr)() = &Vec::v;
 #if __has_include(<coroutine>)
 #include <coroutine>
 #endif
+
+// ── C++20 / C++23 / C++26 features inside Objective-C++ ──
+#include <expected>
+#include <span>
+#include <ranges>
+#include <concepts>
+#include <format>
+#include <bit>
+#include <compare>
+#include <utility>
+#include <tuple>
+#include <string_view>
+
+#ifdef NEVER_SET
+#elifdef HAS_CPP17
+#define CPP17_ELIFDEF 1
+#elifndef HAS_CPP20
+#define CPP17_ELIFNDEF 1
+#endif
+
+namespace modern {
+// concepts, requires-expressions and constrained auto
+template <typename T> concept Addable = requires(T a, T b) { { a + b } -> std::convertible_to<T>; };
+template <typename T> concept HasSize = requires(const T &t) { t.size(); requires std::integral<decltype(t.size())>; typename T::value_type; };
+void takes_addable(Addable auto a) { (void)a; }
+template <std::integral T> constexpr T half(T v) requires (sizeof(T) >= 2) { return v / 2; }
+
+// deducing this (C++23), static operator() and operator[] (C++23), multidimensional subscript
+struct Widget {
+    int value = 0;
+    int get(this const Widget &self) { return self.value; }
+    template <typename Self> auto &&data(this Self &&self) { return std::forward<Self>(self).value; }
+    static int operator()(int x) { return x + 1; }
+    static int operator[](int i) { return i; }
+    int &operator[](int r, int c) { return value; }
+};
+
+// std::expected, if consteval, auto(x) decay copy, [[assume]]
+std::expected<int, std::string> parse(std::string_view s) {
+    if consteval { return 0; } else { if (s.empty()) return std::unexpected("empty"); }
+    return static_cast<int>(s.size());
+}
+int decay_copy(const int &x) { return auto(x) + auto{x}; }
+int assume_demo(int x) { [[assume(x > 0)]]; return x; }
+
+// ranges, views, std::format, coroutines keywords, three-way comparison, designated initialisers
+void ranges_demo() {
+    std::vector<int> v{1, 2, 3, 4};
+    auto evens = v | std::views::filter([](int x) { return x % 2 == 0; }) | std::views::transform([](int x) { return x * x; });
+    for (int x : evens) { (void)x; }
+    auto s = std::format("{} {:>5} {:08.3f} {:#x}", 1, "ab", 3.14159, 255);
+    std::span<int> sp{v};
+    auto ord = 1 <=> 2;
+    struct P { int a; int b; } p{.a = 1, .b = 2};
+    auto [a, b] = p;
+    (void)s; (void)sp; (void)ord; (void)a; (void)b;
+}
+
+// C++26 (clang 21): pack indexing, deleted-with-reason, placeholder `_`, #embed
+template <typename... Ts> auto first_of(Ts... ts) { return ts...[0]; }
+void deleted_reason() = delete("do not call");
+void placeholder() { int _ = 1; int _ = 2; }
+}  // namespace modern
+
+// ── Objective-C++ specifics: blocks vs lambdas, ARC with C++ members, bridging ──
+@interface Bridge : NSObject
+@property (nonatomic, copy) void (^onDone)(const std::string &);
+- (void)run:(std::function<void(NSString *)>)callback;
+- (std::optional<int>)maybe;
++ (instancetype)shared;
+@end
+
+@implementation Bridge {
+    std::vector<__strong NSString *> _names;
+    std::unordered_map<std::string, __weak id> _weak;
+}
++ (instancetype)shared { static Bridge *b = [Bridge new]; return b; }
+- (void)run:(std::function<void(NSString *)>)callback {
+    __block int counter = 0;
+    void (^block)(void) = ^{ counter++; callback(@"x"); };
+    auto lambda = [block]() { block(); };
+    lambda();
+    dispatch_async(dispatch_get_main_queue(), ^{ NSLog(@"%d", counter); });
+    if (@available(macOS 13.0, *)) { NSLog(@"available"); }
+}
+- (std::optional<int>)maybe { return std::nullopt; }
+@end

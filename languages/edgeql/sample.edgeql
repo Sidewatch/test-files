@@ -1,3 +1,4 @@
+# EdgeQL / Gel 6 (EdgeDB 6) — syntax showcase
 # ── Comments ──
 # Line comment. TODO: add access policies. FIXME: backfill the migration.
 
@@ -385,3 +386,13 @@ select <optional Item>$maybe;
 select Item { ** };
 select Item { * };
 select Item { name, ** } limit 1;
+
+# ── Newer forms (EdgeDB 5/6) ──
+select if true then 1 else 2;
+select if 1 > 2 then 'a' else if 2 > 1 then 'b' else 'c';
+select __std__::count(Item);
+select (select Item limit 1) { name, __type__: { name } };
+select Item { name } filter __source__ = Item;
+with module schema select ObjectType { name } limit 1;
+select Item { name, n := .name[0] } filter exists .tags;
+select std::json_set(to_json('{}'), 'a', json := to_json('1'));

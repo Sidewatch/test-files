@@ -1,3 +1,4 @@
+-- HiveQL (Apache Hive 4.1) — syntax showcase
 -- ── Comments ──
 -- HiveQL: partitioned tables, UDFs, window functions, lateral views and rollups.
 /* Block comment. TODO: bucket by sku. FIXME: skewed partitions. */
@@ -328,3 +329,47 @@ EXPLAIN VECTORIZATION ONLY SELECT * FROM events;
 EXPLAIN CBO SELECT * FROM events;
 EXPLAIN LOCKS INSERT INTO t SELECT * FROM events;
 -- Non-ASCII: café 日本語 ☕
+
+-- ── Hive 4: Iceberg tables, time travel, merge variants, connectors, scheduled queries ──
+CREATE TABLE ice_events (id BIGINT, ts TIMESTAMP, payload STRING)
+PARTITIONED BY SPEC (month(ts), bucket(16, id))
+STORED BY ICEBERG
+TBLPROPERTIES ('format-version'='2');
+
+SELECT * FROM ice_events FOR SYSTEM_VERSION AS OF 1234567890;
+SELECT * FROM ice_events FOR SYSTEM_TIME AS OF '2026-09-24 10:00:00';
+ALTER TABLE ice_events EXECUTE ROLLBACK(1234567890);
+ALTER TABLE ice_events EXECUTE EXPIRE_SNAPSHOTS('2026-09-01 00:00:00');
+ALTER TABLE ice_events CREATE BRANCH audit;
+ALTER TABLE ice_events CREATE TAG release_1;
+ALTER TABLE ice_events SET PARTITION SPEC (day(ts));
+ALTER TABLE ice_events COMPACT 'minor' AND WAIT;
+
+MERGE INTO ice_events t USING staging s ON t.id = s.id
+WHEN MATCHED AND s.payload IS NULL THEN DELETE
+WHEN MATCHED THEN UPDATE SET payload = s.payload
+WHEN NOT MATCHED AND s.id > 0 THEN INSERT VALUES (s.id, s.ts, s.payload);
+
+CREATE CONNECTOR pg_conn TYPE 'postgres' URL 'jdbc:postgresql://db.example.com:5432' COMMENT 'Postgres' WITH DCPROPERTIES ('hive.sql.dbcp.username'='reader');
+CREATE REMOTE DATABASE pg_db USING pg_conn WITH DBPROPERTIES ('connector.remoteDbName'='public');
+SHOW CONNECTORS;
+DROP CONNECTOR IF EXISTS pg_conn;
+
+CREATE SCHEDULED QUERY refresh_totals CRON '0 */10 * * * ? *' AS INSERT OVERWRITE TABLE daily_active PARTITION (dt) SELECT 1, 2, 3.0, '2026-09-24';
+ALTER SCHEDULED QUERY refresh_totals DISABLED;
+ALTER SCHEDULED QUERY refresh_totals EXECUTED;
+DROP SCHEDULED QUERY refresh_totals;
+
+ALTER MATERIALIZED VIEW daily_totals REBUILD;
+ALTER MATERIALIZED VIEW daily_totals DISABLE REWRITE;
+SHOW MATERIALIZED VIEWS;
+CREATE MATERIALIZED VIEW mv_stored STORED AS ORC DISABLE REWRITE AS SELECT dt FROM events;
+
+SELECT user_id, ROW_NUMBER() OVER (PARTITION BY dt ORDER BY ts) AS rn FROM events QUALIFY rn = 1;
+SELECT * FROM events WHERE dt = current_date() AND ts > current_timestamp() - INTERVAL '1' HOUR;
+SELECT user_id, count(*) AS n FROM events GROUP BY ALL;
+SELECT array_distinct(tags), array_union(tags, tags), array_slice(tags, 0, 2), map_from_entries(ARRAY(STRUCT('k', 1))) FROM events;
+SELECT try_cast('x' AS INT), nullif(num, 0), greatest(1, 2), least(1, 2), width_bucket(5, 0, 10, 4), to_epoch_milli(ts) FROM events;
+SELECT regexp_extract_all(label, '(\\d+)', 1), replace(label, 'a', 'b'), levenshtein('a', 'b'), soundex('x') FROM events;
+RESET hive.exec.parallel;
+

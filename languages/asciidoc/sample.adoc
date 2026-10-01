@@ -1,3 +1,4 @@
+// AsciiDoc (Asciidoctor 2.0, AsciiDoc Language draft) — syntax showcase
 // A single-line comment: TODO tidy the includes before release.
 ////
 A block comment
@@ -608,3 +609,208 @@ To everyone who counts twice.
 
 [index]
 === Index
+
+// ── Auto-numbered callouts, markdown-compatible syntax ──────────────
+== Newer and compatibility constructs
+
+[source,ruby]
+----
+require 'json' # <.>
+data = JSON.parse(text) # <.>
+puts data.fetch('sku') # <.>
+----
+<.> Load the standard library.
+<.> Parse the payload.
+<.> Read one field.
+
+[source,xml]
+----
+<stock>
+  <item sku="A-100"/> <!--1-->
+</stock>
+----
+<1> XML callouts use a comment form.
+
+[source,c]
+----
+int main(void) { return 0; } /* <1> */
+----
+<1> C-style comment callout.
+
+// Markdown-style fenced code, headings, quotes and rules
+```ruby
+puts "fenced code block"
+```
+
+~~~
+Tilde fenced literal.
+~~~
+
+# Markdown level-one heading
+## Markdown level-two heading
+
+> A Markdown blockquote.
+> -- Source
+
+* * *
+
+- - -
+
+___
+
+// Nested tables
+|===
+a|
+Outer cell with a nested table:
+
+!===
+! Inner A ! Inner B
+! 1 ! 2
+!===
+|===
+
+// Cell spans, duplication and alignment shorthand
+[cols="3*^"]
+|===
+2+| Two columns 1+| One
+2*| Duplicated twice | Single
+.2+>.>| Right bottom over two rows | Next | Next
+|===
+
+// Listing, literal and passthrough styles
+[source#unique-id.highlighted%linenums,ruby,start=10]
+----
+puts "attributes shorthand on a source block"
+----
+
+[source,java,subs="verbatim,quotes,attributes,macros"]
+----
+String name = "{warehouse}"; // *bold in a listing*
+----
+
+[subs="+macros"]
+----
+pass:[<em>macro inside a literal</em>]
+----
+
+[%unbreakable]
+--
+This open block avoids page breaks.
+--
+
+[%hardbreaks]
+Hard
+breaks
+via option.
+
+[%autowidth.stretch.float,cols="1,1"]
+|===
+|A |B
+|===
+
+// Counters, set directives and undefined attributes
+{counter:step:1} {counter:step} {counter2:silent:a} {counter:letter:a}
+{set:flag} {set:flag!} {set:greeting:Hello there}
+
+// Document header variants (manpage, title page, revision line)
+:doctype: manpage
+:manmanual: Warehouse Manual
+:mansource: Warehouse 1.0
+:title-page:
+:front-cover-image: image:cover.png[Cover,1050,1600]
+:toc: macro
+:toc-title: Contents
+:toclevels: 4
+:sectnumlevels: 4
+:partnums:
+:chapter-signifier: Chapter
+:part-signifier: Part
+:appendix-caption: Appendix
+:listing-caption: Listing
+:example-caption: Example
+:source-linenums-option:
+:icons: image
+:iconsdir: ./icons
+:copycss!:
+:nofooter!:
+:hide-uri-scheme:
+:attribute-missing: skip
+:attribute-undefined: drop
+:max-include-depth: 8
+:skip-front-matter:
+:outfilesuffix: .html
+:stem: latexmath
+:docinfo: shared
+:tabsize: 4
+:pdf-theme: custom
+:pygments-style: monokai
+
+toc::[]
+
+[[pagebreak-section]]
+<<<
+
+// Roles, options and block metadata combinations
+[quote#famous.lead, "Pat Example", "Letter"]
+____
+Quoted block with ID, role, attribution and citation title.
+____
+
+[verse#poem.centered, "Poet"]
+Single-line verse paragraph form.
+
+[NOTE.aside%collapsible]
+.Collapsible note with a title
+====
+Details hidden by default.
+====
+
+[TIP,caption="Pro tip"]
+Custom caption on an admonition paragraph.
+
+[example,caption=""]
+====
+No caption prefix.
+====
+
+[caption="Figure A. "]
+.Captioned figure
+image::fig.png[]
+
+[link=https://example.com]
+image::linked.png[Click]
+
+[#screenshot.border.shadow]
+image::shot.png[Screenshot,500]
+
+// Inline macros and extras
+Stem: stem:[sqrt(4) = 2] latexmath:[\frac{1}{2}] asciimath:[1/2].
+Index terms: indexterm:[Receiving,Dock] ((Dock)) (((Dock,Door 4))).
+Keyboard: kbd:[Ctrl+C] kbd:[Ctrl+\]] kbd:[\\]
+Passthrough: +literal monospace+ `+literal mono with *no* formatting+` pass:[<b>raw</b>] +++<i>triple</i>+++
+Escapes: \{warehouse} \*not strong\* \<<not-xref>> \footnote:[not]
+Quotes: "`double`" '`single`' and apostrophe's, plus `` `backtick monospace` ``.
+URL with attributes: https://example.com[Link text,role=ext,window=_blank,opts=nofollow]
+Email: ops@example.com and mailto:ops@example.com[Ops,Subject line]
+Autolinks: <https://example.com> and https://example.com/path?x=1&y=2.
+Include inline: include::inline-note.adoc[]
+Replacements: (C) (R) (TM) -- ... -> => <- <= 1/2 &#8212; &#x2014; &mdash;
+Footnotes: footnote:[Anonymous] footnote:id[Named] footnote:id[] footnoteref:[x,Legacy]
+Highlight: #marked# [.role]#roled# [#id]#identified# [.role1.role2]#multiple#
+Sub and sup: H~2~O E=mc^2^ 10^-3^ log~2~(8)
+
+// Conditionals: single-line, multi-attribute with + and ,
+ifdef::backend-html5,backend-pdf[Rendered to HTML or PDF.]
+ifdef::env-github+backend-html5[Both GitHub and HTML.]
+ifndef::sectnums[No numbering.]
+ifeval::["{doctype}" == "manpage"]
+Man page output.
+endif::[]
+ifeval::[{sectnumlevels} < 5 and {toclevels} >= 3]
+Compound condition.
+endif::[]
+
+// Preprocessor include with tags, lines and leveloffset
+include::lib.rb[tags=init;!debug]
+include::lib.rb[lines=10..20,leveloffset=+1]
+include::{docdir}/{partial}.adoc[leveloffset=-1,indent=2]

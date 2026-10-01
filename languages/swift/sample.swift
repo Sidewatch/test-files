@@ -1,5 +1,6 @@
 #!/usr/bin/env swift
-// swift-tools-version: 6.0
+// Swift 6.2 — syntax showcase
+// swift-tools-version: 6.2
 // swiftlint:disable file_length
 
 // ── Comments ──
@@ -464,7 +465,7 @@ public func legacy() -> Int { 1 }
 }
 
 @usableFromInline internal let cached = 1
-@_silgen_name("c_function") func cFunction() -> Int32
+@_silgen_name("c_function") func cFunction() -> Int32 { 0 }
 @discardableResult @Sendable func sendable() -> Int { 1 }
 enum Context { @TaskLocal static var requestID = 0 }
 
@@ -592,3 +593,474 @@ let multiLineChain = [1, 2, 3]
     .map { $0 + 1 }
     .filter { $0 > 2 }
     .reduce(into: [Int]()) { $0.append($1) }
+
+// ── Imports: every form ──
+public import Foundation
+internal import Dispatch
+private import os
+fileprivate import Darwin
+package import Foundation
+@testable import Foundation
+@_spi(Internal) import Foundation
+import func Foundation.exit
+import var Foundation.NSNotFound
+import enum Foundation.ComparisonResult
+import protocol Foundation.NSCopying
+import typealias Foundation.TimeInterval
+import Foundation.NSString
+import Distributed
+
+// ── Compiler directives: every condition ──
+#if compiler(>=6.2) && swift(>=6.0)
+let newCompiler = true
+#elseif arch(arm64) || arch(x86_64)
+let arch64 = true
+#elseif hasFeature(StrictConcurrency)
+let strict = true
+#elseif targetEnvironment(simulator) || canImport(SwiftUI)
+let ui = true
+#elseif os(iOS) || os(visionOS) || os(tvOS) || os(watchOS)
+let appleMobile = true
+#endif
+
+#if false
+#error("never emitted: this branch is inactive")
+#endif
+
+#sourceLocation(file: "generated.swift", line: 100)
+let relocated = #line
+#sourceLocation()
+let handle = #dsohandle
+
+// ── More literals: playground, line continuation, keypath strings ──
+let colour = #colorLiteral(red: 0.9, green: 0.4, blue: 0.1, alpha: 1)
+let fileRef = #fileLiteral(resourceName: "report.txt")
+let imageRef = #imageLiteral(resourceName: "logo")
+let rawContinued = #"""
+    raw string with a continuation \#
+    on one logical line, and an escaped newline: \#n
+    """#
+let rawInterpolations = #"first \#(decimal) second \#(simple) third"#
+let unicodeScalar: Unicode.Scalar = "a"
+let nestedInterpolation = "outer \("inner \(decimal)") done"
+let tupleIndex = tuple.0 + tuple.quantity
+let dictionaryEmpty: [String: Int] = [:]
+let arrayTyped: [Int] = [], arrayLong: Array<Int> = Array<Int>(), optionalSugar: Optional<Int> = .none
+
+// ── Types: metatypes, composition, bracket-qualified, sugar ──
+let metaInt: Int.Type = Int.self
+let metaArray: [Int].Type = [Int].self
+let metaParenthesised: (Int).Type = Int.self
+let metaOptional: Optional<Int>.Type = Int?.self
+let metaProtocol: Describable.Protocol = Describable.self
+let metaAny: Any.Type = type(of: metaInt)
+typealias Codec = Encodable & Decodable
+typealias SendableItem = Hashable & Sendable
+func compose(_ value: Describable & Sendable, other: any Hashable & Codable) {}
+let bracketIndex: [Int].Index = 0
+let bracketKeys: [String: Int].Keys = [:].keys
+let functionType: (Int, String) async throws -> Bool = { _, _ in true }
+let optionalFunction: ((Int) -> Int)? = nil
+let tupleType: (x: Int, y: Int) = (x: 1, y: 2)
+let arrayOfOptionals: [Int?] = [1, nil]
+let implicitlyUnwrapped: Int! = 3
+let opaqueParameter: (some Hashable)? = nil
+
+// ── Constructor expressions ──
+let emptyArray = [Int]()
+let emptyDictionary = [String: Int]()
+let genericConstruction = Stack<Int>()
+let arrayCapacity = Array<Int>(repeating: 0, count: 3)
+let trailingConstruct = Task<Void, Never> { }
+
+// ── Ranges: every spelling ──
+func ranges(_ numbers: [Int]) {
+    let closed = 1...5
+    let half = 1..<5
+    let from = 1...
+    let upTo = ..<5
+    let through = ...5
+    let tail = numbers[1...]
+    let head = numbers[..<2]
+    let up = numbers[...2]
+    let everything = numbers[...]
+    let stride = Swift.stride(from: 0, to: 10, by: 2)
+    _ = (closed, half, from, upTo, through, tail, head, up, everything, stride)
+}
+
+// ── Operators: custom, comparison, identity ──
+prefix operator ++
+postfix operator --
+prefix func ++ (value: inout Int) -> Int { value += 1; return value }
+postfix func -- (value: inout Int) -> Int { defer { value -= 1 }; return value }
+
+precedencegroup PipelinePrecedence {
+    associativity: left
+    assignment: true
+    higherThan: AssignmentPrecedence
+}
+infix operator |>: PipelinePrecedence
+func |> <A, B>(value: A, transform: (A) -> B) -> B { transform(value) }
+
+final class Marker {}
+func comparisons(a: Int, b: Int, x: Marker, y: Marker) {
+    let results = (a == b, a != b, a < b, a <= b, a > b, a >= b)
+    let identity = (x === y, x !== y)
+    var counter = 0
+    let pre = ++counter
+    let post = counter--
+    let piped = counter |> { $0 + 1 }
+    _ = (results, identity, pre, post, piped)
+}
+
+// ── Access to properties: wrappers, projections, modify and read ──
+struct Account {
+    @Clamped(0...100) var score: Int = 0
+    private var storage = 0
+    var scoreRange: ClosedRange<Int> { $score }
+    var raw: Int {
+        get { storage }
+        _modify { yield &storage }
+    }
+    var flag: Bool {
+        get { storage > 0 }
+        nonmutating set { _ = newValue }
+    }
+    static var shared: Account { Account() }
+    var observedTwice: Int = 0 {
+        willSet(incoming) { _ = incoming }
+        didSet(previous) { _ = previous }
+    }
+}
+
+// ── Reference ownership ──
+final class Holder {
+    unowned(unsafe) var unsafeReference: Warehouse
+    unowned(safe) var safeReference: Warehouse
+    weak var optionalReference: Warehouse?
+    init(_ warehouse: Warehouse) {
+        unsafeReference = warehouse
+        safeReference = warehouse
+    }
+}
+
+// ── Objective-C interop ──
+@objc protocol WarehouseDelegate {
+    func didChange()
+    @objc optional func didRename(to name: String)
+}
+
+@objc final class Observed: NSObject {
+    @objc dynamic var count = 0
+    let getterSelector = #selector(getter: Observed.count)
+    let setterSelector = #selector(setter: Observed.count)
+    let keyPathString = #keyPath(Observed.count)
+    @objc(rename:) func rename(_ name: String) {}
+}
+
+// ── Initialisers ──
+struct Temperature {
+    var degrees: Double
+    init?(text: String) {
+        guard let value = Double(text) else { return nil }
+        degrees = value
+    }
+    init!(forced: Double) { degrees = forced }
+    init(throwing value: Double) throws {
+        guard value > -273.15 else { throw InventoryError.invalidQuantity }
+        degrees = value
+    }
+}
+
+class Vehicle {
+    var wheels: Int
+    required init(wheels: Int) { self.wheels = wheels }
+    convenience init() { self.init(wheels: 4) }
+}
+
+class Bicycle: Vehicle {
+    required init(wheels: Int) { super.init(wheels: wheels) }
+    override convenience init() { self.init(wheels: 2) }
+}
+
+// ── Subscripts ──
+struct Matrix2 {
+    var cells = [[Double]](repeating: [0, 0], count: 2)
+    subscript(row: Int, column: Int) -> Double {
+        get { cells[row][column] }
+        set { cells[row][column] = newValue }
+    }
+    subscript<T: BinaryInteger>(index: T) -> [Double] { cells[Int(index)] }
+    static subscript(identity size: Int) -> Matrix2 { Matrix2() }
+    subscript(defaulted index: Int = 0) -> [Double] { cells[index] }
+}
+
+// ── Dynamic features with key paths ──
+@dynamicMemberLookup
+struct Wrapper<Base> {
+    var base: Base
+    subscript<T>(dynamicMember keyPath: KeyPath<Base, T>) -> T { base[keyPath: keyPath] }
+    subscript<T>(dynamicMember keyPath: WritableKeyPath<Base, T>) -> T {
+        get { base[keyPath: keyPath] }
+        set { base[keyPath: keyPath] = newValue }
+    }
+}
+
+let keyPaths = (\Item.name, \Item.price?.description, \[Int].count, \[String].[0], \Item.self, \.name as KeyPath<Item, String>)
+
+// ── Generics: constraints, packs, primary associated types ──
+protocol Container<Element> {
+    associatedtype Element
+    associatedtype Index: Comparable = Int
+    var count: Int { get }
+}
+
+func process(_ values: some Collection<Int>, into sink: any Collection<Int>) {}
+func equalPairs<each T: Equatable>(_ lhs: repeat each T, _ rhs: repeat each T) -> Bool
+    where repeat each T: Hashable {
+    let pairs = (repeat (each lhs, each rhs))
+    _ = pairs
+    return true
+}
+func variadic(_ numbers: Int...) -> Int { numbers.reduce(0, +) }
+func defaults(a: Int = 1, _ b: String = "x", label c: Bool = false) {}
+func genericWhere<S: Sequence, T>(_ s: S, _ t: T) where S.Element: Hashable, T: Equatable, S.Element == T {}
+struct Pairing<A, B> where A: Hashable, B: Equatable {}
+extension Pairing: Equatable where A: Equatable {}
+extension Int: @retroactive Identifiable { public var id: Int { self } }
+struct Matrix<let rows: Int, let columns: Int> { static var count: Int { rows * columns } }
+
+// ── Ownership: noncopyable, discard, copy and consume ──
+struct Token: ~Copyable {
+    let raw: Int
+    consuming func finish() { discard self }
+    deinit { print("token dropped") }
+}
+
+struct Box<Value: ~Copyable>: ~Copyable {
+    var value: Value
+}
+extension Box: Copyable where Value: Copyable {}
+
+func ownership(_ value: consuming Item) {
+    let duplicate = copy value
+    let moved = consume value
+    _ = (duplicate, moved)
+}
+
+// ── Typed throws, rethrows, errors ──
+func parseSKU(_ text: String) throws(InventoryError) -> SKU {
+    guard text.isSKU else { throw .unknownSKU(text) }
+    return text
+}
+func rethrowing<E: Error>(_ body: () throws(E) -> Void) throws(E) { try body() }
+func neverThrows() throws(Never) {}
+
+func errorForms() {
+    do throws(InventoryError) {
+        _ = try parseSKU("ABC-1")
+    } catch {
+        print(error)
+    }
+    let result: Result<Int, InventoryError> = .success(1)
+    switch result {
+    case .success(let value): print(value)
+    case .failure(let error): print(error)
+    }
+    let captured = Result { try Int("1").unsafelyUnwrapped }
+    _ = captured
+}
+
+// ── Concurrency: isolation, sending, global actors ──
+@globalActor actor StoreActor {
+    static let shared = StoreActor()
+}
+
+@concurrent func backgroundWork() async -> Int { 1 }
+nonisolated(nonsending) func inheritsCaller() async {}
+func isolatedDefault(isolation: isolated (any Actor)? = #isolation) async {}
+@StoreActor func onStore() {}
+
+final class Cache {
+    isolated deinit {}
+}
+
+distributed actor Robot {
+    typealias ActorSystem = LocalTestingDistributedActorSystem
+    distributed func ping() -> String { "pong" }
+}
+
+func tasks() async {
+    let handle = Task { await backgroundWork() }
+    let detached = Task.detached(priority: .background) { 1 }
+    async let first = backgroundWork()
+    let values = await (handle.value, detached.value, first)
+    let sequence = AsyncStream<Int> { $0.finish() }
+    for await element in sequence { print(element) }
+    for try await element in sequence { print(element) }
+    await withTaskGroup(of: Int.self) { group in
+        group.addTask { 1 }
+        for await result in group { print(result) }
+    }
+    let continuation: Int = await withCheckedContinuation { resume in resume.resume(returning: 1) }
+    _ = (values, continuation)
+}
+
+// ── Closures: captures, annotations, multiple trailing closures ──
+final class Controller {
+    var count = 0
+    func run() {
+        let weakCapture = { [weak self] in self?.count }
+        let unownedCapture = { [unowned self] in self.count }
+        let mainActorClosure = { @MainActor in print("main") }
+        let sendableClosure = { @Sendable (x: Int) async throws -> Int in x }
+        let ignored = { _ in }
+        let pair = { (a: Int, b: Int) -> Int in a + b }
+        let sorted = [3, 1, 2].sorted(by: >)
+        _ = (weakCapture, unownedCapture, mainActorClosure, sendableClosure, ignored, pair, sorted)
+    }
+    func fetch(onSuccess: () -> Void, onFailure: () -> Void) {}
+    func call() {
+        fetch { print("ok") } onFailure: { print("failed") }
+        fetch(onSuccess: { }, onFailure: { })
+    }
+    func store(_ completion: @escaping () -> Void) {}
+    func store(lazily value: @autoclosure @escaping () -> Int) {}
+}
+
+// ── Pattern matching: every pattern ──
+func patterns(_ any: Any, point: (Int, Int), optional: Int?, number: Int) {
+    switch any {
+    case is String: print("string")
+    case let text as String: print(text)
+    case let number as Int where number > 3: print(number)
+    case _ as Double: print("double")
+    case Optional<Int>.none: print("none")
+    default: break
+    }
+
+    switch point {
+    case (0, 0): print("origin")
+    case (let x, 0): print(x)
+    case (0, let y): print(y)
+    case let (x, y) where x == y: print("diagonal")
+    case (-10...10, _): print("near")
+    case (_, 11...): print("above")
+    default: print("far")
+    }
+
+    switch number {
+    case 1, 2, 3: print("few")
+    case 4...: print("many")
+    case ..<0: print("negative")
+    case 0:
+        print("zero")
+        fallthrough
+    case _ where number.isMultiple(of: 2): print("even")
+    @unknown default: print("unknown")
+    }
+
+    if case .some(let x) = optional, x > 1 { print(x) }
+    if case 1...5 = number { print("in range") }
+    while case let x? = optional, x < 0 { break }
+    guard case let (a, b) = point, a < b else { return }
+    for case let (a, 0) in [(1, 0), (2, 3)] { print(a) }
+    for (index, element) in [10, 20].enumerated() { print(index, element) }
+    for _ in 0..<2 {}
+    let (first, _) = point
+    let (_, second): (Int, Int) = point
+    if let optional { print(optional) }
+    _ = (first, second)
+}
+
+// ── Resilience and optimiser attributes ──
+@available(swift 5.9)
+@available(macOS, introduced: 13, deprecated: 15, obsoleted: 17, message: "Replaced", renamed: "newName")
+@available(iOS, unavailable)
+@backDeployed(before: macOS 14)
+public func backDeployed() {}
+
+@_disfavoredOverload @_alwaysEmitIntoClient public func disfavoured() {}
+@inline(never) @_effects(readonly) func neverInlined() {}
+@unsafe struct RawBuffer { var pointer: UnsafeMutablePointer<UInt8> }
+@safe func usesUnsafe(_ buffer: RawBuffer) -> UInt8 { unsafe buffer.pointer.pointee }
+@preconcurrency @MainActor protocol LegacyDelegate {}
+@frozen public enum Mode { case fast, slow }
+@propertyWrapper struct Logged<Value> {
+    var wrappedValue: Value
+    init(wrappedValue: Value) { self.wrappedValue = wrappedValue }
+    init(projectedValue: Value) { wrappedValue = projectedValue }
+    var projectedValue: Value { wrappedValue }
+}
+
+// ── Result builders: every build method ──
+@resultBuilder
+enum ListBuilder {
+    static func buildExpression(_ value: Int) -> [Int] { [value] }
+    static func buildBlock(_ parts: [Int]...) -> [Int] { parts.flatMap { $0 } }
+    static func buildArray(_ parts: [[Int]]) -> [Int] { parts.flatMap { $0 } }
+    static func buildOptional(_ part: [Int]?) -> [Int] { part ?? [] }
+    static func buildEither(first part: [Int]) -> [Int] { part }
+    static func buildEither(second part: [Int]) -> [Int] { part }
+    static func buildLimitedAvailability(_ part: [Int]) -> [Int] { part }
+    static func buildFinalResult(_ part: [Int]) -> [Int] { part }
+}
+
+@ListBuilder func numbersList(flag: Bool) -> [Int] {
+    1
+    if flag { 2 } else { 3 }
+    for n in 4...5 { n }
+    if #available(macOS 14, *) { 6 }
+}
+
+// ── Macros: declaration roles and uses ──
+@freestanding(declaration, names: arbitrary) macro makeDecls() = #externalMacro(module: "Macros", type: "DeclMacro")
+@attached(peer, names: prefixed(_)) macro Peer() = #externalMacro(module: "Macros", type: "PeerMacro")
+@attached(accessor) macro Accessor() = #externalMacro(module: "Macros", type: "AccessorMacro")
+@attached(extension, conformances: Equatable, names: named(==)) macro Equal() = #externalMacro(module: "Macros", type: "ExtMacro")
+@attached(memberAttribute) macro Members() = #externalMacro(module: "Macros", type: "MembersMacro")
+@attached(body) macro Traced() = #externalMacro(module: "Macros", type: "BodyMacro")
+#makeDecls()
+
+// ── Swift Testing ──
+@Suite("Inventory", .tags(.fast)) struct InventoryTests {
+    @Test("adds items", arguments: [1, 2, 3]) func adds(_ n: Int) throws {
+        #expect(n > 0, "positive")
+        #expect(throws: InventoryError.self) { throw InventoryError.invalidQuantity }
+        try #require(Int("1") != nil)
+        Issue.record("recorded")
+    }
+}
+
+// ── Local declarations ──
+func locals() {
+    struct Local { var value = 1 }
+    enum LocalEnum { case a, b }
+    class LocalClass {}
+    typealias LocalAlias = Int
+    func nested(_ x: Int) -> Int { x + 1 }
+    let a = nested(1) + Local().value
+    var b = 0; b += 1
+    let semicolon = 1; let another = 2;
+    _ = (a, b, semicolon, another, LocalEnum.a, LocalClass(), LocalAlias(1))
+}
+
+// ── Unsafe, debugging, and misc expressions ──
+func miscellany(_ array: [Int]) {
+    let pointer = array.withUnsafeBufferPointer { $0.baseAddress }
+    let sizeOf = MemoryLayout<Int>.size
+    let anyHashable: AnyHashable = 1
+    let never: () -> Never = { fatalError() }
+    let selfType = type(of: array)
+    let isNil = array.first == nil
+    let nilCoalescing = array.first ?? array.last ?? 0
+    let optionalChain = array.first?.description.first?.isLetter
+    let forceChain = array.first!.description
+    let stringLiteralOperators = "a" + "b" + String(repeating: "c", count: 2)
+    let dollarClosure: ([Int]) -> Int = { $0.count }
+    let assignmentInClosure = { (x: inout Int) in x = 5 }
+    let `keywordIdentifier` = 1
+    let `class` = 2
+    _ = (pointer, sizeOf, anyHashable, never, selfType, isNil, nilCoalescing, optionalChain,
+         forceChain, stringLiteralOperators, dollarClosure, assignmentInClosure, `keywordIdentifier`, `class`)
+}

@@ -1,3 +1,4 @@
+// JSONC (JSON with Comments, as read by VS Code and tsc) — syntax showcase; JSON itself is RFC 8259 / ECMA-404
 // JSON with Comments: a tsconfig-style and editor-settings file for the warehouse app.
 /* Block comment
    across several lines, with "quotes" and // slashes inside */

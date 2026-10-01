@@ -1,3 +1,4 @@
+// Java 25 — syntax showcase (no JDK installed here; written against JLS 25)
 // ── Package and imports ──
 package com.example.warehouse;
 
@@ -10,6 +11,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.*;
+import module java.base;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -333,10 +336,120 @@ public class Warehouse implements Serializable, Comparable<Warehouse> {
     Warehouse() { this("default"); }
     @Override protected void finalize() throws Throwable { super.finalize(); }
 
+    // ── Java 25 additions ──
+    // Not shown (cannot coexist in this file): compact source files with an instance `void main()`
+    // (JEP 512) replace the whole class; string templates were removed in 23; primitive patterns are preview.
+
+    // ── Sized integer types and array access ──
+    byte byteValue = 0x7F;
+    short shortValue = (short) 300;
+    int firstBin() { return bins[0] + grid[1][2]; }
+
+    // ── Type-use annotations ──
+    @java.lang.annotation.Target(java.lang.annotation.ElementType.TYPE_USE)
+    @interface Nullable {}
+
+    @Nullable String maybe;
+    List<@Nullable String> labels = new ArrayList<>();
+    String @Nullable [] nullableArray;
+
+    // ── Interface constants and extending interfaces ──
+    interface Limits {
+        int LIMIT = 10;
+        String UNIT = "kg";
+    }
+    interface Special extends Priced, Serializable, Limits {}
+
+    // ── Receiver parameter ──
+    void withReceiver(Warehouse this, int x) { }
+
+    // ── Unnamed variables and patterns (final in 22) ──
+    int unnamed(Event event, int[] arr, Object o) {
+        int count = 0;
+        for (var _ : arr) count++;
+        try { Integer.parseInt("x"); } catch (NumberFormatException _) { count--; }
+        java.util.function.BiFunction<Integer, Integer, Integer> first = (a, _) -> a;
+        if (o instanceof Item(_, var qty, _)) count += qty;
+        return switch (event) {
+            case Received(_, int n) -> count + n;
+            case Shipped(var _, _, _) -> count;
+        };
+    }
+
+    // ── Pattern switch: null, guards, nested record patterns ──
+    record Pair<A, B>(A first, B second) {}
+
+    String patterns(Object o) {
+        return switch (o) {
+            case null -> "null";
+            case Integer i when i > 5 -> "big " + i;
+            case Integer i -> "int " + i;
+            case String s -> s;
+            case Pair(Pair(var a, var b), String c) -> a + "" + b + c;
+            case Pair<?, ?>(var a, var b) -> a + "/" + b;
+            case Status st when st == Status.OUT -> "out";
+            case int[] ia -> "ints " + ia.length;
+            default -> "other";
+        };
+    }
+
+    String nullDefault(String s) {
+        switch (s) {
+            case null, default -> { return "none"; }
+            case "a" -> { return "A"; }
+        }
+    }
+
+    // ── Local declarations ──
+    void locals() {
+        record Point(int x, int y) {}
+        enum Mode { ON, OFF }
+        interface Greeter { String greet(); }
+        class Local { int n; }
+        var p = new Point(1, 2);
+        var g = (Greeter) () -> "hi" + p + Mode.ON;
+        Object[] objs = new Object[] { new Local(), g };
+        System.out.println(objs.length);
+    }
+
+    // ── Inner class creation and qualified this ──
+    class Inner {
+        Warehouse outer() { return Warehouse.this; }
+        <U> U pick(U u) { return u; }
+    }
+
+    void innerUse() {
+        Warehouse.Inner in = this.new Inner();
+        String s = in.<String>pick("x");
+        Object o = Collections.<String>emptyList();
+    }
+
+    // ── Flexible constructor bodies (final in 25) ──
+    Warehouse(String name, int version) {
+        if (version < 0) throw new IllegalArgumentException("version");
+        var normalised = name.strip();
+        this(normalised);
+        this.version = version;
+    }
+
     public static void main(String[] args) throws Exception {
         Warehouse w = new Warehouse("Main");
         w.items.add(new Item("A-100", 5, new BigDecimal("2.50")));
         System.out.printf("%s holds %d units on %s%n", w.name, w.totalQuantity(), LocalDate.of(2026, 1, 31));
         System.out.println(TEXT_BLOCK + max(1, 2) + w.legacySwitch(Status.LOW));
     }
+}
+
+// ── Module declaration (module-info.java form; lives in its own file in real projects) ──
+@Deprecated
+open module com.example.warehouse {
+    requires transitive java.logging;
+    requires static java.sql;
+    requires java.base;
+    exports com.example.warehouse;
+    exports com.example.warehouse.api to java.sql, java.logging;
+    opens com.example.warehouse.model;
+    opens com.example.warehouse.internal to java.base;
+    uses java.sql.Driver;
+    provides java.sql.Driver with com.example.warehouse.DriverImpl;
 }

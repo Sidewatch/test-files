@@ -1,5 +1,7 @@
 #!/usr/bin/env php
 <?php
+// PHP 8.5 — syntax showcase
+declare(encoding='UTF-8');
 declare(strict_types=1);
 
 /**
@@ -477,6 +479,7 @@ $spaceship_sort = usort($list, fn($a, $b) => $a <=> $b);
 $int_ops = intdiv(7, 2) + 7 % 2 + 2 ** 3 ** 2 + (-7 % 3) + (7 <=> 3);
 $str_ops = 'a' . 'b' . "c{$ka}" . 'd' . PHP_EOL;
 $bool_ops = true && false || !true and false or true xor false;
+// non-canonical casts below are deprecated in 8.5
 $cast_ops = (int)'1' + (integer)'2' + (float)'3' + (double)'4';
 $cast_ops2 = (bool)'a' . (boolean)'b' . (string)1 . (binary)'c' . (array)1 . (object)[];
 $assign_ops = $ka .= 'x';
@@ -508,6 +511,104 @@ NOW;
 print <<<"DOC"
 Heredoc inside print with $ka
 DOC . "\n";
+// ── PHP 8.4 / 8.5: property hooks, asymmetric visibility, pipe, #[\NoDiscard] ──
+namespace AcmeVault\Modern;
+
+use InvalidArgumentException;
+
+interface HasFullName { public string $fullName { get; } }
+
+class Person implements HasFullName
+{
+    // virtual property: get hook only, short (arrow) form
+    public string $fullName { get => $this->first . ' ' . $this->last; }
+
+    // set hook, long form with body, then get hook
+    public string $first {
+        set(string $value) {
+            if ($value === '') { throw new InvalidArgumentException('empty'); }
+            $this->first = ucfirst($value);
+        }
+        get => $this->first;
+    }
+
+    // set hook with arrow form and implicit parameter
+    public string $last { set => strtolower($value); }
+
+    // hooks with attributes, final and by-reference get
+    public array $tags = [] {
+        #[\Deprecated] final get => $this->tags;
+    }
+    public array $refs = [] { &get { return $this->refs; } }
+
+    // promoted property with hooks
+    public function __construct(public int $age { set => max(0, $value); }, string $first = 'Ada', string $last = 'Lovelace')
+    {
+        $this->first = $first;
+        $this->last = $last;
+    }
+
+    // asymmetric visibility
+    public private(set) string $id = 'p-1';
+    protected(set) int $visits = 0;
+    public protected(set) readonly string $slug;
+    final public string $locked = 'x';
+    var $legacy_var = 1;
+    public function __clone() {}
+}
+
+abstract class HookedBase
+{
+    abstract public string $label { get; set; }
+}
+
+// pipe operator (8.5)
+$piped = 'Hello World' |> strtolower(...) |> ucwords(...) |> (fn(string $s): string => trim($s));
+$piped2 = [1, 2, 3] |> array_reverse(...) |> array_sum(...);
+
+// #[\NoDiscard] and #[\Deprecated] attributes
+#[\NoDiscard('use the result')]
+function compute(): int { return 1; }
+#[\Deprecated(message: 'use compute()', since: '8.5')]
+function old_compute(): int { return 1; }
+(void) compute();
+
+// clone with updated properties (8.5), new without wrapping parentheses (8.4)
+$p1 = new Person(30);
+$p2 = clone($p1, ['first' => 'Grace']);
+$chained = new Person(31)->fullName;
+$const_closure = static fn(int $x): int => $x + 1;
+const ADDER = static function (int $x): int { return $x + 2; };
+class Pt { public function __construct(final public int $x = 0) {} }
+
+// array_first / array_last (8.5), mb_trim, bcmath, json_validate (8.3), typed class constants (8.3)
+$first = array_first([1, 2, 3]);
+$last = array_last([1, 2, 3]);
+$valid = json_validate('{"a":1}');
+interface TypedConst { const string NAME = 'typed'; }
+class TypedConstImpl implements TypedConst { final public const int LIMIT = 5; }
+$dyn_const = TypedConstImpl::{'LIMIT'};
+$lazy = (new \ReflectionClass(Person::class))->newLazyGhost(function (Person $o): void {});
+class OverrideDemo extends HookedBase { #[\Override] public string $label { get => 'x'; set { } } }
+$octal_explicit = 0o17;
+
+// ── Rarely used constructs ──
+namespace\helper();
+$rel = new namespace\Thing();
+$rel_const = namespace\SOME_CONST;
+class ParentUse extends Pt
+{
+    public function __construct() { parent::__construct(1); }
+    public function who(): string { return parent::class . self::class . static::class; }
+}
+declare(ticks=1): echo 'ticked'; enddeclare;
+declare(ticks=1) { echo 'block'; }
+;
+if ($yes) { ; }
+for (;;) { break; }
+while (false);
+$empty_block = function (): void {};
+
 goto end_label;
 end_label:
 __halt_compiler();

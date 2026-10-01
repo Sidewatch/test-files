@@ -1,10 +1,13 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!-- XML 1.0 (Fifth Edition) — syntax showcase. A document has one XML declaration and one DOCTYPE,
+     so the PUBLIC form is used here; SYSTEM identifiers appear on the entities below. -->
+<?xml-model href="inventory.rng" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"?>
 <?xml-stylesheet type="text/xsl" href="inventory.xsl"?>
 <?xml-stylesheet type="text/css" href="inventory.css" media="screen" alternate="yes"?>
 <!-- ── Comments ───────────────────────────────────────────────
      A warehouse inventory document exercising every XML construct.
      TODO: add the supplier catalogue. FIXME: stale prices. -->
-<!DOCTYPE inventory SYSTEM "inventory.dtd" [
+<!DOCTYPE inventory PUBLIC "-//ACME//DTD Inventory 2.1//EN" "inventory.dtd" [
   <!-- Internal DTD subset -->
   <!ELEMENT inventory (meta, warehouse+)>
   <!ELEMENT meta (title, updated?, note*)>
@@ -43,6 +46,7 @@
   <!ENTITY logo-img SYSTEM "logo.png" NDATA png>
   <!NOTATION png SYSTEM "image/png">
   <!NOTATION svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+  <!NOTATION gif PUBLIC "-//ACME//NOTATION GIF//EN">
   <?processing-in-dtd instruction?>
 ]>
 <inventory xmlns="https://example.com/inventory"

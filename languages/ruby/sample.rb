@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# Ruby 3.4 — syntax showcase
 # frozen_string_literal: true
 # encoding: utf-8
 # warn_indent: true
@@ -7,7 +8,7 @@
 # TODO: persist the catalog. FIXME: tax rounding.
 
 =begin
-A block comment using =begin / =end.
+A block comment delimited by the begin and end markers.
 It may span several lines.
 =end
 
@@ -373,6 +374,18 @@ in ^(integer + 1)
   puts "pinned expression"
 in 1.. | ..-1
   puts "range"
+in [*, { name: "needle" } => found, *post]
+  puts found, post
+in [*pre, 42, *]
+  puts pre
+in (Integer | Float) => number
+  puts number
+in { id: Integer => id, **nil }
+  puts id
+in Point[_, _] | Point(x: 0)
+  puts "point"
+in [Integer, Integer] unless integer.zero?
+  puts "pair"
 else
   puts "no match"
 end
@@ -468,6 +481,67 @@ module Shouting
 end
 using Shouting
 
+# ── More operators, undef, empty statements ──
+not_equal = 1 != 2
+class Vec
+  def +@ = self
+  def ~@ = self
+  def -@ = self
+  def ! = false
+  def !=(other) = !(self == other)
+  def a; end
+  def b; end
+  undef a, :b
+  undef_method :c rescue nil
+end
+;;
+star_nil = ->(**nil) { 1 }
+def no_kwargs(a, **nil); end
+guard_unless = case 5
+               in Integer => n unless n < 0 then n
+               end
+legacy_unless_case = case 5
+                     when 5 then :five
+                     end
+puts __LINE__, __FILE__, __ENCODING__
+alias new_name old_name rescue nil
+p(*[1, 2], **{ a: 1 })
+p 1 if defined?(yield)
+numbered_it = [[1, 2]].map { |(a, b)| a + b }
+hash_shorthand_call = greet(name:) rescue nil
+rescue_modifier = raise rescue 1
+endless_with_args(a) rescue nil
+ractor = Ractor.new { 1 } rescue nil
+multiple_assign_nested = (a, b), c = [1, 2], 3
+op_assign_index = hash[:a] ||= 1
+op_assign_attr = widget&.name ||= "x" rescue nil
+safe_assign = nothing&.foo = 1
+const_path = ::Inventory::Product
+const_assign = Inventory::LIMIT = 5
+global_special = [$stderr, $stdin, $PROGRAM_NAME, $0, $*, $$, $?, $:, $", $<, $>, $_, $@, $&]
+backref_pre = $`
+symbol_float = :"1.5"
+character_literal_escape = ?\n
+unary_minus_literal = -2 ** 2
+lambda_literal_args = ->(a, b = 1, *c, d:, e: 2, **f, &g) {}
+block_local = [1].each { |x; y| y = x }
+string_continuation = "a" \
+  "b"
+rescue_in_block = [1].map do |x|
+  Integer(x)
+rescue ArgumentError
+  0
+else
+  1
+ensure
+  2
+end
+if (m = /(?<year>\d+)/ =~ "2020")
+  puts year rescue nil
+end
+while (line = gets) do break end
+begin; end
+BEGIN { }
 # ── Fibers, threads, enumerators ──
 fiber = Fiber.new do
   Fiber.yield 1

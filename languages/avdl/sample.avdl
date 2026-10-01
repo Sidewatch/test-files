@@ -1,3 +1,4 @@
+// Apache Avro IDL (Avro 1.12) — syntax showcase
 /**
  * Avro IDL protocol for a warehouse ordering service.
  * Doc comments attach to the declaration that follows them.
@@ -182,3 +183,49 @@ protocol Extended {
   @aliases(["oldName"]) int renamed(@order("ignore") int a, long b = 2);
   union { null, Color } maybeColor(union { null, Color } input = null);
 }
+
+// ── Avro 1.12 IDL: nullable types, namespaces, main schema ──────────
+namespace com.example.nullable;
+
+/** Nullable shorthand: T? means union { null, T }. */
+record Customer {
+  string name;
+  string? nickname = null;
+  int? age = null;
+  long? loyaltyPoints;
+  array<string>? tags = null;
+  array<string?> sparse = [];
+  map<int?> counters = {};
+  Address? billingAddress = null;
+  union { null, string, int } classic = null;
+  union { int, null } nonNullDefault = 1;
+  decimal(9, 2)? balance = null;
+  timestamp_ms? lastSeen = null;
+  uuid? externalId = null;
+}
+
+@namespace("com.example.other")
+record Foreign {
+  @namespace("com.example.inner") string scoped;
+  Customer customer;
+  com.example.warehouse.Order order;
+}
+
+record Primitives {
+  null n = null;
+  boolean b = false;
+  int i = 0;
+  long l = 0;
+  float f = 0.0;
+  double d = 0.0;
+  bytes by = "";
+  string s = "";
+}
+
+enum Priority { LOW, MEDIUM, HIGH } = MEDIUM;
+enum NoDefault { ONE, TWO }
+
+fixed Hash32(32);
+
+/** A main schema declaration selects the root type of a schema file. */
+schema Customer;

@@ -1,3 +1,4 @@
+;;;; Common Lisp (ANSI X3.226-1994, as implemented by SBCL 2.5 and CCL) — syntax showcase
 ;;;; Warehouse inventory in Common Lisp.
 ;;;; Four semicolons mark file headers; three, sections; two, code blocks;
 ;;;; one, trailing remarks.
@@ -392,3 +393,170 @@ string")
 (format t "~(~a~) ~:@(~a~) ~:(~a~) ~/warehouse::custom-directive/" "LOWER" "upper" "cap" 1)
 (read-char) (peek-char) (unread-char #\a) (read-byte in) (listen) (clear-input) (read-sequence buffer in)
 ;; TODO: move the format strings into a message catalogue.
+
+;;; ── CLOS in full: slots, metaclasses, protocols ─────────────────────
+
+(defclass shape ()
+  ((name :initarg :name :initform "shape" :reader shape-name :type string)
+   (sides :initarg :sides :accessor shape-sides :initform 0 :allocation :instance)
+   (count :allocation :class :initform 0 :accessor shape-count))
+  (:metaclass standard-class)
+  (:default-initargs :name "unnamed")
+  (:documentation "Base class for shapes."))
+
+(defclass polygon (shape) ((vertices :initarg :vertices :accessor vertices :initform nil)))
+(defclass coloured-mixin () ((colour :initarg :colour :initform :black :accessor colour)))
+(defclass coloured-polygon (polygon coloured-mixin) ())
+
+(defgeneric area (shape)
+  (:documentation "The area of SHAPE.")
+  (:generic-function-class standard-generic-function)
+  (:method-combination +)
+  (:method ((s shape)) 0)
+  (declare (optimize speed)))
+
+(defgeneric combine (a b) (:method-combination progn))
+(defmethod combine progn ((a shape) (b shape)) :both-shapes)
+(defmethod combine progn ((a polygon) b) :polygon-first)
+
+(defmethod area ((p polygon))
+  (with-slots (vertices) p
+    (length vertices)))
+
+(defmethod area :around ((p coloured-polygon))
+  (with-accessors ((c colour) (v vertices)) p
+    (if (eq c :transparent) 0 (call-next-method))))
+
+(defmethod (setf shape-name) :before (new (s shape)) (declare (ignore new)) (print "renaming"))
+(defmethod shared-initialize :after ((s shape) slot-names &rest initargs &key &allow-other-keys)
+  (declare (ignore slot-names initargs))
+  (incf (shape-count s)))
+(defmethod make-load-form ((s shape) &optional environment)
+  (make-load-form-saving-slots s :environment environment))
+(defmethod update-instance-for-different-class :before ((old shape) (new polygon) &key)
+  nil)
+(defmethod slot-missing (class instance slot-name operation &optional new-value)
+  (declare (ignore class instance operation new-value))
+  (error "No slot ~a" slot-name))
+
+(let ((p (make-instance 'coloured-polygon :vertices '(1 2 3) :colour :red)))
+  (change-class p 'polygon)
+  (slot-value p 'vertices)
+  (slot-boundp p 'vertices)
+  (slot-exists-p p 'vertices)
+  (slot-makunbound p 'vertices)
+  (class-of p)
+  (find-class 'polygon)
+  (typep p 'shape)
+  (subtypep 'polygon 'shape)
+  (reinitialize-instance p :vertices nil)
+  (describe p)
+  (ensure-generic-function 'area)
+  (no-applicable-method #'area p)
+  (compute-applicable-methods #'area (list p))
+  (find-method #'area '() (list (find-class 'polygon)))
+  (remove-method #'area (find-method #'area '() (list (find-class 'polygon))))
+  (slot-value p 'vertices))
+
+;;; ── Evaluation control, compilation, and environment ────────────────
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defparameter *compile-time-constant* 42))
+(defmacro compile-time-value () (load-time-value *compile-time-constant*))
+(locally (declare (optimize (safety 0))) (+ 1 2))
+(multiple-value-call #'list (values 1 2) (values 3))
+(nth-value 1 (floor 7 2))
+(multiple-value-setq (a b) (values 1 2))
+(multiple-value-list (values 1 2 3))
+(values-list '(1 2 3))
+(let ((fn (compile nil '(lambda (x) (* x x))))) (funcall fn 4))
+(compile-file "warehouse.lisp" :output-file "warehouse.fasl" :verbose t)
+(load "warehouse.fasl" :verbose nil :print nil)
+(macroexpand-1 '(unless-empty (x '(1)) x))
+(macroexpand '(incf-by x 2))
+(constantp 42)
+(special-operator-p 'if)
+(macro-function 'when)
+(fboundp 'fib)
+(fmakunbound 'old)
+(boundp '*stock*)
+(makunbound '*scratch*)
+(symbol-value '*reorder-point*)
+(symbol-function 'fib)
+(symbol-plist 'fib)
+(get 'fib 'property)
+(setf (get 'fib 'property) t)
+(function-lambda-expression #'fib)
+(proclaim '(optimize (speed 1)))
+(defconstant +answer+ 42 "The answer.")
+(defvar *unbound*)
+(defparameter *lexical-note* "special variable naming convention")
+(sb-ext:*gc-run-time*)
+(sb-ext:quit :unix-status 0)
+#+sbcl (sb-ext:gc :full t)
+#+(and sbcl (not ccl)) (sb-ext:disable-debugger)
+#+ccl (ccl:gc)
+#-(or sbcl ccl clisp) (error "Unsupported implementation")
+#+#.(cl:if (cl:find-package "SWANK") '(and) '(or)) (print "swank")
+
+;;; ── Loop, in every clause family ────────────────────────────────────
+
+(loop named outer
+      for i from 0 below 10
+      for j downfrom 10 to 0 by 2
+      for k upfrom 1
+      for e in '(1 2 3) by #'cddr
+      for (a b) on '(1 2 3 4) by #'cddr
+      for x = 1 then (* x 2)
+      for ch across "abc"
+      for s being the symbols of :cl
+      for k2 being each hash-key of (make-hash-table) using (hash-value v)
+      for p being the present-symbol in :cl
+      for e2 being the elements of #(1 2 3) using (index ix)
+      with total = 0 and count = 0
+      as y = (random 10)
+      initially (print "start")
+      collect i into all
+      append (list i j)
+      nconc (list k)
+      count (evenp i)
+      sum i into s2 of-type fixnum
+      maximize i
+      minimize j
+      thereis (> i 5)
+      always (>= i 0)
+      never (< i 0)
+      do (setf total (+ total i))
+      if (evenp i) collect i else collect (- i) end
+      when (> i 3) do (print i) and sum i end
+      unless (< i 0) do (print j)
+      with-result = nil
+      repeat 5
+      while (< i 8)
+      until (> j 20)
+      finally (return-from outer (values all total))
+      finally (return (list all total)))
+
+;;; ── Format directives, comprehensively ──────────────────────────────
+
+(format nil "~a ~s ~d ~b ~o ~x ~r ~:r ~@r ~c ~e ~f ~g ~$ ~% ~& ~| ~~ ~t ~* ~? ~p" 1 "s" 2 3 4 255 5 6 7 #\a 1.5 2.5 3.5 4.5)
+(format nil "~10a|~10@a|~-5,2f|~,3e|~8,'0d|~:d|~@d|~,,'.,4:d" "left" "right" 3.14159 12345.678 42 1234567 5 1234567)
+(format nil "~{~a~^, ~}|~:{(~a ~a)~}|~@{~a~}|~:@{~a~}" '(1 2 3) '((1 2) (3 4)) 1 2 3)
+(format nil "~[a~;b~;c~:;other~]|~:[no~;yes~]|~@[present ~a~]|~#[none~;one~:;~a~]" 1 t 5)
+(format nil "~(UPPER~)|~@(first cap~)|~:(each word~)|~:@(ALL~)|~<~%~1,10:;wrapped~>|~;~>")
+(format nil "~V,'*D|~#,'xd|~3*~a|~2@*~a|~@*~a" 5 42 0 'a 'b 'c 'd)
+(format nil "~/pprint-fill/~/my-package:my-directive/" '(1 2) 3)
+(format nil "~_~:_~@_~:@_~I~:I~W~<~:>")
+(format nil "~2,1,0,'*,'_,3e" 12345.6)
+
+;;; ── Streams, strings and characters, spelled out ────────────────────
+
+(list (char-upcase #\a) (char-name #\Space) (name-char "Newline") (code-char 955) (char-int #\a)
+      (digit-char 7) (alpha-char-p #\a) (alphanumericp #\1) (upper-case-p #\A) (both-case-p #\a)
+      (string #\a) (make-string 2 :initial-element #\-) (string-capitalize "hello world") (nstring-downcase (copy-seq "ABC"))
+      (string-left-trim " " "  x") (string-right-trim " " "x  ") (subseq "hello" 1 3) (concatenate 'string "a" "b")
+      (with-output-to-string (s) (write-char #\a s) (write-string "bc" s))
+      (string-not-equal "a" "b") (string-greaterp "b" "a") (string/= "a" "b") (char< #\a #\b) (char-equal #\a #\A)
+      (parse-integer "ff" :radix 16 :junk-allowed t) (read-from-string "#x1F") (write-to-string 255 :base 2 :radix t)
+      (intern (string-upcase "sym")) (symbol-name 'sym) (gensym "G") (gentemp "T") (make-symbol "S") (keywordp :k)
+      (list #\Newline #\Tab #\Page #\Backspace #\Rubout #\Space #\Return #\Linefeed))

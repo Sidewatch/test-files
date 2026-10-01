@@ -1,5 +1,5 @@
 program Sample;
-{ Free Pascal / Delphi showcase: records, classes, generics, sets, pointers and exceptions. }
+{ Free Pascal 3.2 / Delphi 13 — syntax showcase: records, classes, generics, sets, pointers and exceptions. }
 (* Old-style block comment
    over several lines *)
 // A line comment
@@ -594,4 +594,314 @@ begin
     nop
   end;
   Halt(0);
+end.
+
+{ ── The sections below are separate compilation units (unit, library, package); they cannot share a file
+     with `program`, and are appended only so every form is highlighted. ── }
+
+unit Sample.Modern;
+
+{$IFDEF FPC}{$mode delphi}{$ENDIF}
+{$SCOPEDENUMS ON}
+{$ZEROBASEDSTRINGS OFF}
+
+interface
+
+uses
+  System.SysUtils, System.Classes, System.Generics.Collections, System.Threading, System.SyncObjs,
+  Vcl.Forms in 'Vcl.Forms.pas', Winapi.Windows;
+
+type
+  TColor = (Red, Green, Blue);
+
+  { Attributes (Delphi) }
+  TestFixtureAttribute = class(TCustomAttribute)
+  public
+    constructor Create(const AName: string; AValue: Integer = 0);
+  end;
+
+  [TestFixture('orders', 1)]
+  TOrderTests = class
+  private
+    [Weak] FOwner: TObject;
+    [Volatile] FFlag: Boolean;
+    [Ref] FRef: Integer;
+  public
+    [Test]
+    [TestCase('One', '1,2')]
+    procedure Adds(A, B: Integer);
+  end;
+
+  { Generics with constraints }
+  TCache<TKey; TValue: class, constructor> = class
+  strict private
+    FMap: TDictionary<TKey, TValue>;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    function GetOrAdd(const AKey: TKey): TValue;
+    procedure ForEach(const AAction: TProc<TKey, TValue>);
+  end;
+
+  TComparerFn<T> = reference to function(const A, B: T): Integer;
+  TNumeric<T: record> = record
+    Value: T;
+    class operator Implicit(const A: T): TNumeric<T>;
+  end;
+
+  { Managed records (Delphi 10.4+) }
+  TManaged = record
+    Data: Integer;
+    class operator Initialize(out Dest: TManaged);
+    class operator Finalize(var Dest: TManaged);
+    class operator Assign(var Dest: TManaged; const [ref] Src: TManaged);
+  end;
+
+  { Record and class helpers, class references }
+  TStringHelperEx = record helper for string
+    function Twice: string;
+  end;
+  TOrderClass = class of TOrderTests;
+
+  { Interfaces with GUIDs and method resolution }
+  IReader = interface
+    ['{11111111-2222-3333-4444-555555555555}']
+    function Read: string;
+    property Text: string read Read;
+  end;
+  IWriter = interface(IReader)
+    ['{11111111-2222-3333-4444-555555555556}']
+    procedure Write(const S: string);
+  end;
+  TReaderWriter = class(TInterfacedObject, IReader, IWriter)
+    function IReader.Read = ReadImpl;
+    function ReadImpl: string;
+    procedure Write(const S: string);
+  private
+    FImpl: IReader;
+  public
+    property Impl: IReader read FImpl implements IReader;
+  end;
+
+  TDispatch = dispinterface
+    ['{22222222-3333-4444-5555-666666666666}']
+    procedure Ping; dispid 1;
+  end;
+
+  TBits = bitpacked array[0..7] of Boolean;
+  TProc2 = procedure(X: Integer) is nested;
+  TMethodRef = function(X: Integer): Integer of object;
+  TCaller = reference to procedure;
+
+const
+  Pipe = '|';
+  MultiLine = '''
+    A Delphi multi-line string literal.
+      Indentation is relative to the closing quotes.
+    ''';
+  Unicode = '日本語 ünïcödé';
+  Version: record Major, Minor: Word end = (Major: 1; Minor: 4);
+
+var
+  GlobalCounter: Integer;
+  GlobalCache: TCache<string, TObject>;
+
+function Fibonacci(N: Integer): Int64; inline;
+procedure Greet(const Name: string; Times: Integer = 1); overload;
+procedure Greet(const Names: array of string); overload;
+function Divide(A, B: Integer): Double; platform; deprecated 'use SafeDivide';
+
+implementation
+
+uses
+  System.Math;
+
+{$R *.res}
+
+constructor TestFixtureAttribute.Create(const AName: string; AValue: Integer);
+begin
+  inherited Create;
+end;
+
+procedure TOrderTests.Adds(A, B: Integer);
+begin
+  Assert(A + B = 3, 'sum');
+end;
+
+constructor TCache<TKey, TValue>.Create;
+begin
+  inherited;
+  FMap := TDictionary<TKey, TValue>.Create;
+end;
+
+destructor TCache<TKey, TValue>.Destroy;
+begin
+  FMap.Free;
+  inherited;
+end;
+
+function TCache<TKey, TValue>.GetOrAdd(const AKey: TKey): TValue;
+begin
+  if not FMap.TryGetValue(AKey, Result) then
+  begin
+    Result := TValue.Create;
+    FMap.Add(AKey, Result);
+  end;
+end;
+
+procedure TCache<TKey, TValue>.ForEach(const AAction: TProc<TKey, TValue>);
+var
+  Pair: TPair<TKey, TValue>;
+begin
+  for Pair in FMap do AAction(Pair.Key, Pair.Value);
+end;
+
+class operator TManaged.Initialize(out Dest: TManaged);
+begin
+  Dest.Data := 0;
+end;
+
+class operator TManaged.Finalize(var Dest: TManaged);
+begin
+  Dest.Data := -1;
+end;
+
+class operator TManaged.Assign(var Dest: TManaged; const [ref] Src: TManaged);
+begin
+  Dest.Data := Src.Data;
+end;
+
+class operator TNumeric<T>.Implicit(const A: T): TNumeric<T>;
+begin
+  Result.Value := A;
+end;
+
+function TStringHelperEx.Twice: string;
+begin
+  Result := Self + Self;
+end;
+
+function TReaderWriter.ReadImpl: string; begin Result := 'x'; end;
+procedure TReaderWriter.Write(const S: string); begin end;
+
+function Fibonacci(N: Integer): Int64;
+begin
+  if N < 2 then Exit(N);
+  Result := Fibonacci(N - 1) + Fibonacci(N - 2);
+end;
+
+procedure Greet(const Name: string; Times: Integer);
+begin
+  for var I := 1 to Times do
+    WriteLn('Hello, ', Name);
+end;
+
+procedure Greet(const Names: array of string);
+begin
+  for var N in Names do Greet(N);
+end;
+
+function Divide(A, B: Integer): Double;
+begin
+  Result := A / B;
+end;
+
+procedure Modern;
+var
+  Total: Integer;
+begin
+  // Inline variable declarations, type inference, anonymous methods
+  var X := 10;
+  var Y: Integer := 20;
+  var Fn: TFunc<Integer, Integer> := function(V: Integer): Integer begin Result := V * 2 end;
+  var Proc: TProc := procedure begin Inc(Total) end;
+  Proc();
+  Total := Fn(X) + Y;
+  for var I := 0 to 9 do Inc(Total, I);
+  for var Item in [1, 2, 3] do Inc(Total, Item);
+  for var Ch in 'abc' do Write(Ch);
+  // Tasks and parallel loops
+  var Tasks: TArray<ITask>;
+  SetLength(Tasks, 2);
+  Tasks[0] := TTask.Run(procedure begin Sleep(10) end);
+  TParallel.For(0, 9, procedure(I: Integer) begin Write(I) end);
+  TTask.WaitForAll(Tasks);
+  // Case on strings
+  case 'abc' of
+    'abc', 'def': WriteLn('hit');
+  else
+    WriteLn('miss');
+  end;
+  // Try/except/finally with typed handlers
+  try
+    try
+      raise EArgumentException.Create('bad');
+    except
+      on E: EArgumentException do WriteLn(E.Message);
+      on E: Exception do raise;
+    end;
+  finally
+    WriteLn('done');
+  end;
+  // Pointers and typecasts
+  var P: PInteger := @X;
+  P^ := PInteger(PByte(P) + 0)^;
+  var O: TObject := TObject.Create;
+  if O is TObject then (O as TObject).Free;
+  // Strings, sets and literals
+  var S := 'It''s ' + #13#10 + #$263A + ^G + 'end';
+  S := Format('%s|%d|%8.3f|%x|%e|%p|%m', ['a', 1, 2.5, 255, 1.0, nil, 5.0]);
+  var Digits: set of Byte := [0..9, 20, 30..39];
+  var H := $FF + %1010 + &17 + 1_000;
+  var F := 1.5e3 + 2E-2;
+  Assert(H > 0);
+  Include(Digits, 5);
+end;
+
+initialization
+  GlobalCounter := 0;
+  GlobalCache := TCache<string, TObject>.Create;
+
+finalization
+  GlobalCache.Free;
+
+end.
+
+library SampleLib;
+
+uses
+  System.SysUtils;
+
+function Add(A, B: Integer): Integer; stdcall;
+begin
+  Result := A + B;
+end;
+
+procedure Hello; cdecl;
+begin
+  WriteLn('hello');
+end;
+
+exports
+  Add,
+  Hello name 'sample_hello',
+  Add index 1 name 'SampleAdd';
+
+begin
+end.
+
+package SamplePackage;
+
+{$R *.res}
+{$DESCRIPTION 'Sample package'}
+{$LIBSUFFIX AUTO}
+{$RUNONLY}
+
+requires
+  rtl,
+  vcl;
+
+contains
+  Sample.Modern in 'Sample.Modern.pas';
+
 end.

@@ -1,4 +1,5 @@
-#version 450 core
+// GLSL 4.60 (Vulkan GL_KHR_vulkan_glsl, GL_EXT_* extensions) — syntax showcase
+#version 460 core
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_EXT_scalar_block_layout : require
 #pragma optimize(on)
@@ -393,3 +394,118 @@ void builtins() {
     int baseVertex = gl_BaseVertex + gl_BaseInstance + gl_DrawID;
     uvec3 wg = gl_NumWorkGroups + gl_WorkGroupSize + gl_WorkGroupID;
 }
+
+// ── Vulkan GLSL, subgroup, ray tracing, mesh shading, buffer references ──
+// These declarations belong to different shader stages and cannot compile together; they are kept in one file to show the syntax.
+#extension GL_KHR_vulkan_glsl : enable
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_buffer_reference : require
+#extension GL_EXT_buffer_reference2 : require
+#extension GL_EXT_shader_explicit_arithmetic_types : require
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
+#extension GL_KHR_shader_subgroup_arithmetic : require
+#extension GL_KHR_shader_subgroup_ballot : require
+#extension GL_EXT_ray_tracing : require
+#extension GL_EXT_ray_query : require
+#extension GL_EXT_mesh_shader : require
+#extension GL_EXT_debug_printf : enable
+#extension GL_EXT_scalar_block_layout : enable
+#include "common.glsl"
+
+layout(set = 0, binding = 0) uniform texture2D uSeparateTexture;
+layout(set = 0, binding = 1) uniform sampler uSeparateSampler;
+layout(set = 0, binding = 2) uniform sampler2D uTextures[];
+layout(set = 0, binding = 3, input_attachment_index = 0) uniform subpassInput uSubpass;
+layout(set = 1, binding = 0, scalar) buffer ScalarBlock { vec3 packedPositions[]; } scalarBuffer;
+layout(set = 1, binding = 1) uniform accelerationStructureEXT uTlas;
+layout(push_constant, std430) uniform PushConstants { uint64_t address; float16_t scale; int8_t flag; uint16_t index; } pc;
+layout(constant_id = 1) const bool kUseFast = true;
+layout(constant_id = 2) const float kScale = 1.0;
+layout(local_size_x_id = 3, local_size_y_id = 4, local_size_z = 1) in;
+
+layout(buffer_reference, std430, buffer_reference_align = 16) readonly buffer VertexBuffer {
+    vec4 vertices[];
+};
+layout(buffer_reference) buffer NodeRef;
+layout(buffer_reference, std430) buffer NodeRef { NodeRef next; int value; };
+
+layout(location = 0) rayPayloadEXT vec4 hitPayload;
+layout(location = 1) rayPayloadInEXT vec4 incomingPayload;
+layout(location = 2) callableDataEXT vec4 callData;
+layout(location = 3) callableDataInEXT vec4 callDataIn;
+hitAttributeEXT vec2 barycentrics;
+taskPayloadSharedEXT uint taskData;
+layout(location = 0) perprimitiveEXT out vec4 primColor[];
+layout(location = 1) out vec4 vertexColor[];
+layout(triangles, max_vertices = 64, max_primitives = 126) out;
+
+float16_t half = 1.0hf;
+f16vec3 halfVec = f16vec3(1.0hf);
+int8_t i8 = int8_t(1);
+uint16_t u16 = uint16_t(2us);
+int64_t i64 = 3l;
+uint64_t u64 = 4ul;
+float32_t f32 = 1.0f;
+float64_t f64 = 1.0lf;
+
+void vulkanStage() {
+    vec4 c = texture(sampler2D(uSeparateTexture, uSeparateSampler), vec2(0.5));
+    vec4 d = texture(uTextures[nonuniformEXT(pc.index)], vec2(0.5));
+    vec4 e = subpassLoad(uSubpass);
+    VertexBuffer vb = VertexBuffer(pc.address);
+    vec4 first = vb.vertices[gl_VertexIndex];
+    uint lane = gl_SubgroupInvocationID;
+    uint size = gl_SubgroupSize;
+    float sum = subgroupAdd(first.x) + subgroupMin(first.y) + subgroupMax(first.z) + subgroupBroadcastFirst(first.w);
+    uvec4 ballot = subgroupBallot(sum > 0.0);
+    bool elected = subgroupElect();
+    subgroupBarrier(); subgroupMemoryBarrier();
+    debugPrintfEXT("value %f at %d", sum, int(lane));
+}
+
+void rayStage() {
+    uint rayFlags = gl_RayFlagsOpaqueEXT | gl_RayFlagsTerminateOnFirstHitEXT;
+    traceRayEXT(uTlas, rayFlags, 0xFF, 0, 0, 0, gl_WorldRayOriginEXT, 0.001, gl_WorldRayDirectionEXT, 100.0, 0);
+    executeCallableEXT(0, 2);
+    vec3 origin = gl_ObjectRayOriginEXT + gl_ObjectRayDirectionEXT * gl_HitTEXT;
+    uint id = gl_InstanceCustomIndexEXT + gl_InstanceID + gl_PrimitiveID + gl_GeometryIndexEXT;
+    uvec3 launch = gl_LaunchIDEXT + gl_LaunchSizeEXT;
+    float tMin = gl_RayTminEXT, tMax = gl_RayTmaxEXT;
+    mat4x3 o2w = gl_ObjectToWorldEXT;
+    mat4x3 w2o = gl_WorldToObjectEXT;
+    reportIntersectionEXT(1.0, 0u);
+    ignoreIntersectionEXT;
+    terminateRayEXT;
+    rayQueryEXT rq;
+    rayQueryInitializeEXT(rq, uTlas, gl_RayFlagsNoneEXT, 0xFF, origin, 0.0, vec3(0.0, 0.0, 1.0), 10.0);
+    while (rayQueryProceedEXT(rq)) {
+        if (rayQueryGetIntersectionTypeEXT(rq, false) == gl_RayQueryCandidateIntersectionTriangleEXT) {
+            rayQueryConfirmIntersectionEXT(rq);
+        }
+    }
+    rayQueryTerminateEXT(rq);
+}
+
+void meshStage() {
+    SetMeshOutputsEXT(3, 1);
+    gl_MeshVerticesEXT[0].gl_Position = vec4(0.0);
+    gl_PrimitiveTriangleIndicesEXT[0] = uvec3(0, 1, 2);
+    gl_MeshPrimitivesEXT[0].gl_PrimitiveID = 0;
+    EmitMeshTasksEXT(1, 1, 1);
+}
+
+void invariantAndPrecise() {
+    invariant gl_Position;
+    precise float p = 1.0;
+}
+
+// ── Preprocessor additions ──
+#define VERSION_STRING "4.60"
+#if defined(SHOWCASE_NEVER_DEFINED) && __VERSION__ >= 460
+#error "diagnostic example, never compiled"
+#endif
+#ifdef GL_EXT_ray_tracing
+#pragma shader_stage(fragment)
+#endif
+#line 200 "generated.glsl"

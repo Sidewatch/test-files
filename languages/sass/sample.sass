@@ -1,3 +1,4 @@
+// Sass 1.93 (Dart Sass, indented syntax) — syntax showcase
 // ── Comments ──
 // Sass (indented syntax) showcase for a warehouse dashboard.
 // Silent comment: removed from the CSS output. TODO: theme tokens. FIXME: legacy ie rules.
@@ -368,3 +369,193 @@ $side: left
   filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#80000000', endColorstr='#80000000')
   display: none !important
   color: red !IMPORTANT
+
+// ── Modern module functions (modules are loaded by the @use rules at the top of the file) ──
+
+.modern
+  a: math.clamp(0, 5, 10)
+  b: math.hypot(3, 4)
+  c: math.log(8, 2)
+  d: math.$pi + math.$e
+  e: math.max(1px, 2px)
+  f: math.min(1px, 2px)
+  g: math.abs(-1px)
+  h: math.ceil(1.2) + math.floor(1.8) + math.round(1.5)
+  i: math.sqrt(16) + math.pow(2, 3) + math.sin(0deg) + math.cos(0deg) + math.tan(0deg)
+  j: math.atan2(1, 1) + math.asin(1) + math.acos(1) + math.atan(1)
+  k: math.unit(1px) + math.is-unitless(1)
+  l: math.compatible(1px, 1in) + math.percentage(0.5)
+  m: math.random(10) + math.random()
+  n: color.channel(#336699, "red") + color.channel(#336699, "hue", $space: hsl)
+  o: color.adjust(#336699, $lightness: 10%, $alpha: -0.2)
+  p: color.change(#336699, $red: 10, $space: rgb)
+  q: color.scale(#336699, $saturation: 20%)
+  r: color.mix(red, blue, 30%, $method: oklch)
+  s: color.to-space(#336699, oklch)
+  t: color.space(oklch(60% 0.1 200))
+  u: color.is-legacy(#336699)
+  v: color.same(#336699, rgb(51 102 153))
+  w: color.is-in-gamut(color(display-p3 1 0 0))
+  x: color.to-gamut(color(display-p3 1 0 0), $method: local-minde)
+  y: color.invert(#336699) + color.grayscale(#336699) + color.complement(#336699)
+  z: oklch(60% 0.15 200) + lab(50% 20 -30) + color(srgb 0.2 0.4 0.6) + hwb(200 10% 20%) + color-mix(in oklch, red, blue)
+
+.meta
+  a: meta.type-of(1px) + meta.inspect((a: 1))
+  b: meta.feature-exists(global-variable-shadowing) + meta.variable-exists(x) + meta.global-variable-exists(x)
+  c: meta.function-exists(sum) + meta.mixin-exists(rounded) + meta.module-variables("t")
+  d: meta.call(meta.get-function("sum"), 1, 2)
+  e: meta.keywords((a: 1)) + meta.calc-name(calc(1px + 2px))
+  f: meta.calc-args(calc(1px + 2px))
+
+@include meta.load-css("theme", $with: (primary: #336699))
+@include meta.apply(meta.get-mixin("rounded"), 4px)
+
+// ── Argument forms: keyword, rest, spread, content arguments ──
+@function pick($a, $b: 2, $rest...)
+  @return $a + $b + list.length($rest)
+
+@mixin with-kw($args...)
+  kw: meta.keywords($args)
+  @content($args...)
+
+.args
+  a: pick(1)
+  b: pick(1, 2, 3, 4)
+  c: pick($b: 5, $a: 1)
+  d: pick($list-comma...)
+  e: pick((a: 1, b: 2)...)
+  @include with-kw(1, 2, $x: 3) using ($one, $two, $x: null)
+    inner: $one $two $x
+
+// ── Old indented-syntax conveniences ──
+.legacy-syntax
+  :color red
+  background:
+    color: blue
+    image: url("a.png")
+  +rounded(4px)
+  +theme(#fff, $extra...)
+    color: black
+  width: 1px + 2px,
+    3px + 4px
+  selector-one,
+  selector-two
+    color: green
+
+=old-mixin($a, $b: 2)
+  width: $a
+  height: $b
+
+.uses-old
+  +old-mixin(1)
+  +old-mixin(1, $b: 3)
+
+// ── Selectors, at-root, and extend variations ──
+.parent
+  @at-root #{&}__element
+    color: red
+  @at-root (without: media)
+    .escaped-media
+      color: blue
+  @at-root (with: rule)
+    .keep-rule
+      color: green
+  &-suffix, &:hover, &.cls, &[attr], &::after
+    color: orange
+  @extend %message-shared, .another !optional
+  :is(&, .other) &
+    color: purple
+  @media (min-width: 40em)
+    &
+      color: pink
+  @supports (display: grid)
+    &
+      display: grid
+
+@media #{$query} and (min-width: 40em)
+  .interpolated-query
+    color: red
+
+@media screen and (min-width: math.div(640px, 1))
+  .computed-query
+    color: red
+
+@supports not (display: grid)
+  .no-grid
+    float: left
+
+@-moz-document url-prefix()
+  .moz
+    color: red
+
+@include keyframes(spin)
+  from
+    transform: rotate(0)
+  to
+    transform: rotate(1turn)
+
+// ── Strings, urls, numbers, lists, maps ──
+.values
+  s1: "double" 'single' unquoted
+  s2: "with \"escapes\" and \\ and \a  unicode \1F4E6"
+  s3: "interp #{1 + 1}" + 'x'
+  u1: url(unquoted/path.png)
+  u2: url("quoted.png")
+  u3: url($url-base + "x.png")
+  n1: 1 + 2 - 3 * 4
+  n2: 1px + 2px
+  n3: 10px * 2
+  n4: math.div(10px, 2)
+  n5: 5 % 3
+  n6: 1e3 + 1E-3 + .5 + 5.
+  n7: 1/2
+  n8: (1/2)
+  n9: #{1/2}
+  l1: 1 2 3
+  l2: 1, 2, 3
+  l3: [1 2 3]
+  l4: [1, 2, 3]
+  l5: (1 2 3)
+  l6: ()
+  l7: (1,)
+  m1: (a: 1, b: 2)
+  m2: (a: (b: (c: 1)))
+  m3: ("quoted": 1, 2: two, (1 2): list, null: x)
+  b1: true and false or not true
+  b2: 1 == 1 and 2 != 3 and 3 < 4 and 4 <= 5 and 5 > 4 and 5 >= 5
+  c1: #fff #ffffff #ffffffff #fffa red rgb(1 2 3) rgba(1, 2, 3, 0.5) hsl(1deg 2% 3%) hsla(1, 2%, 3%, 0.5)
+  c2: rgb(from red r g b / 50%) + color-mix(in srgb, red 30%, blue)
+  p1: -webkit-box + -moz-appearance + --custom + $var + -$var + +$var + (-$var)
+  important: red !important
+  important-interp: red #{"!important"}
+
+// ── Custom properties with interpolation and arbitrary values ──
+:root
+  --plain: red
+  --interp: #{$primary}
+  --calc: calc(100% - #{$spacing})
+  --json: [1, 2, 3]
+  --block: { a: b }
+  --empty:
+  --spaces:   lots   of   space
+  --url: url(x.png)
+  --string: "a string"
+  --math: #{math.div(1, 3)}
+  --nested: var(--plain, var(--fallback, red))
+  --ref: #{map.get($breakpoints, medium)}
+
+// ── Forward and use with configuration ──
+// A real file must put @use and @forward before every other rule (only @charset and variable
+// declarations may precede them); they are repeated here so the forms are all visible.
+@forward "library" with ($primary: blue !default, $radius: 2px)
+@forward "theme" as theme-* hide internal-fn show public-fn, $public-var
+@use "library" as lib with ($primary: #336699)
+@use "sass:math" as m
+
+.config
+  a: lib.$primary
+  b: lib.radius()
+  @include lib.rounded
+  c: m.div(1, 2)
+

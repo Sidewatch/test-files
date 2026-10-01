@@ -1,3 +1,4 @@
+;;; CLIPS 6.4.2 — syntax showcase
 ;;; CLIPS expert system: warehouse reorder advisor.
 ;;; Semicolons start comments that run to the end of the line.
 ;;; TODO: load the thresholds from a file.
@@ -240,3 +241,153 @@
 (bind ?unicode "café – ünïcode")
 (printout t "Done" crlf)
 ; TODO: split the rule base into modules per department.
+
+; ── CLIPS 6.4: fact-set and instance-set queries ────────────────────
+(deffunction fact-queries ()
+   (any-factp ((?f item)) (< ?f:qty 5))
+   (find-fact ((?f item)) (eq ?f:sku A-100))
+   (find-all-facts ((?f item)) (> ?f:qty 10))
+   (do-for-fact ((?f item)) (eq ?f:sku B-200) (printout t ?f:name crlf))
+   (do-for-all-facts ((?a item) (?b item)) (and (neq ?a ?b) (eq ?a:category ?b:category))
+      (printout t ?a:sku " " ?b:sku crlf))
+   (delayed-do-for-all-facts ((?f item)) (= ?f:qty 0) (retract ?f))
+   (any-instancep ((?p PERSON)) (> ?p:age 65))
+   (find-instance ((?p PERSON)) (eq ?p:name "Alice"))
+   (find-all-instances ((?p PERSON)) TRUE)
+   (do-for-instance ((?p PERSON)) (eq ?p:name "Bob") (send ?p greet))
+   (do-for-all-instances ((?p PERSON)) TRUE (send ?p greet))
+   (delayed-do-for-all-instances ((?p PERSON)) (< ?p:age 18) (send ?p delete)))
+
+; ── Generic functions and methods with restrictions ─────────────────
+(defgeneric combine)
+(defmethod combine ((?a INTEGER) (?b INTEGER)) (+ ?a ?b))
+(defmethod combine ((?a NUMBER) (?b NUMBER)) (+ ?a ?b))
+(defmethod combine ((?a STRING) (?b STRING)) (str-cat ?a ?b))
+(defmethod combine ((?a SYMBOL) $?rest) (create$ ?a ?rest))
+(defmethod combine ((?a LEXEME (neq ?a none)) (?b MULTIFIELD)) (create$ ?a ?b))
+(defmethod combine ((?a INTEGER (> ?a 0)) (?b FLOAT)) (call-next-method))
+(defmethod combine 5 ((?a PERSON) (?b PERSON)) (str-cat ?a:name ?b:name))
+(defmethod combine (?x ?y) (override-next-method ?x ?y))
+
+; ── Classes: facets, handlers of every type, accessors ──────────────
+(defclass ANIMAL
+   (is-a USER)
+   (role abstract)
+   (pattern-match non-reactive)
+   (slot name (access read-only) (storage local) (visibility public) (create-accessor read) (override-message name-changed))
+   (slot legs (type INTEGER) (default 4) (propagation inherit) (source composite) (access initialize-only))
+   (slot owner (type INSTANCE-NAME) (default [nobody]))
+   (multislot tags (default-dynamic (create$)) (cardinality 0 10))
+   (slot weight (type FLOAT NUMBER) (range 0.0 ?VARIABLE) (access read-write) (storage shared)))
+
+(defclass DOG
+   (is-a ANIMAL)
+   (role concrete)
+   (slot breed (type SYMBOL) (allowed-symbols lab collie other) (default other)))
+
+(defmessage-handler ANIMAL speak primary () (printout t "..." crlf))
+(defmessage-handler DOG speak primary () (printout t "Woof" crlf))
+(defmessage-handler DOG speak before () (printout t "[before] "))
+(defmessage-handler DOG speak after () (printout t " [after]" crlf))
+(defmessage-handler DOG speak around () (call-next-handler))
+(defmessage-handler DOG init after () (printout t "initialised" crlf))
+(defmessage-handler DOG delete before () (printout t "deleting" crlf))
+(defmessage-handler DOG put-name primary (?value) (dynamic-put name ?value))
+(defmessage-handler DOG get-name primary () (dynamic-get name))
+(defmessage-handler DOG describe primary ($?extras)
+   (printout t ?self:name " (" ?self:breed ") " ?extras crlf)
+   (bind ?x (override-next-handler))
+   (next-handlerp))
+
+(definstances dogs
+   (rex of DOG (name "Rex") (breed lab))
+   ([fido] of DOG (name "Fido") (tags small friendly)))
+
+(deffunction message-demo ()
+   (make-instance rex2 of DOG (name "Rex2"))
+   (send [rex2] speak)
+   (send [rex2] put-name "Renamed")
+   (send (instance-address * [rex2]) describe 1 2 3)
+   (slot-direct-accessor DOG breed)
+   (ppinstance)
+   (instances)
+   (unmake-instance [rex2])
+   (class-existp DOG)
+   (subclassp DOG ANIMAL)
+   (class-subclasses ANIMAL inherit)
+   (message-handler-existp DOG speak primary)
+   (list-defmessage-handlers DOG inherit)
+   (undefclass DOG)
+   (undefinstances dogs))
+
+; ── Modules: every import/export form ───────────────────────────────
+(defmodule INVENTORY
+   (export deftemplate item reorder)
+   (export defclass ?ALL)
+   (export deffunction average)
+   (export defgeneric combine)
+   (export defglobal ?NONE))
+
+(defmodule ORDERS
+   (import INVENTORY deftemplate item)
+   (import INVENTORY defclass ?ALL)
+   (import INVENTORY deffunction ?ALL)
+   (import INVENTORY ?ALL))
+
+(deftemplate INVENTORY::stocked (slot sku))
+(defrule ORDERS::place-order
+   (declare (salience -10) (dynamic-salience TRUE))
+   (INVENTORY::item (sku ?s) (qty 0))
+   =>
+   (focus INVENTORY ORDERS)
+   (printout t "ordering " ?s crlf)
+   (get-current-module)
+   (set-current-module ORDERS))
+
+; ── Activation control, strategies and tracing ──────────────────────
+(deffunction control-surface ()
+   (set-strategy simplicity)
+   (set-strategy complexity)
+   (set-strategy lex)
+   (set-strategy mea)
+   (set-strategy random)
+   (set-strategy breadth)
+   (set-incremental-reset TRUE)
+   (set-fact-duplication FALSE)
+   (set-dynamic-constraint-checking TRUE)
+   (set-static-constraint-checking FALSE)
+   (set-reset-globals TRUE)
+   (set-sequence-operator-recognition TRUE)
+   (set-conserve-memory TRUE)
+   (watch all) (watch facts) (watch activations) (watch compilations) (watch statistics)
+   (watch focus) (watch globals) (watch instances) (watch slots) (watch messages)
+   (watch message-handlers) (watch generic-functions) (watch methods) (watch deffunctions)
+   (unwatch facts)
+   (run 10) (run -1)
+   (agenda INVENTORY)
+   (refresh-agenda)
+   (halt)
+   (save-facts "facts.dat" local) (load-facts "facts.dat") (save "kb.clp") (bsave "kb.bin") (bload "kb.bin")
+   (checkpoint) (get-auto-float-dividend) (set-auto-float-dividend TRUE)
+   (defrule-module low-stock) (list-defmodules) (get-defmodule-list))
+
+; ── Rule conditional elements and expressions in full ───────────────
+(defrule all-conditional-elements
+   (declare (salience 0) (auto-focus FALSE) (node-index-hash FALSE))
+   ?a <- (item (sku ?s) (qty ?q&:(> ?q 0)))
+   ?b <- (reorder (sku ?s))
+   (item (sku ?other&~?s) (qty =(+ ?q 1)))
+   (item (sku ?s2) (qty ?q2&:(and (>= ?q2 1) (<= ?q2 10) (neq ?q2 5))))
+   (or (and (item (sku A-100)) (item (sku B-200))) (not (item)))
+   (exists (item (sku ?e)) (reorder (sku ?e)))
+   (forall (item (sku ?f)) (reorder (sku ?f)))
+   (logical (item (sku ?l)) (and (reorder (sku ?l))))
+   (test (> ?q 0))
+   (not (item (sku ?s) (qty ?z&:(< ?z 0))))
+   =>
+   (retract ?a ?b)
+   (assert (item (sku new) (qty (+ ?q 1))) (reorder (sku ?s) (amount 1)))
+   (modify ?a (qty (- ?q 1)) (tags a b))
+   (duplicate ?a (sku copy))
+   (printout t "done" crlf)
+   (return))

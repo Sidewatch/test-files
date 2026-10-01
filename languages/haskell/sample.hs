@@ -1,3 +1,9 @@
+-- Haskell (GHC 9.12, GHC2024 language edition) — syntax showcase
+{-# LANGUAGE GHC2024 #-}
+{-# LANGUAGE OrPatterns, MultilineStrings, NamedDefaults, RequiredTypeArguments, TypeAbstractions #-}
+{-# LANGUAGE ExtendedLiterals, TypeData, LinearTypes, OverloadedLabels, OverloadedRecordDot #-}
+{-# LANGUAGE QuantifiedConstraints, ImpredicativeTypes, LexicalNegation, HexFloatLiterals, NegativeLiterals #-}
+{-# LANGUAGE ApplicativeDo, StrictData, UnliftedNewtypes, StaticPointers, Safe #-}
 {-# LANGUAGE LambdaCase, BinaryLiterals, NumericUnderscores #-}
 {-# LANGUAGE ScopedTypeVariables, TupleSections #-}
 {-# LANGUAGE GADTs, KindSignatures, RankNTypes #-}
@@ -545,3 +551,100 @@ cppFeature = "new base"
 cppFeature :: String
 cppFeature = "old base"
 #endif
+
+-- ── GHC 9.6–9.12 additions ──
+-- Or-patterns (9.12): alternatives sharing one right-hand side
+orPattern :: Status -> Bool
+orPattern (Pending; Paid) = True
+orPattern _ = False
+
+-- Multiline string literals (9.12)
+banner :: String
+banner = """
+  Welcome to the warehouse.
+    Indentation relative to the closing quotes is kept.
+  Escapes like \t and quotes " work.
+  """
+
+-- Required type arguments (9.10): a visible forall
+sizeOfType :: forall a -> Show a => String
+sizeOfType a = "type argument"
+
+useRequired :: String
+useRequired = sizeOfType Int
+
+-- Type abstractions in constructor patterns and lambdas (9.8+)
+tyAbs :: Maybe Int -> Int
+tyAbs (Just @Int n) = n
+tyAbs Nothing = 0
+
+tyAbsLam :: Int
+tyAbsLam = (\ @a (x :: a) -> x) 1
+
+-- Extended literals (9.8)
+extLits :: (Int, Int)
+extLits = (0x01#Int8 `seq` 1, 0xFF#Word8 `seq` 2)
+
+-- type data (9.6): constructors live only at the type level
+type data Universe = Planet | Moon
+
+data Body (u :: Universe) where
+  MkPlanet :: Body Planet
+  MkMoon :: Body Moon
+
+-- Linear types
+linearSwap :: (a, b) %1 -> (b, a)
+linearSwap (a, b) = (b, a)
+
+linearMany :: a %Many -> a
+linearMany x = x
+
+polyMult :: forall (m :: Multiplicity) a. a %m -> a
+polyMult x = x
+
+-- Named defaults (9.12)
+default Show (Integer, Double)
+
+-- Overloaded labels, record dot sections, quantified constraints
+label' :: IsLabel "name" a => a
+label' = #name
+
+dotSection :: [Person] -> [String]
+dotSection = map (.name)
+
+nestedDot :: Person -> Int
+nestedDot p = p.age + 1
+
+newtype Fix' f = Fix' (f (Fix' f))
+instance (forall a. Show a => Show (f a)) => Show (Fix' f) where
+  showsPrec d (Fix' x) = showParen (d > 10) (showString "Fix' " . showsPrec 11 x)
+
+-- Lexical negation, hex floats, applicative do
+lexNeg :: Int
+lexNeg = (- 1) + -2
+
+hexFloat :: Double
+hexFloat = 0x1.8p3
+
+appDo :: Maybe Int
+appDo = do
+  x <- Just 1
+  y <- Just 2
+  pure (x + y)
+
+-- Static pointers, impredicative types, standalone kind signatures
+impredicative :: Maybe (forall a. [a] -> [a])
+impredicative = Just reverse
+
+-- Deriving with explicit type applications and empty deriving
+data Unit' = Unit' deriving ()
+data Color' = Red' | Green' deriving stock (Show, Eq, Enum, Bounded)
+
+-- Multi-way if inside do, let with guards, operator sections with backticks
+guardLet :: Int -> String
+guardLet n = let f x | x > 0 = "pos" | otherwise = "non-pos" in f n
+
+-- Arrow-style where with typeclass defaulting
+typeclassDefault :: String
+typeclassDefault = show (2 ^ 10)
+

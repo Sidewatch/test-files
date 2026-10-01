@@ -1,3 +1,4 @@
+// ReScript 12 — syntax showcase
 // ── Comments ──
 // ReScript showcase: warehouse inventory compiled to JS.
 // TODO: persist orders. FIXME: partial match in `parse`.
@@ -12,7 +13,7 @@
 
 // ── Opens, modules ──
 open Belt
-open! Js.Array2
+open! Js.Array2 // deprecated: prefer the Array module
 module L = Belt.List
 include Belt.Result
 
@@ -119,7 +120,6 @@ type jsObject = {"sku": string, "qty": int}
 type withConstraint<'a> = array<'a> constraint 'a = int
 type opaque = private string
 type promiseOfInt = promise<int>
-type uncurried = (. int) => int
 
 exception OutOfStock(string)
 exception Invalid
@@ -145,16 +145,15 @@ and isEven = n => n == 0 ? true : isOdd(n - 1)
 and isOdd = n => n == 0 ? false : isEven(n - 1)
 let placeholder = Array.map([1, 2, 3], x => x + 1)
 let pipeFirst = [1, 2, 3]->Array.map(x => x * 2)->Array.length
-let pipeLast = [1, 2, 3] |> Array.length
 let withPlaceholder = [1, 2, 3]->Array.reduce(0, (a, b) => a + b)
 let underscore = Array.map(_, x => x)
 let polymorphic: 'a. 'a => 'a = x => x
-let async fetchAll = async () => {
+let fetchOne = async () => 1
+let fetchAll = async () => {
   let a = await fetchOne()
   let b = await Promise.resolve(2)
   a + b
 }
-and fetchOne = async () => 1
 
 // ── Pattern matching ──
 let describe = order =>
@@ -276,8 +275,7 @@ let control = n => {
   let ternary = n > 0 ? "yes" : "no"
   ignore(ternary)
   assert(n != 99)
-  let lazyValue = lazy (n + 1)
-  Lazy.force(lazyValue)
+  Console.log("done")
 }
 
 // ── Operators ──
@@ -356,3 +354,173 @@ let orders = [
 
 orders->Array.forEach(o => Console.log(describe(o)))
 Console.log(`revenue: ${revenue(orders)->Float.toString}`)
+
+// ── Type spreads, tags, and inline records ──
+type point3 = {...point, z: float}
+type moreStatus =
+  | ...status
+  | Refunded(float)
+@tag("kind")
+type shape =
+  | @as("circle") Circle({radius: float})
+  | @as("rect") Rect({width: float, height: float})
+type inlineRec = Move({x: int, y: int}) | Stop
+type recursiveVariant = Num(int) | Add(recursiveVariant, recursiveVariant) | Mul(recursiveVariant, recursiveVariant)
+type nestedGeneric<'a, 'b> = array<option<result<'a, 'b>>>
+type withDefaults = {name: string, age?: int}
+type taggedUnion<'a> = | One('a) | Many(array<'a>)
+type objectTypeOpen = {..}
+type module_ = module(Priced)
+type abstractMod
+type asyncFn = int => promise<int>
+
+// ── First-class modules and module features ──
+module type Shape = {
+  type t
+  let area: t => float
+}
+module Circle: Shape with type t = float = {
+  type t = float
+  let area = r => 3.14 *. r *. r
+}
+let firstClass = module(Circle: Shape with type t = float)
+module Unpacked = unpack(firstClass: Shape with type t = float)
+module FunctorApplied = MakeCounter({
+  let initial = 0
+})
+module Aliased = Money
+module type OfModule = module type of Money
+module Nested = {
+  module Inner = {
+    let value = 1
+  }
+  include Inner
+  open Belt.Array
+}
+module Constrained: {
+  type t = private int
+  let make: int => t
+} = {
+  type t = int
+  let make = x => x
+}
+module type WithTypeConstraints = Priced with type t := int
+
+// ── Expression forms ──
+let blockExpr = {
+  let a = 1
+  let b = {
+    let c = 2
+    c * 2
+  }
+  a + b
+}
+let tupleDestructure = {
+  let (a, b) = (1, 2)
+  let {number, total, _} = orders->Array.getUnsafe(0)
+  let [first, second] = [1, 2]
+  let list{head, ...tail} = list{1, 2, 3}
+  (a, b, number, total, first, second, head, tail)
+}
+let chainedPipes = [1, 2, 3]->Array.map(x => x + 1)->Array.filter(x => x > 2)->Array.length
+let pipePlaceholder = [1, 2, 3]->Array.reduce(0, (acc, x) => acc + x)
+let labelledPipe = "abc"->String.slice(~start=0, ~end=2)
+let partialLabelled = Array.map(_, x => x * 2)
+let namedArgsPunned = (~a, ~b) => a + b
+let callPunnedArgs = { let a = 1; let b = 2; namedArgsPunned(~a, ~b) }
+let optionalArg = (~x=?, ()) => x
+let defaultArg = (~x=5, ()) => x
+let typedLabelled = (~x: int, ~y: option<int>=?, ()) => x
+let aliasLabel = (~value as v, ~other as o: int) => v + o
+let unitFn = () => ()
+let nestedFn = (a) => (b) => (c) => a + b + c
+let recordPun = {let number = 1; let total = 2.0; {number, total}}
+let recordSpreadUpdate = (o: order) => {...o, total: 0.0}
+let nestedRecord = {"a": {"b": {"c": 1}}}
+let nestedAccess = nestedRecord["a"]["b"]["c"]
+let indexAssign = (arr: array<int>) => arr[0] = 5
+let optionalChaining = (o: option<order>) => o->Option.flatMap(x => x.note)
+let polyvarWithPayload = #Rgb(1, 2, 3)
+let polyvarString = #"with-dash"
+let intLiteralVariants = (0b1010, 0o17, 0xAF, 1_000, 5., 5.0e3)
+let charRange = ('a', '\\')
+let unicodeEscapes = "\u00e9 \u{1F4E6} \x41 \101 \o101"
+let forLoop = for i in 0 to 2 { Console.log(i) }
+let whileLoop = { let i = ref(0); while i.contents < 2 { i := i.contents + 1 } }
+let switchOnTuple = switch (1, "a") {
+| (1, "a") => true
+| (_, _) => false
+}
+let switchWithGuards = x =>
+  switch x {
+  | n if n < 0 => "neg"
+  | 0 => "zero"
+  | n if n > 100 => "big"
+  | _ => "pos"
+  }
+let switchOnStringAndPolyvar = switch (#a, "b") {
+| (#a | #b, "b" | "c") => 1
+| _ => 0
+}
+let tryWith = try {
+  JSON.parseExn("{")
+} catch {
+| JsExn(e) => JSON.Null
+| _ => JSON.Null
+}
+let catchPromise = async () => {
+  try {
+    await Promise.reject(Failure("x"))
+  } catch {
+  | Failure(msg) => msg
+  | _ => ""
+  }
+}
+let asyncBlock = async () => {
+  let results = await Promise.all([Promise.resolve(1), Promise.resolve(2)])
+  results
+}
+let optionals = (Some(1), None, Some(Some(2)), Ok(1), Error("e"))
+let unaryOps = (-1, -1.0, !true, -.1.0)
+let compareOps = (1 < 2, 1 > 2, 1 <= 2, 1 >= 2, 1 == 1, 1 != 2, 1 === 1, 1 !== 2)
+let stringConcat = "a" ++ "b" ++ "c"
+let ternaryNested = true ? (false ? 1 : 2) : 3
+let ifExpression = if true { 1 } else if false { 2 } else { 3 }
+let ifWithoutElse = if true { Console.log("x") }
+let uncurriedCall = add(1, 2)
+let arrayOfFns = [x => x + 1, x => x * 2]
+let applyAll = arrayOfFns->Array.map(f => f(1))
+let spreadInList = list{1, 2, ...list{3, 4}}
+let genericFn = (type a, x: a): a => x
+let asAlias = switch Some(5) {
+| Some(n) as whole => (n, whole)
+| None as nothing => (0, nothing)
+}
+let exceptionInSwitch = switch Array.getUnsafe([1], 0) {
+| value => value
+| exception Not_found => 0
+}
+
+// ── Decorators and directives ──
+@@jsxConfig({version: 4, mode: "automatic"})
+@@directive("use client")
+@@warning("-44")
+@live let kept = 1
+@dead let removable = 2
+@deprecated("use something else") let old = 4
+@unboxed type wrapper = Wrapper(string)
+@variadic @module("path") external joinAll: array<string> => string = "join"
+@return(nullable) @get external maybeLength: array<int> => option<int> = "length"
+@set external setLength: (array<int>, int) => unit = "length"
+@get_index external getAt: (array<int>, int) => int = ""
+@set_index external setAt: (array<int>, int, int) => unit = ""
+@module("fs") @val external readFileSync: (string, string) => string = "readFileSync"
+@val @scope("window") external alert: string => unit = "alert"
+@val @scope(("process", "env")) external env: dict<string> = "env"
+@module external lib: {"version": string} = "lib"
+@module("react") external useState: (unit => 'a) => ('a, ('a => 'a) => unit) = "useState"
+@react.component
+let counter = (~initial=0, ~onChange: int => unit=?) => {
+  let (count, setCount) = React.useState(() => initial)
+  <button onClick={_ => setCount(c => c + 1)}> {React.int(count)} </button>
+}

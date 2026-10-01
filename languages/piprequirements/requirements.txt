@@ -1,4 +1,4 @@
-# Requirements-file showcase: every specifier, marker and option.
+# pip 25.x requirements file format (PEP 440 versions, PEP 508 markers) — syntax showcase: every specifier, marker and option.
 # Runtime dependencies for the inventory service.
 -r base.txt
 --requirement extras/dev.txt
@@ -132,3 +132,112 @@ numpy==1.26.4 --hash=sha256:2222222222222222222222222222222222222222222222222222
 --root-user-action=ignore
 -v
 -q
+
+# ── pip 25 options ──
+--group dev
+--group ./packages/shared/pyproject.toml:test
+--upgrade
+-U
+--upgrade-strategy only-if-needed
+--force-reinstall
+--ignore-installed
+-I
+--ignore-requires-python
+--no-compile
+--compile
+--user
+--prefix /opt/inventory
+--src ./src
+--exists-action w
+--no-warn-script-location
+--break-system-packages
+--no-clean
+--keyring-provider subprocess
+--no-input
+--log pip.log
+--isolated
+--use-deprecated=legacy-resolver
+--use-feature=truststore
+--python /usr/bin/python3
+--only-binary=:all:
+--no-binary=:none:
+--no-binary :all:
+--require-virtualenv
+--report report.json
+--dry-run
+--config-settings editable_mode=compat
+-C --build-option=--parallel
+--global-option=--quiet
+-r https://example.com/requirements.txt
+-c https://example.com/constraints.txt
+
+# ── All environment-marker variables and operators ──
+a1; os_name == "posix"
+a2; sys_platform == "linux"
+a3; platform_machine == "x86_64" or platform_machine == "aarch64"
+a4; platform_python_implementation != "PyPy"
+a5; platform_release >= "5.0"
+a6; platform_system == "Darwin"
+a7; platform_version != ""
+a8; python_version >= "3.9" and python_version < "3.14"
+a9; python_full_version >= "3.9.1"
+b1; implementation_name == "cpython"
+b2; implementation_version >= "3.12"
+b3; extra == "test" or extra == 'docs'
+b4; "linux" in sys_platform
+b5; "win" not in sys_platform
+b6; "3.10" <= python_version
+b7; python_version in "3.10 3.11 3.12"
+b8; ('linux' == sys_platform and python_version >= '3.9') or (sys_platform == 'darwin' and platform_machine == 'arm64')
+b9; extra == "a-b" or extra == "a_b" or extra == "a.b"
+c1[extra-one,extra_two,extra.three]>=1; python_version >= "3.9"
+
+# ── PEP 440 version forms ──
+v1==1.0
+v2==1.0.0
+v3==1.0a1
+v4==1.0b2
+v5==1.0rc3
+v6==1.0.post1
+v7==1.0.dev1
+v8==1.0a1.post2.dev3
+v9==1!1.0
+w1==1.0+local
+w2==1.0+abc.123
+w3==1.*
+w4==1.0.*
+w5>=1.0.0rc1
+w6~=1.0
+w7~=1.0.0
+w8!=1.0.*
+w9<=2.0.0
+x1>1.0,<2.0
+x2<2.0,>1.0
+x3 >= 1.0 , < 2.0
+x4===1.0-anything
+x5==2024.1.1
+x6==2024.01.01
+x7 ( >= 1.0 )
+
+# ── URLs and paths with markers, extras and hashes ──
+y1[extra] @ https://example.com/y1-1.0.tar.gz ; python_version >= "3.9"
+y2 @ file:///opt/src/y2 ; sys_platform == "linux"
+y3 @ git+https://example.com/y3.git@main ; python_version < "3.13"
+y4 @ git+https://example.com/y4.git@refs/pull/1/head
+y5 @ git+ssh://git@example.com:22/y5.git@v1.0#subdirectory=pkg
+y6 @ ./local/path
+y7 @ ../relative/path
+y8 @ /absolute/path
+y9 @ https://user:example-not-a-real-key@example.com/y9.whl
+https://example.com/z1-1.0-py3-none-any.whl --hash=sha256:4444444444444444444444444444444444444444444444444444444444444444
+./z2 --config-settings editable_mode=strict
+z3 ; python_version >= "3.9" \
+    --hash=sha256:5555555555555555555555555555555555555555555555555555555555555555 \
+    --hash=sha512:66666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666
+
+# Comment with  trailing spaces and tabs	between words
+#no-space-comment
+	# indented comment
+  # another indented comment
+line-with-inline-comment==1.0   # comment here
+url-with-fragment @ https://example.com/p.whl#sha256=7777777777777777777777777777777777777777777777777777777777777777

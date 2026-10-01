@@ -1,3 +1,7 @@
+// Scala 3.7 — syntax showcase
+//> using scala 3.7
+//> using dep org.example::inventory:1.4.0
+//> using option -deprecation
 // ── Comments ──
 // Scala 3 showcase: a warehouse inventory library.
 // TODO: persist the stock. FIXME: partial match in `describe`.
@@ -51,7 +55,6 @@ object Literals:
   val doubleSuffix = 3.14d
   val exponent = 1.5e-3
   val exponent2 = 6.022E23
-  val noLeadingDigit = .5
   val boolTrue = true
   val boolFalse = false
   val nothing = null
@@ -59,7 +62,6 @@ object Literals:
   val char = 'x'
   val escapedChar = '\n'
   val unicodeChar = 'A'
-  val octalChar = '\101'
   val quoteChar = '\''
   val string = "A string with \"quotes\", a \\ backslash, \t tab, é unicode."
   val multiline = """Triple-quoted
@@ -356,7 +358,6 @@ object Effects:
     var i = 0
     while i < 3 do i += 1
     while (i > 0) { i -= 1 }
-    do { i += 1 } while (i < 3)
     return_(i)
 
   def return_(i: Int): Int = return i
@@ -390,12 +391,126 @@ object Derives:
   def sizeImpl[T: Type](using Quotes): Expr[Int] = Expr(1)
 
 // ── Scala 2 compatible forms still accepted by Scala 3 ──
+// ── Recent features (3.3 to 3.7) ──
+import scala.language.experimental.modularity
+import scala.language.experimental.into
+
+package object util:
+  def helper: Int = 1
+  val limit = 10
+
+abstract class Declared:
+  val abstractVal: Int
+  var abstractVar: String
+  def abstractDef: Boolean
+  val a, b = 1
+  var c, d: Int = 0
+  def self: this.type = this
+
+object Recent:
+  // named tuples
+  type Person = (name: String, age: Int)
+  val alice: Person = (name = "Alice", age = 30)
+  val aliceName = alice.name
+  def namedMatch(p: Person): String = p match
+    case (name = n, age = a) => s"$n is $a"
+  // literal, singleton, projected, refinement, compound and annotated types
+  type One = 1
+  type Hello = "hello"
+  type Yes = true
+  val anchor = Item("anchor", 1.0)
+  def single(v: anchor.type): anchor.type = v
+  trait Holder { type Inner; def inner: Inner }
+  type Projected = Holder#Inner
+  type Refined = Holder { type Inner = Int }
+  type Compound = Serializable with Comparable[?] // deprecated: use `&`
+  type Annotated = Int @unchecked
+  def annotated(xs: List[Int @unchecked]): Int = xs.head
+  // fewer braces: colon arguments
+  List(1, 2).foreach: x =>
+    println(x)
+  val mapped = List(1, 2).map:
+    _ + 1
+  val folded = List(1, 2).foldLeft(0): (acc, x) =>
+    acc + x
+  // conditional givens (3.6 syntax) and given patterns
+  given listShow: [A] => (s: Show[A]) => Show[List[A]] with
+    def show(as: List[A]): String = as.map(s.show).mkString(",")
+  given (using Show[Int]): Show[Option[Int]] = _.fold("none")(_.toString)
+  def givenPattern(opts: List[Int]): Unit =
+    for given Int <- opts do ()
+  // into and tracked modifiers (preview/experimental)
+  into class Target(val v: Int)
+  def takes(x: into Item): Unit = ()
+  class Service(tracked val dep: Show[Int])
+  // polymorphic and context function types, match types, inline control flow
+  val polyId: [T] => T => T = [T] => (x: T) => x
+  val ctxFun: Int ?=> String = summon[Int].toString
+  type Elem[X] = X match
+    case String => Char
+    case Array[t] => t
+  inline def pick(inline flag: Boolean): Int =
+    inline if flag then 1 else 2
+  inline def kind[T]: String = inline erasedValue[T] match
+    case _: Int => "int"
+    case _: String => "string"
+  // anonymous classes, constructor applications and `this`
+  class Parent(val n: Int)
+  trait Mix
+  class Child extends Parent(1) with Mix:
+    def me: this.type = this
+    def outerThis = Child.this
+    def up = super.toString
+  val anon = new Parent(2) with Mix
+  val anonBody = new Parent(3):
+    def extra = n + 1
+  object Singleton extends Parent(4)
+  // end markers
+  def endMarkers(n: Int): Int =
+    val r =
+      if n > 0 then
+        1
+      else
+        2
+      end if
+    for i <- 1 to 2 do
+      println(i)
+    end for
+    var k = 0
+    while k < 2 do
+      k += 1
+    end while
+    val m = n match
+      case 1 => "one"
+      case _ => "other"
+    end m
+    try
+      r
+    catch case _: Exception => 0
+    end try
+  end endMarkers
+  extension (s: String)
+    def twice = s + s
+  end extension
+  given Show[Boolean] with
+    def show(b: Boolean) = b.toString
+  end given
+end Recent
+
+// ── Imports: every form ──
+import scala.collection.immutable as imm
+import scala.collection.immutable.{List as L, Map as _, *}
+import scala.math.Ordering.Implicits.given
+import scala.math.Ordering.Implicits.{given Ordering[?]}
+import com.example.inventory.Recent.{Person, given}
+
 object Scala2:
   val wildcard = List(1).map { case x => x }
   import scala.collection.mutable.{Map => MMap, _}
   val withUnderscoreImport = MMap.empty[String, Int]
   def wildcardType(xs: List[_]) = xs.size
-  val eta = square _
+  def viewBounded[A <% Ordered[A]](a: A, b: A): Boolean = a < b // deprecated view bound
+  def lowerBound[A >: Null](a: A): A = a
   trait Marker extends scala.annotation.StaticAnnotation
   class Outer { class Inner; def m(i: this.Inner) = i }
   val hash = 1.##

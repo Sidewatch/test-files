@@ -1,6 +1,7 @@
-# syntax=docker/dockerfile:1.7
+# syntax=docker/dockerfile:1
 # escape=\
-# check=error=true
+# check=skip=JSONArgsRecommended,StageNameCasing;error=true
+# Dockerfile 1.x (BuildKit frontend) — syntax showcase
 
 # ── Comments ──
 # Comment line. TODO: pin digests. FIXME: slim the runtime image.
@@ -81,7 +82,7 @@ MAINTAINER Acme Ops <ops@example.com>
 FROM busybox:1.36@sha256:0000000000000000000000000000000000000000000000000000000000000000 AS pinned
 
 # ── Further instructions and flags ──
-FROM --platform=linux/arm64 --platform=$TARGETPLATFORM alpine:3.19 AS extras
+FROM --platform=$TARGETPLATFORM alpine:3.19 AS extras
 ARG TARGETARCH TARGETOS=linux
 ARG VERSION=1.0.0 \
     CHANNEL=stable
@@ -139,3 +140,25 @@ CMD [ "sh" , "-c" , "echo done" ]
 FROM scratch
 FROM alpine AS "quoted-stage"
 FROM ${REGISTRY:-docker.io}/library/${BASE_IMAGE:-alpine}:${TAG:-latest}
+
+# ── Recent additions (Dockerfile frontend 1.x) ──
+FROM --platform=$BUILDPLATFORM golang:1.25 AS recent
+COPY --parents --exclude=*.md --exclude=**/tmp ./src/**/*.go /app/
+ADD --unpack=true https://example.com/release.tar.gz /opt/release/
+ADD --exclude=*.log --checksum=sha256:0000000000000000000000000000000000000000000000000000000000000000 ["https://example.com/data.tgz", "/data/"]
+RUN --mount=type=bind,from=build,source=/opt/warehouse,target=/mnt/build \
+    --mount=type=cache,id=gomod,target=/go/pkg/mod,sharing=locked,uid=1000,mode=0755 \
+    --mount=type=secret,id=token,env=API_TOKEN,required=true \
+    --device=nvidia.com/gpu=all \
+    go build ./...
+RUN --mount=from=build,target=/x --network=default echo ok
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --start-interval=1s --retries=3 CMD ["true"]
+
+# ── Quoting and escapes ──
+LABEL a='single quoted' "double.key"="double \"quoted\" value" c=plain
+ARG QUOTED='single' OTHER="double"
+ENV SQ='it is single quoted' ESC_SPACE=two\ words
+WORKDIR '/opt/quoted dir'
+COPY 'src one' "dest two"
+RUN echo "double \" quote" 'single quote' escaped\ space \$dollar
+CMD echo a\ b

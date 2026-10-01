@@ -1,3 +1,4 @@
+## Velocity 2.4 — syntax showcase
 ## ── Comments ───────────────────────────────────────────────
 ## Velocity: the warehouse stock email. TODO: add the supplier block.
 #*
@@ -78,6 +79,7 @@
       <td>#money($lineTotal)</td>
       #if($foreach.first)<td>#badge("top" "gold")</td>#end
       #if($foreach.hasNext),#end
+      ## $velocityCount is deprecated since 2.0 (use $foreach.count)
       #if($velocityCount == 3)#break#end
     </tr>
   #end
@@ -165,3 +167,25 @@ $esc.html("<b>bold</b>") $date.format("yyyy-MM-dd", $date.date) $math.add(1, 2)
 $display.list($items) $number.format("0.0", 1.234) $sorter.sort($list)
 
 #stop
+
+## ── Additions: loop controls and braced forms ─────────────
+#foreach($a in [1..3])
+  #foreach($b in [1..3])
+    #if($b == 2)#break($foreach)#end
+    #if($a == 2)#continue#end
+    $a$b
+  #end
+#end
+#foreach($x in $list)
+  #if($foreach.last)last#{elseif}($foreach.hasNext)more#{else}none#{end}
+#end
+#set($i = 0)
+#set($i = $i + 1)
+$i #set($i = $i * 2) $i
+#{set}($braced = 1)
+#{macro}(braced $p)$p#{end}
+#{include}("a.txt")
+#{parse}("b.vm")
+#{evaluate}("$braced")
+#{define}($d)text#{end}
+#{break}

@@ -1,4 +1,5 @@
 #!/usr/bin/env coffee
+# CoffeeScript 2.7 (ES2022 output, JSX and BigInt literals) — syntax showcase
 # Warehouse inventory in CoffeeScript.
 # A hash starts a line comment. TODO: port the report to async/await.
 
@@ -445,3 +446,139 @@ import { a as aa, default as dd } from 'lib'
 debugger
 throw new Error "unreachable" unless true
 # TODO: replace the callback pyramids with async/await.
+
+# ── CoffeeScript 2.x: JSX, BigInt, tagged templates, async ──────────
+# JSX elements and fragments (2.6+)
+element = <div className="card" id={cardId}>Hello, {name}!</div>
+selfClosing = <input type="text" value={value} disabled />
+fragment = <>
+  <h1>Title</h1>
+  <p>Paragraph with {count} items</p>
+</>
+withProps = <Component {...props} key={id} onClick={(e) -> handle e}>
+  {child for child in children}
+</Component>
+conditionalJsx = <ul>
+  {if show then <li>shown</li> else null}
+  {<li key={i}>{x}</li> for x, i in items}
+</ul>
+namespaced = <svg:rect width="10" height="10" />
+dotted = <Lib.Widget label="dotted component" />
+
+# BigInt and numeric forms
+bigNumber = 12345678901234567890n
+bigHex = 0xFFn
+withSeparators = 1_000_000.000_1
+binaryBig = 0b1010_1010n
+octalBig = 0o777n
+
+# Tagged template literals and raw strings
+tagged = tag"template #{value} literal"
+raw = String.raw"C:\path\#{dir}"
+multiTagged = html"""
+  <p>#{text}</p>
+"""
+
+# async/await in every position
+fetchAll = (urls) ->
+  results = await Promise.all (fetch url for url in urls)
+  await Promise.all (r.json() for r in results)
+asyncArrow = => await work()
+asyncMethod = class Api
+  load: -> await @client.get '/stock'
+  @create: -> await new Api().init()
+for await chunk from stream
+  console.log chunk
+asyncGenerator = ->
+  for await line from reader
+    yield line.trim()
+dynamic = await import('./lazy.js')
+topLevel = await Promise.resolve 42
+
+# Optional chaining forms and nullish assignment
+a?.b
+a?[0]
+a?.b?.c?()
+a?.b = 1
+a?.b ?= 2
+a ?= 3
+a.b ?= 4
+a[b] ?= 5
+a ?? b
+a?.b?.c ? 'fallback'
+delete a?.b
+fn?.()
+fn?.call this
+
+# Destructuring everywhere
+{a, b: {c, d = 5}, e...} = source
+[first, [second, third], rest...] = nested
+{length} = 'string'
+{0: head, [list.length - 1]: tail} = list
+for {sku, qty} in items
+  console.log sku, qty
+for [key, value] in Object.entries obj
+  console.log key, value
+(({a, b}) -> a + b)({a: 1, b: 2})
+fn = ({a, b = 2}, [c, d] = [3, 4], rest...) -> [a, b, c, d, rest]
+try
+  risky()
+catch {message, code}
+  console.error message, code
+try risky() catch [first] then first
+
+# Classes: async/generator methods, super, static, bound
+class Service extends Base
+  @static: -> 'static'
+  @defaults: {timeout: 30}
+  constructor: (options = {}) ->
+    super options
+    {@timeout = 30, @retries = 3} = options
+  fetch: (url) -> await super.fetch url
+  generate: -> yield from @items
+  bound: => @value
+  'computed-name': -> 'ok'
+  "dynamic#{n}": -> n
+  get = -> 'method named get'
+  toString: -> "Service(#{@timeout})"
+
+# Spread, rest and object forms
+merged = {defaults..., overrides..., extra: 1}
+combined = [first..., middle..., last]
+call = fn a, args..., last
+new Thing args...
+Math.max nums...
+{a, b} = {a: 1, b: 2, c: 3}
+obj = {a, b, "quoted": 1, 'single': 2, 3: 'three', [computed]: 4, "interp#{x}": 5}
+
+# Chained comparisons, ranges and slices
+inBounds = 0 < x < 10
+chain = a < b <= c == d
+inclusive = [1..5]
+exclusive = [1...5]
+letters = ['a'..'e']
+descending = [5..1]
+withStep = [0..10] by 2
+slice = list[1..]
+spliceAssign = list[1..2] = ['x', 'y']
+removeSlice = list[0...1] = []
+
+# Existential and type operators
+exists = x?
+notExists = not x?
+typeof x
+x instanceof Y
+x not instanceof Y
+'key' of obj
+'key' not of obj
+3 in [1, 2, 3]
+3 not in [1, 2, 3]
+x is y
+x isnt y
+not x
+!x
+x and y or z
+x && y || z
+x ? y
+x or= y
+x and= z

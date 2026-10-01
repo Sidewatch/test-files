@@ -1,3 +1,4 @@
+%%% Erlang/OTP 28 — syntax showcase (erlc is not installed locally)
 %%% ── Comments ──
 %%% @doc A supervised stock store showing every Erlang syntactic category.
 %%% @author Acme Dev <dev@example.com>
@@ -336,3 +337,14 @@ debug(_) -> ok.
 -define(assertEq(A, B), (fun() -> true = (A =:= B) end)()).
 -define(MACRO_WITH_UNDERSCORE, _).
 -export([extras/0, guards/1, debug/1]).
+
+%% ── OTP 27/28 additions ──
+-nominal meters() :: integer().
+-nominal seconds() :: integer().
+
+otp28(List, Other) ->
+    Strict = [X * 2 || X <:- List],
+    Zipped = [{A, B} || A <- List && B <- Other],
+    StrictBin = << <<X>> || <<X>> <:= <<1, 2, 3>> >>,
+    StrictMap = #{K => V || K := V <:- [{a, 1}]},
+    {Strict, Zipped, StrictBin, StrictMap}.

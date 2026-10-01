@@ -1,4 +1,5 @@
-(* ── Comments ───────────────────────────────────────────────
+(* Wolfram Language 14.3 — syntax showcase
+   ── Comments ───────────────────────────────────────────────
    Wolfram Language: warehouse orders as associations, a query, and plots.
    TODO: cache the totals. FIXME: currency formatting.
    (* comments nest in Wolfram Language *)
@@ -292,6 +293,26 @@ Dynamic[Clock[]];
 Button["Reorder", Print["ordered"]];
 Export["orders.csv", Dataset[orders]];
 Import["https://example.com/stock.json", "RawJSON"];
+
+(* ── Additions: newer constructs ────────────────────────── *)
+(* ::Subsection:: *)
+withDelayed = With[{k := RandomInteger[10]}, {k, k}];
+echoed = 1 + 1 // Echo;
+echoFn = Range[3] // EchoFunction[Total];
+spliced = {1, Splice[{2, 3}], Nothing, 4};
+inactive = Inactive[Plus][1, 2] // Activate;
+labelled = Labeled[Plot[x, {x, 0, 1}], "line", Top];
+fromTemplate = TemplateApply["Hello `1`", {"world"}];
+templateSlots = TemplateObject[{"Item ", TemplateSlot["sku"]}];
+trueFalse = {TrueQ[True], BooleanQ[False], MemberQ[{1, 2}, 1], FreeQ[{1}, 2]};
+associationThread = AssociationThread[{"a", "b"} -> {1, 2}];
+groupedBy = GroupBy[Range[10], EvenQ -> Total];
+lookupFn = Lookup["a"][<|"a" -> 1|>];
+strictOps = {a =!= b, a === b, a \[Equal] b};
+arrayIdx = {{1, 2}, {3, 4}}[[All, 1]];
+pureAssoc = <|"f" -> (#^2 &)|>["f"][3];
+nestedFn = Function[{x}, Function[{y}, x + y]][1][2];
+directed = Graph[{1 -> 2, 2 -> 3}, VertexLabels -> "Name"];
 
 End[];
 EndPackage[];

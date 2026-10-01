@@ -1,4 +1,5 @@
 #!/usr/bin/env jq -nf
+# jq 1.8 — syntax showcase (checked with jq 1.8.2)
 # ── Comments ──
 # Line comment; jq has no block comments.
 # TODO: stream large inputs with --stream
@@ -9,6 +10,8 @@ module {name: "warehouse", version: "1.0"};
 import "lib/helpers" as helpers;
 include "lib/constants";
 import "data/defaults" as $defaults;
+import "lib/helpers" as meta_helpers {search: "./"};
+include "lib/constants" {search: ["./", "~/.jq"]};
 
 # ── Function definitions ──
 def money: (. * 100 | round) / 100;
@@ -163,6 +166,24 @@ def label_break: label $done | (1, 2, break $done, 3);
 def operators_assign: .a |= empty, (.[] += 1), (.a //= 2), (.a |= (. // 3)), (.. |= .), (.a, .b) = 9, (.a = (1, 2)), (.[1:3] = ["x"]), (.[2:4] |= map(. + 1)), del(.[1:3]), (to_entries | map(select(.key != "a")) | from_entries);
 def slices: .[1:], .[:-1], .[1:-1], .[-2:], .["a":"c"]?, .[1.5:3.5], (.[1:][1:]);
 def formats_inline: @base64 "dGVzdA==\(.)", ("dGVzdA==" | @base64d), ([1, "a"] | @csv, @tsv, @sh), ("é" | @uri), ({"a": "<&>"} | @html "\(.a)");
+
+# ── jq 1.7 / 1.8 additions ──
+def newer_builtins:
+  toarray, have_literal_numbers, have_decnum, abs, trim, ltrim, rtrim,
+  trimstr("x"), ltrimstr("a"), rtrimstr("b"), pick(.a, .b.c), debug("checkpoint %s"),
+  add(.[].qty), skip(2; .[]), limit(3; .[]), ("a%20b" | @urid), splits("a"; "g"),
+  scan("a"; "i"), ltrimstr("x"), getpath(["a"]), input_line_number,
+  have_literal_numbers, ("x" | ascii), ([.[] | strings]), ([.[] | scalars]),
+  ([.[] | iterables]), ([.[] | booleans]), ([.[] | nulls]), ([.[] | arrays]), ([.[] | objects]),
+  ([.[] | numbers]), ([.[] | values]), tojson, ({} | .a.b.c = 1),
+  getpath(["a", "b"]) // "missing", (try error("x") catch .), (.a as $x | $x),
+  limit(1; error?), ([.[] | select(type == "object")] | length),
+  splits(", "), sub("(?<w>\\w+)"; "<\(.w)>"; "g"), ascii_downcase, @sh "echo \(.)";
+# ── Optional and error forms ──
+def optional_operator: (.a?), (.[]?), (..?), (try .a catch "no"), (.a? // "default"), ((.a | error)? // "caught");
+# ── Comment forms ──
+# A comment may follow code:   . # trailing comment
+# Windows line endings and Unicode in comments are fine: ✓
 
 # ── Main program ──
 {

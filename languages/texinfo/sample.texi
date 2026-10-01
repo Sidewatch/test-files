@@ -1,9 +1,19 @@
 \input texinfo   @c -*-texinfo-*-
+@c Texinfo 7.2 — syntax showcase
 @c %**start of header
 @setfilename inventory.info
 @settitle Inventory Service Manual
 @documentencoding UTF-8
 @documentlanguage en
+@documentdescription
+Manual for the inventory service, covering endpoints and configuration.
+@end documentdescription
+@footnotestyle end
+@codequoteundirected on
+@codequotebacktick on
+@allowcodebreaks true
+@urefbreakstyle after
+@microtype on
 @paragraphindent 2
 @firstparagraphindent insert
 @exampleindent 4
@@ -20,6 +30,7 @@
 * Inventory: (inventory).   Warehouse stock service.
 @end direntry
 @c %**end of header
+@novalidate
 
 @c ── Comments ──
 @c A Texinfo comment runs to the end of the line.
@@ -372,7 +383,6 @@ $$ \sum_{i=1}^{n} q_i $$
 
 @alias lbl=code
 @definfoenclose hilite,<<,>>
-@set-- escapes
 @c @include other.texi
 @clickstyle @result
 @fonttextsize 11
@@ -384,6 +394,87 @@ $$ \sum_{i=1}^{n} q_i $$
 @evenfooting @thisfile @| @| @today
 @oddheading @| @thistitle @|
 @summarycontents
+
+@c ───────────────────────────────────────────
+@c Texinfo 7 additions
+@node Additions
+@chapter Additions
+@nodedescription Features added in Texinfo 6 and 7.
+@part Part heading
+@unnumberedsec Unnumbered section
+@unnumberedsubsec Unnumbered subsection
+@unnumberedsubsubsec Unnumbered subsubsection
+@appendixsubsec Appendix subsection
+@appendixsubsubsec Appendix subsubsection
+@anchor{Landing spot}
+@cindex ports @subentry listening
+@cindex ports @subentry closed @sortas{Zzz}
+@indexterm{extra index term}
+@inlinefmt{html, <em>inline HTML</em>}
+@inlineraw{tex, \\relax}
+@inlinefmtifelse{info, Info text, other text}
+@inlineifset{VERSION, set text}
+@inlineifclear{DRAFT, clear text}
+@ifcommanddefined node
+Command @code{@@node} is defined.
+@end ifcommanddefined
+@ifcommandnotdefined nosuchcommand
+No such command.
+@end ifcommandnotdefined
+@ifnotinfo
+Not Info.
+@end ifnotinfo
+@ifnotplaintext
+Not plain text.
+@end ifnotplaintext
+@ifxml
+XML only.
+@end ifxml
+@ifnotxml
+Not XML.
+@end ifnotxml
+@ifnottex
+Not TeX.
+@end ifnottex
+@U{263A} @click{} @geq{} @leq{} @registeredsymbol{} @textdegree{} @guillemetleft{} @guillemetright{} @quotedblleft{} @quotedblright{}
+@var{x}@sub{i} and @var{x}@sup{2}; @headitemfont{h} @slanted{s} @strong{strong}
+@verbatiminclude sample-data.txt
+@c Quotation with author
+@quotation Note
+@author An Author
+Quoted text with an attribution.
+@end quotation
+@exampleindent 2
+@deffnx Command stock-count sku
+@defvrx {User Option} reorder-limit
+@deftypefnx {Library Function} int stock_total (void)
+@deftypemethod Ledger int add (int @var{n})
+Add @var{n}.
+@end deftypemethod
+@defcv {Class Option} Ledger rounding
+@end defcv
+@defop Operation Ledger close
+@end defop
+@deftypeivar Ledger int count
+@end deftypeivar
+@deftypecv {Class Option} Ledger int limit
+@end deftypecv
+@defmethod Ledger flush
+@end defmethod
+@defivar Ledger size
+@end defivar
+@deftypeop Operation Ledger int total
+@end deftypeop
+@deftypefun int stock_sum (int @var{a})
+@end deftypefun
+@deftypevar int stock_max
+@end deftypevar
+@deftypefunx int stock_min (int @var{a})
+@sp 1
+@w{}
+@dircategory More
+@set txicodequoteundirected
+@clear txicodequotebacktick
 
 @c ───────────────────────────────────────────
 @node Index

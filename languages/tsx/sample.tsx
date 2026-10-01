@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// TypeScript 5.9 + React 19 JSX — TSX syntax showcase
 // ── Comments ──
 // Line comment: warehouse inventory UI in TSX.
 /* Block comment
@@ -357,3 +358,68 @@ export default function Toolbar<T extends { id: string }>({ items }: { items: T[
 
 export const config = { runtime: "edge", version: typeof __VERSION__ === "string" ? __VERSION__ : "dev" } as const;
 export { Badge as StockBadge, Warehouse, Level, Flags };
+
+// ── Type-system forms ──
+import fs = require("node:fs");
+import Path = Warehouse.REORDER_POINT;
+import type Mod = require("./module");
+export import Alias = Warehouse;
+// CommonJS-only form: cannot coexist with the ES exports above in a real build.
+export = Warehouse;
+declare const uniqueTag: unique symbol;
+type Probe = typeof uniqueTag;
+type Opt = [string?, number?];
+type Rest = [first: string, ...rest: number[]];
+type Ro = readonly string[];
+type RoTuple = readonly [x: number, y: number];
+type Paren = (string | number)[];
+type Self = { chain(): this };
+type Callable = { (sku: string): Item; new (sku: string): Item; readonly [key: string]: unknown };
+type Instance = InstanceType<typeof ItemRepository>;
+type Nested = Types.Deep.Name;
+type Keys = keyof typeof Warehouse;
+type Cond<T> = T extends readonly (infer U)[] ? U : never;
+type NarrowInfer<T> = T extends [infer H extends string, ...infer R] ? [H, R] : never;
+type Abstract = abstract new (...args: any[]) => object;
+declare function assertNever(x: never): never;
+declare class Ambient { method(): void; static create(): Ambient }
+declare namespace Types.Deep { type Name = string }
+
+// ── Instantiation expressions and meta properties ──
+const makeBox = <T,>(value: T) => ({ value });
+const stringBox = makeBox<string>;
+const metaUrl = import.meta.url;
+function Ctor(this: { made?: boolean }) {
+  if (!new.target) return;
+  this.made = true;
+}
+
+// ── Older declaration forms ──
+var legacy = 1;
+var a1 = 1, b1 = 2;
+let assigned: number;
+assigned = 5;
+assigned += 1;
+;
+const GenExpr = function* () { yield 1; };
+function* genDecl(): Generator<number> { yield 1; yield* [2, 3]; }
+const ClassExpr = class Named { static x = 1; };
+const json2 = await import("./data.json", { with: { type: "json" } });
+// deprecated import-assertion spelling (replaced by `with`):
+import legacyJson from "./data.json" assert { type: "json" };
+
+// ── Explicit resource management ──
+async function useResources() {
+  using handle = { [Symbol.dispose]() { console.log("closed"); } };
+  await using conn = { async [Symbol.asyncDispose]() { console.log("closed async"); } };
+  for (using h of [handle]) void h;
+  for (await using c of [conn]) void c;
+}
+
+// ── JSX forms ──
+const NS = <svg:rect xlink:href="#a" width="10" />;
+const Member = <Utils.Icon name="x" />;
+const Generic = <List<Item> items={[]} render={(i) => <b>{i.name}</b>} />;
+const Spread = <Badge {...{ label: "x" }} label="y" />;
+const Entities = <p>&lt;&amp;&gt; &#169; &#x1F3ED;</p>;
+const Attr = <a href='single' title="double" data-x={`tpl ${1}`} hidden>text</a>;

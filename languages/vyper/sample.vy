@@ -1,5 +1,6 @@
+# Vyper 0.4.3 — syntax showcase
 # pragma version ^0.4.0
-# @version ^0.4.0
+# @version ^0.4.0   (deprecated spelling of the version pragma, kept for highlighting)
 # pragma evm-version cancun
 # pragma nonreentrancy on
 # ── Comments ───────────────────────────────────────────────
@@ -214,7 +215,7 @@ def stop():
     assert msg.sender == owner  # unreachable message
     self.paused = True
     log Paused(flag=True)
-    selfdestruct(owner)
+    selfdestruct(owner)  # deprecated: EVM SELFDESTRUCT semantics changed
 
 @external
 @view
@@ -309,7 +310,7 @@ def encode_decode(data: Bytes[64]):
     first: uint256 = 0
     second: uint256 = 0
     first, second = abi_decode(data, (uint256, uint256))
-    result: Bytes[128] = _abi_encode(first)
+    result: Bytes[128] = abi_encode(first)
     signed: address = ecrecover(keccak256(b"m"), 27, convert(1, uint256), convert(2, uint256))
     point: uint256[2] = ecadd([1, 2], [3, 4])
     scaled: uint256[2] = ecmul([1, 2], 3)
@@ -355,3 +356,51 @@ def struct_demo() -> Item:
     arr[0] = arr[1] + arr[2]
     tup: (uint256, bool) = (1, True)
     return copy
+
+# ── Additions: modules, exports and remaining forms ────────
+import erc20_lib
+import ownable as own2
+from ethereum.ercs import IERC721
+
+initializes: erc20_lib[ownable := own2]
+exports: (erc20_lib.transfer, erc20_lib.balanceOf, own2.owner)
+exports: erc20_lib.__interface__
+
+counter_: public(uint256)
+
+@deploy
+def __init__():
+    own2.__init__()
+    erc20_lib.__init__("Token", "TKN", 18, "Token", "1")
+
+@external
+def module_calls(to: address, amount: uint256) -> bool:
+    own2._check_owner()
+    return erc20_lib._transfer(msg.sender, to, amount)
+
+@internal
+@view
+def _tiers(x: uint256) -> uint8:
+    if x < 10:
+        return 0
+    elif x < 100:
+        return 1
+    return 2
+
+@external
+@view
+def conditional(x: uint256) -> String[8]:
+    label_: String[8] = "small" if x < 10 else "large"
+    return label_
+
+@external
+def struct_events(who: address):
+    log Bumped(who=who, by=1, total=2)
+    log Bumped(who, 1, 2)
+    item: Item = Item(sku=keccak256("a"), qty=0, price=0.0, tags=[])
+    self.named_items.append(item)
+    self.named_items.pop()
+    last: Item = self.named_items[len(self.named_items) - 1]
+    self.names = ["a", "b"]
+    self.matrix[1][2] = 7
+    self.counts[who] = max(self.counts[who], 1)

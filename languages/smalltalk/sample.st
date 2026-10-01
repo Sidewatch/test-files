@@ -1,9 +1,10 @@
+"Smalltalk (Pharo 13) — syntax showcase"
 "── Comments ──
  Smalltalk comments are double-quoted and can span several lines.
  TODO: persist stock movements.
  FIXME: reorder threshold should be per SKU."
 
-"── Class definition (Pharo message syntax) ──"
+"── Class definition (classic message syntax; superseded in Pharo 9+ by the << form below, deprecated style) ──"
 Object subclass: #StockItem
     instanceVariableNames: 'sku name quantity price tags'
     classVariableNames: 'ReorderPoint Registry'
@@ -198,3 +199,165 @@ stream contents displayNl.
 Date today.
 Time now.
 Random new next.
+
+"── Class definition, current Pharo form (Object << #Name) ──"
+Object << #Shelf
+    slots: { #label. #items };
+    sharedVariables: { #Count };
+    sharedPools: { };
+    tag: 'Core';
+    package: 'Warehouse-Core'.
+
+Shelf subclass: #Pallet
+    slots: { #weight };
+    package: 'Warehouse-Core'.
+
+Trait << #TStockable
+    slots: { #stock };
+    package: 'Warehouse-Core'.
+
+Object << #Crate
+    traits: { TStockable };
+    slots: { #id };
+    package: 'Warehouse-Core'.
+
+"── More number forms ──"
+nums := {
+    1_000_000. -16rFF. 16r1F.8. 2r1e4. 1e-3. 1.5e-3. 100 factorial.
+    1/2. (1/3) + (2/3). 3.14s2. 0.5s. 1.0e0. 36rSMALLTALK. -42. - 42 abs
+}.
+bindings := {#{Transcript}. #{Smalltalk}. #{StockItem}}.
+literals := #(#(1 2) #($a $b) #(#a #b) #'with space' #+ #foo:bar: 1.5 -2 'str' (nested list) $ #[1 2 3] true false nil).
+emptyArray := #().
+emptyBrace := {}.
+byteArray := #[0 255 16rFF].
+cascadeOnLiteral := (OrderedCollection new) add: 1; add: 2; yourself.
+
+"── Method syntax: pragmas, primitives, categories, nonlocal return ──"
+StockItem >> pragmaDemo
+    <category: 'demo'>
+    <primitive: 60>
+    <script>
+    <inline: true>
+    <compilerOptions: #(+ optionInlineIf)>
+    ^ [:x | x > 0 ifTrue: [^ x]. 0] value: 1
+
+StockItem >> temporaries: aNumber
+    | a b |
+    a := aNumber.
+    b := [:n | | inner | inner := n + a. inner] value: 2.
+    ^ a + b
+
+StockItem >> unusual
+    "Statements separated by periods; trailing period optional."
+    self foo.
+    self bar.
+    ^ self; yourself
+
+StockItem class >> new
+    ^ super new init
+
+"── Tonel file format ──"
+Class {
+    #name : 'Bin',
+    #superclass : 'Object',
+    #instVars : [
+        'label',
+        'capacity'
+    ],
+    #classVars : [
+        'Default'
+    ],
+    #category : 'Warehouse-Core',
+    #package : 'Warehouse-Core'
+}
+
+{ #category : 'accessing' }
+Bin >> label [
+    ^ label
+]
+
+{ #category : 'accessing' }
+Bin class >> default [
+    ^ Default ifNil: [ Default := self new ]
+]
+
+{ #category : 'testing' }
+Bin >> isFull: anAmount [
+    "Answer whether anAmount exceeds the capacity."
+    ^ anAmount > capacity
+]
+
+"── GNU Smalltalk bracket syntax ──"
+Object subclass: Drawer [
+    | label contents |
+    <comment: 'A drawer holding stock lines.'>
+    Drawer class >> label: aLabel [
+        <category: 'instance creation'>
+        ^ self new setLabel: aLabel
+    ]
+    Total := 0.
+    setLabel: aLabel [
+        <category: 'private'>
+        label := aLabel.
+        contents := OrderedCollection new
+    ]
+    label [ ^ label ]
+    add: anItem [ contents add: anItem. ^ anItem ]
+    do: aBlock [ contents do: aBlock ]
+    printOn: aStream [ aStream nextPutAll: 'Drawer ', label ]
+]
+
+Drawer extend [
+    size [ ^ contents size ]
+]
+
+Drawer class extend [
+    named: aName [ ^ self label: aName ]
+]
+
+Integer extend [
+    double [ ^ self * 2 ]
+]
+
+Eval [
+    | d |
+    d := Drawer label: 'top'.
+    d add: 3; add: 4.
+    d size printNl.
+    (d inject: 0 into: [:a :e | a + e]) displayNl
+]
+
+"── Chunk format (Squeak / classic file-in) ──"
+!StockItem methodsFor: 'accessing'!
+price
+    ^ price!
+price: aPrice
+    price := aPrice! !
+
+!StockItem class methodsFor: 'instance creation'!
+named: aName
+    ^ self new setName: aName! !
+
+"── Special selectors, cascades and precedence ──"
+(1 max: 2) printNl; displayNl.
+1 + 2 * 3 - 4 / 5.
+#(3 1 2) asSortedCollection asArray.
+(1 to: 10) select: [:n | n even].
+(1 to: 10 by: 2) asOrderedCollection.
+1 -> (2 -> 3).
+3 @ 4 + (1 @ 1).
+(3 > 2) | (1 > 2) & true.
+(1 = 1) and: [2 = 2] or: [false].
+a := b := c := 0.
+^ a.
+thisContext sender.
+Smalltalk version displayNl.
+Character cr asString, Character tab asString, (Character value: 65) asString.
+$a < $b.
+'abc' < 'abd'.
+#a == #a.
+'it''s' size.
+'multi
+line' lines.
+"Comment between statements" 1 + 1. "trailing comment"

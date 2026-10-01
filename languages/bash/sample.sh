@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Bash 5.3 — syntax showcase
 # shellcheck shell=bash disable=SC2034
 #
 # sample.sh - warehouse stock deploy and report script covering Bash syntax.
@@ -324,3 +325,48 @@ echo $'a\tb' | cat -A
 true && false || echo "fallback"; true & false | cat; ! false
 (( $# )) || usage
 [ -t 0 ] || exec < /dev/null
+
+# ── Arithmetic assignment and comparison operators ───────────────────
+(( x += 1, x -= 1, x *= 2, x /= 2, x %= 7, x **= 2 ))
+(( x <<= 1, x >>= 1, x &= 0xFF, x |= 1, x ^= 3 ))
+(( x >= 1 && x <= 9 && x != 4 && x == 4 ))
+echo $(( 10 >= 5 )) $(( 2 ** 10 )) $(( x = y = 3 ))
+
+# ── Brace expansion, numeric and lettered ranges ─────────────────────
+echo {1..10} {10..1} {a..z} {01..05} {1..20..5} {A..C}{1..2}
+mkdir -p proj/{src,test}/{unit,integration}
+
+# ── Legacy test operators, combined with -a / -o ─────────────────────
+[ -f "$0" -a -r "$0" ] && echo "file and readable"
+[ ! -d "$0" -o -w "$0" ] && echo "not a dir or writable"
+test -e "$0" -a -s "$0" -o -z "$APP_NAME"
+
+# ── Backtick edge forms ──────────────────────────────────────────────
+echo `` `date` "$`date`"
+
+# ── Bash 5.x features ────────────────────────────────────────────────
+# Command substitution without a subshell (5.3): funsub and valsub
+text=${ echo "no subshell"; }
+count=${| REPLY=42; }
+echo "${ date +%F; }" "${| REPLY=$((1 + 1)); }"
+shopt -s patsub_replacement array_expand_once globskipdots
+GLOBSORT="-mtime"
+echo "${text//no/& and more}"
+echo "$EPOCHSECONDS $EPOCHREALTIME $SRANDOM $BASH_MONOSECONDS ${BASH_ARGV0}"
+printf '%(%Y-%m-%d)T\n' -1
+printf '%s\n' "${text@Q}" "${text@a}" "${text@A}"
+declare -I inherited_var
+declare -p text count
+local - 2>/dev/null || true
+wait -f "$!" 2>/dev/null || true
+read -E -p "edit: " editable < /dev/null || true
+compgen -V completions -W "alpha beta" -- "a"
+[[ -v targets[1] ]] && echo "element set"
+typeset -n nameref_var=targets
+for item in "${!nameref_var[@]}"; do :; done
+name+=" appended"
+declare -A map=()
+map+=([k]=v)
+export -f main
+time -p sleep 0
+! command -v nonexistent >/dev/null

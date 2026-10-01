@@ -1,4 +1,4 @@
-# Ninja showcase: a build for a small C program with generators, pools and subninja.
+# Ninja 1.13 — syntax showcase: a build for a small C program with generators, pools and subninja.
 # Comments run to the end of the line.
 ninja_required_version = 1.10
 
@@ -125,3 +125,39 @@ build ../relative/out.o: cc ../relative/src.c
 build out.txt | extra.txt: echo in1.txt in2.txt | implicit.txt || order_only.txt
 
 default all
+
+# ── Validations (|@), pool console, built-in variables ──
+rule lint
+  command = lint $in
+  description = LINT $in
+  pool = console
+
+rule copy
+  command = cp $in $out
+  description = COPY $in -> $out
+
+rule archive
+  command = tar cf $out $in
+  rspfile = $out.rsp
+  rspfile_content = $in
+  restat = 1
+  generator = 0
+
+build validated.o: cc src/validated.c |@ lint.stamp
+build lint.stamp: lint src/validated.c
+build a.out b.out | c.out d.out: copy in.txt | impl1 impl2 || order1 order2 |@ valid1
+  description = multi-output $in_newline $out
+build $builddir/arch.tar: archive $builddir/main.o $
+    $builddir/stock.o
+  pool = serial
+build ${builddir}/braced-$version.o: cc src/${version}.c
+  defines = -DX="$$HOME" -DY='$version'
+build all_stuff: phony a.out b.out lint.stamp validated.o
+
+# ── Edge-local variable scope, shadowing and trailing whitespace ──
+indent_var = outer
+rule show
+  command = echo $indent_var $in
+build shadow.txt: show in.txt
+  indent_var = inner
+default shadow.txt all_stuff

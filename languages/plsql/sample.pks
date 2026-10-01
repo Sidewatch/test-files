@@ -1,4 +1,4 @@
--- Oracle PL/SQL showcase: package spec and body, types, cursors, exceptions, bulk and dynamic SQL.
+-- Oracle PL/SQL (Oracle AI Database 26ai / 23ai) — syntax showcase: package spec and body, types, cursors, exceptions, bulk and dynamic SQL.
 /* A block comment
    over several lines. */
 REM A SQL*Plus remark line
@@ -367,5 +367,176 @@ BEGIN
     DBMS_LOCK.SLEEP(0);
     DBMS_SCHEDULER.CREATE_JOB(job_name => 'j1', job_type => 'PLSQL_BLOCK', job_action => 'BEGIN NULL; END;', repeat_interval => 'FREQ=DAILY');
     UTL_FILE.PUT_LINE(UTL_FILE.FOPEN('DATA_DIR', 'out.txt', 'w'), 'text');
+END;
+/
+
+-- ── Oracle 21c - 26ai: iterators, qualified expressions, SQL macros, domains, vectors, duality views ──
+CREATE OR REPLACE PACKAGE modern_pkg AUTHID CURRENT_USER
+    ACCESSIBLE BY (PACKAGE other_pkg, FUNCTION helper_fn)
+    DEFAULT COLLATION USING_NLS_COMP
+    AS
+    PRAGMA SERIALLY_REUSABLE;
+    TYPE point_t IS RECORD (x NUMBER, y NUMBER);
+    TYPE points_t IS TABLE OF point_t INDEX BY PLS_INTEGER;
+    TYPE names_t IS TABLE OF VARCHAR2(30) INDEX BY VARCHAR2(30);
+    SUBTYPE pos_t IS POSITIVEN;
+    FUNCTION add_sql(a NUMBER, b NUMBER) RETURN NUMBER SQL_MACRO(SCALAR);
+    FUNCTION filter_tab(t DBMS_TF.TABLE_T, p NUMBER) RETURN VARCHAR2 SQL_MACRO(TABLE);
+    FUNCTION parallel_fn(c SYS_REFCURSOR) RETURN points_t PIPELINED PARALLEL_ENABLE (PARTITION c BY ANY);
+    FUNCTION ext_fn(p NUMBER) RETURN NUMBER AS LANGUAGE C LIBRARY c_lib NAME "ext_fn" PARAMETERS (p INT, RETURN INT);
+    FUNCTION java_fn(p VARCHAR2) RETURN NUMBER AS LANGUAGE JAVA NAME 'Demo.run(java.lang.String) return int';
+    PROCEDURE with_defaults(p_a IN NUMBER DEFAULT 1, p_b IN VARCHAR2 DEFAULT 'x', p_c IN BOOLEAN DEFAULT TRUE);
+END modern_pkg;
+/
+
+CREATE OR REPLACE PACKAGE BODY modern_pkg AS
+    PRAGMA SERIALLY_REUSABLE;
+
+    FUNCTION add_sql(a NUMBER, b NUMBER) RETURN NUMBER SQL_MACRO(SCALAR) IS
+    BEGIN
+        RETURN 'a + b';
+    END;
+
+    FUNCTION filter_tab(t DBMS_TF.TABLE_T, p NUMBER) RETURN VARCHAR2 SQL_MACRO(TABLE) IS
+    BEGIN
+        RETURN 'SELECT * FROM t WHERE qty > p';
+    END;
+
+    FUNCTION parallel_fn(c SYS_REFCURSOR) RETURN points_t PIPELINED PARALLEL_ENABLE (PARTITION c BY ANY) IS
+        v point_t;
+    BEGIN
+        LOOP
+            FETCH c INTO v;
+            EXIT WHEN c%NOTFOUND;
+            PIPE ROW (v);
+        END LOOP;
+        RETURN;
+    END;
+
+    FUNCTION ext_fn(p NUMBER) RETURN NUMBER AS LANGUAGE C LIBRARY c_lib NAME "ext_fn" PARAMETERS (p INT, RETURN INT);
+    FUNCTION java_fn(p VARCHAR2) RETURN NUMBER AS LANGUAGE JAVA NAME 'Demo.run(java.lang.String) return int';
+
+    PROCEDURE with_defaults(p_a IN NUMBER DEFAULT 1, p_b IN VARCHAR2 DEFAULT 'x', p_c IN BOOLEAN DEFAULT TRUE) IS
+        PRAGMA INLINE (with_defaults, 'YES');
+        PRAGMA UDF;
+        PRAGMA RESTRICT_REFERENCES (DEFAULT, WNDS, RNDS);
+        PRAGMA SUPPRESSES_WARNING_6009 (p_a);
+        v_pts   points_t;
+        v_names names_t;
+        v_pt    point_t;
+        v_nums  DBMS_SQL.NUMBER_TABLE;
+        v_sum   NUMBER := 0;
+        v_flag  BOOLEAN := p_c AND p_a > 0;
+        v_line  PLS_INTEGER := $$PLSQL_LINE;
+        v_unit  VARCHAR2(100) := $$PLSQL_UNIT || ' ' || $$PLSQL_UNIT_OWNER || ' ' || $$PLSQL_UNIT_TYPE;
+        v_si    SIMPLE_INTEGER := 0;
+        v_nn    NATURALN := 0;
+        v_sd    SIMPLE_DOUBLE := 0d;
+        v_raw   RAW(16) := SYS_GUID();
+    BEGIN
+        -- Qualified expressions (18c): records, collections and associative arrays
+        v_pt  := point_t(x => 1, y => 2);
+        v_pts := points_t(1 => point_t(x => 1, y => 2), 2 => point_t(x => 3, y => 4));
+        v_names := names_t('a' => 'Alpha', 'b' => 'Beta');
+        v_nums := DBMS_SQL.NUMBER_TABLE(1 => 10, 2 => 20);
+
+        -- Iterators (21c)
+        FOR i IN 1 .. 3, REVERSE 7 .. 9, 20 .. 22 LOOP v_sum := v_sum + i; END LOOP;
+        FOR i IN 1, REPEAT i * 2 WHILE i < 100 LOOP v_sum := v_sum + i; END LOOP;
+        FOR i IN 1 .. 10 WHEN MOD(i, 2) = 0 LOOP v_sum := v_sum + i; END LOOP;
+        FOR k IN INDICES OF v_pts LOOP NULL; END LOOP;
+        FOR v IN VALUES OF v_names LOOP NULL; END LOOP;
+        FOR k, v IN PAIRS OF v_names LOOP NULL; END LOOP;
+        FOR r IN (SELECT sku, qty FROM stock) LOOP v_sum := v_sum + r.qty; END LOOP;
+
+        -- Collection operators and methods
+        v_nums := v_nums MULTISET UNION DISTINCT v_nums;
+        v_nums := v_nums MULTISET EXCEPT v_nums;
+        v_nums := v_nums MULTISET INTERSECT ALL v_nums;
+        IF 1 MEMBER OF v_nums OR v_nums IS EMPTY OR v_nums SUBMULTISET OF v_nums OR v_nums IS A SET THEN NULL; END IF;
+        IF v_pts.EXISTS(1) THEN v_pts.DELETE(1, 2); END IF;
+        v_sum := v_pts.COUNT + v_pts.FIRST + v_pts.LAST + NVL(v_pts.NEXT(1), 0);
+
+        -- BOOLEAN in SQL (23ai), RETURNING and DML
+        UPDATE stock SET qty = qty + 1 WHERE sku = 'A-100' RETURNING qty, price INTO v_sum, v_sum;
+        DELETE FROM stock WHERE sku = 'Z-999' RETURNING sku BULK COLLECT INTO v_names;
+        INSERT INTO flags (id, enabled) VALUES (1, TRUE), (2, FALSE), (3, 'yes');
+        SELECT enabled INTO v_flag FROM flags WHERE id = 1;
+        SELECT 1 + 1, SYSDATE;
+
+        -- Dynamic SQL variants
+        EXECUTE IMMEDIATE 'BEGIN :r := :a + :b; END;' USING OUT v_sum, IN 1, IN 2;
+        EXECUTE IMMEDIATE 'SELECT sku FROM stock WHERE qty > :q' BULK COLLECT INTO v_names USING 5;
+        EXECUTE IMMEDIATE 'CREATE TABLE tmp_t (id NUMBER)';
+
+        -- Inquiry directives and conditional compilation
+        $IF DBMS_DB_VERSION.VERSION >= 23 $THEN
+            v_flag := TRUE;
+        $ELSE
+            v_flag := FALSE;
+        $END
+        $IF $$MY_FLAG = 'ON' AND $$PLSQL_OPTIMIZE_LEVEL > 1 $THEN NULL; $END
+    END with_defaults;
+END modern_pkg;
+/
+
+-- SQL domains, annotations, vectors, IF [NOT] EXISTS and other 23ai DDL
+CREATE DOMAIN IF NOT EXISTS sku_domain AS VARCHAR2(20)
+    CONSTRAINT sku_chk CHECK (REGEXP_LIKE(VALUE, '^[A-Z]-[0-9]{3}$'))
+    DEFAULT 'A-000'
+    DISPLAY SUBSTR(VALUE, 1, 5)
+    ORDER LOWER(VALUE)
+    ANNOTATIONS (Description 'A stock keeping unit');
+CREATE DOMAIN qty_domain AS NUMBER(10) CONSTRAINT qty_chk CHECK (VALUE >= 0);
+CREATE DOMAIN status_domain AS ENUM (pending = 1, paid = 2, cancelled = 3);
+
+CREATE TABLE IF NOT EXISTS items (
+    sku       sku_domain PRIMARY KEY,
+    qty       qty_domain DEFAULT ON NULL 0,
+    embedding VECTOR(3, FLOAT32) ANNOTATIONS (Description 'Embedding'),
+    doc       JSON,
+    flag      BOOLEAN DEFAULT FALSE,
+    created   TIMESTAMP DEFAULT SYSTIMESTAMP
+) ANNOTATIONS (Owner 'warehouse', Sensitive);
+
+ALTER TABLE items ADD IF NOT EXISTS (note VARCHAR2(50));
+DROP TABLE IF EXISTS old_items PURGE;
+CREATE INDEX IF NOT EXISTS items_vec_ix ON items (embedding) ORGANIZATION NEIGHBOR PARTITIONS WITH DISTANCE COSINE WITH TARGET ACCURACY 95;
+CREATE VECTOR INDEX items_hnsw ON items (embedding) ORGANIZATION INMEMORY NEIGHBOR GRAPH DISTANCE EUCLIDEAN;
+
+SELECT sku, VECTOR_DISTANCE(embedding, TO_VECTOR('[1, 2, 3]'), COSINE) AS d,
+       embedding <=> TO_VECTOR('[1, 2, 3]') AS d2,
+       VECTOR_NORM(embedding), VECTOR_DIMENSION_COUNT(embedding), FROM_VECTOR(embedding)
+FROM items
+ORDER BY d
+FETCH APPROX FIRST 5 ROWS ONLY WITH TARGET ACCURACY 90;
+
+SELECT status, COUNT(*) FROM orders GROUP BY status HAVING COUNT(*) > 1;
+SELECT qty AS q, COUNT(*) FROM items GROUP BY q;
+UPDATE items i SET i.qty = o.qty FROM orders o WHERE o.sku = i.sku;
+
+CREATE OR REPLACE JSON RELATIONAL DUALITY VIEW item_dv AS
+    SELECT JSON { '_id': i.sku, 'qty': i.qty, 'tags': [ SELECT JSON { 'tag': t.tag } FROM item_tags t WITH INSERT UPDATE DELETE WHERE t.sku = i.sku ] }
+    FROM items i WITH INSERT UPDATE DELETE;
+
+CREATE OR REPLACE PROCEDURE json_demo IS
+    l_doc JSON_OBJECT_T := JSON_OBJECT_T();
+    l_arr JSON_ARRAY_T := JSON_ARRAY_T('[1, 2, 3]');
+    l_key JSON_KEY_LIST;
+BEGIN
+    l_doc.put('sku', 'A-100');
+    l_doc.put('tags', l_arr);
+    l_key := l_doc.get_keys;
+    DBMS_OUTPUT.PUT_LINE(l_doc.to_string);
+END json_demo;
+/
+
+CREATE OR REPLACE EDITIONABLE FUNCTION f RETURN NUMBER SHARING = METADATA IS BEGIN RETURN 1; END;
+/
+CREATE OR REPLACE NONEDITIONABLE PROCEDURE p SHARING = NONE IS BEGIN NULL; END;
+/
+CREATE OR REPLACE PROCEDURE with_result_cache_and_deterministic_hint IS
+BEGIN
+    FOR r IN (SELECT /*+ RESULT_CACHE */ sku FROM items) LOOP NULL; END LOOP;
 END;
 /

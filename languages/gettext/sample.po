@@ -1,3 +1,4 @@
+# GNU gettext 0.26 PO format — syntax showcase
 # German translation for the Acme warehouse app.
 # Copyright (C) 2026 Acme Ltd
 # This file is distributed under the same license as the warehouse package.
@@ -210,3 +211,61 @@ msgstr "Unicode: Café 日本語 ☕ Ελληνικά"
 #~ msgstr ""
 #~ "Veralteter mehrzeiliger "
 #~ "Eintrag"
+
+# ── Three- and six-form plurals (kept obsolete: this catalogue's header declares nplurals=2) ──
+#: src/plural.py:1
+#, python-format
+#~ msgid "%d file"
+#~ msgid_plural "%d files"
+#~ msgstr[0] "%d plik"
+#~ msgstr[1] "%d pliki"
+#~ msgstr[2] "%d plików"
+
+#: src/plural.py:2
+#~ msgid "%d day"
+#~ msgid_plural "%d days"
+#~ msgstr[0] "%d zero"
+#~ msgstr[1] "%d one"
+#~ msgstr[2] "%d two"
+#~ msgstr[3] "%d few"
+#~ msgstr[4] "%d many"
+#~ msgstr[5] "%d other"
+
+# ── More format flags in the current release ──
+#, c++-format, qt-format, qt-plural-format, kde-kuit-format, object-pascal-format, ocaml-format
+msgid "C++ and Qt formats %1 %n"
+msgstr "C++- und Qt-Formate %1 %n"
+
+#, sh-printf-format, go-format, javascript-format, python-brace-format, no-sh-printf-format
+msgid "Shell and Go formats %s %v {name}"
+msgstr "Shell- und Go-Formate %s %v {name}"
+
+#, ycp-format, gcc-internal-format, kde-format, boost-format, lisp-format, elisp-format
+msgid "Legacy formats"
+msgstr "Alte Formate"
+
+# ── Message with context, plural, flags, reference with line ranges and previous values ──
+#. Extracted comment line one
+#. Extracted comment line two
+# Translator comment with TODO marker: review wording. FIXME: gender agreement.
+#: src/very/long/path/to/a/source file.py:12 src/other.py:99
+#, fuzzy, python-format
+#| msgctxt "old context"
+#| msgid "Old text %d"
+#| msgid_plural "Old texts %d"
+msgctxt "inventory"
+msgid "Item %d"
+msgid_plural "Items %d"
+msgstr[0] "Artikel %d"
+msgstr[1] "Artikel %d"
+
+# ── Empty msgid line continuations and special characters ──
+msgid ""
+"First line\n"
+"Second line with a tab\t, a quote \", a percent %% and a backslash \\\n"
+msgstr ""
+"Erste Zeile\n"
+"Zweite Zeile mit Tab\t, Anführungszeichen \", Prozent %% und Backslash \\\n"
+
+msgid "Octal \101 hex \x41\x42 control \001"
+msgstr "Oktal \101 Hex \x41\x42 Steuerzeichen \001"

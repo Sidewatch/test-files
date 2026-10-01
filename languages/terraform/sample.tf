@@ -1,3 +1,4 @@
+# Terraform 1.14 (HCL2) — syntax showcase
 # ── Comments ──
 # Terraform (HCL): warehouse inventory infrastructure, per environment.
 // Double-slash comments are accepted too.
@@ -8,7 +9,7 @@
 
 # ── terraform block ──
 terraform {
-  required_version = ">= 1.9, < 2.0"
+  required_version = ">= 1.14, < 2.0"
 
   required_providers {
     aws = {
@@ -21,6 +22,11 @@ terraform {
     }
     local = {
       source = "hashicorp/local"
+    }
+    time = {
+      source                = "hashicorp/time"
+      version               = "~> 0.12"
+      configuration_aliases = [time.utc]
     }
   }
 
@@ -405,5 +411,95 @@ output "summary" {
   precondition {
     condition     = length(aws_s3_bucket.uploads) > 0
     error_message = "at least one bucket is required."
+  }
+}
+
+# ── Ephemeral values, write-only arguments, provider functions ──
+variable "db_password" {
+  type      = string
+  ephemeral = true
+  sensitive = true
+}
+
+ephemeral "random_password" "db" {
+  length  = 24
+  special = true
+}
+
+resource "aws_db_instance" "main" {
+  identifier          = "inventory-${var.environment}"
+  engine              = "postgres"
+  instance_class      = "db.t4g.micro"
+  allocated_storage   = 20
+  username            = "inventory"
+  password_wo         = ephemeral.random_password.db.result
+  password_wo_version = 1
+  skip_final_snapshot = true
+}
+
+output "db_secret" {
+  value     = var.db_password
+  ephemeral = true
+  sensitive = true
+}
+
+locals {
+  arn_parts   = provider::aws::arn_parse("arn:aws:iam::123456789012:role/example-deployer")
+  account_id  = local.arn_parts.account_id
+  tmpl        = templatefile("${path.module}/user-data.tftpl", { env = var.environment, names = local.names })
+  legacy_ids  = aws_s3_bucket.uploads.*.id # legacy splat, still valid
+  first_tag   = var.pair.0
+  attr_splat  = values(aws_s3_bucket.uploads)[*].arn
+  object_for  = { for k, v in var.warehouses : k => v.capacity if v.capacity > 0 }
+  spread_args = max([1, 5, 3]...)
+  safe_lookup = var.warehouses["north"].region != null ? var.warehouses["north"].region : "default"
+}
+
+# ── terraform_data, for_each import, actions ──
+resource "terraform_data" "marker" {
+  input            = local.bucket_name
+  triggers_replace = [var.environment]
+
+  provisioner "local-exec" {
+    command = "echo marker"
+  }
+}
+
+import {
+  for_each = var.warehouses
+  to       = aws_s3_bucket.uploads[each.key]
+  id       = "inventory-uploads-${each.key}"
+}
+
+action "aws_lambda_invoke" "notify" {
+  config {
+    function_name = "example-notifier"
+    payload       = jsonencode({ env = var.environment })
+  }
+}
+
+resource "aws_sns_topic" "events" {
+  name = "inventory-events"
+
+  lifecycle {
+    action_trigger {
+      events  = [after_create]
+      actions = [action.aws_lambda_invoke.notify]
+    }
+  }
+}
+
+# ── Tests-adjacent block forms: provider_meta, cloud ──
+terraform {
+  cloud {
+    organization = "example-org"
+
+    workspaces {
+      tags = ["inventory"]
+    }
+  }
+
+  provider_meta "aws" {
+    module_name = "inventory"
   }
 }

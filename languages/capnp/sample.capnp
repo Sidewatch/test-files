@@ -1,3 +1,4 @@
+# Cap'n Proto 1.2 schema language — syntax showcase
 # Cap'n Proto schema for the warehouse message bus.
 # Comments start with a hash. TODO: version the envelope.
 @0xd4a7c1b2e3f40518;
@@ -275,3 +276,113 @@ struct Sparse {
   middle @3 :Text;
 }
 # TODO: add a Cxx.name annotation for every reserved word.
+
+# ── Cap'n Proto 1.x additions ────────────────────────────────────────
+using Json = import "/capnp/compat/json.capnp";
+using Go = import "/go.capnp";
+$Go.package("bus");
+$Go.import("example.com/warehouse/bus");
+
+# Embedded file contents (embed reads a file at compile time)
+const embeddedText :Text = embed "banner.txt";
+const embeddedData :Data = embed "logo.bin";
+const embeddedStruct :Item = embed "default-item.bin";
+
+# JSON annotations on fields, structs and enumerants
+struct JsonEnvelope {
+  id @0 :UInt64 $Json.name("identifier");
+  secret @1 :Text $Json.name("shh");
+  blob @2 :Data $Json.base64;
+  checksum @3 :Data $Json.hex;
+  inner @4 :Inner $Json.flatten();
+  kind :union $Json.flatten($prefix = "kind_") {
+    text @5 :Text;
+    count @6 :UInt32 $Json.name("n");
+  }
+  variant :union $Json.discriminator(name = "type") {
+    alpha @7 :Text $Json.name("A");
+    beta @8 :Void $Json.name("B");
+  }
+  struct Inner {
+    left @0 :Int32;
+    right @1 :Int32;
+  }
+}
+
+enum Colour {
+  red @0 $Json.name("RED");
+  green @1 $Json.name("GREEN");
+  blue @2;
+}
+
+interface Notifier {
+  fire @0 (event :Text) -> () $Json.notification;
+}
+
+# Methods: streaming, generic methods, named results, imported results
+interface Uploader {
+  begin @0 (name :Text) -> (sink :Sink);
+  interface Sink {
+    write @0 (chunk :Data) -> stream;
+    done @1 () -> (size :UInt64);
+  }
+  checksum @1 [Algorithm] (data :Data) -> (digest :Algorithm);
+  fetch @2 (path :Text) -> (content :Data, mime :Text);
+  noResults @3 (flag :Bool = false);
+}
+
+# Struct and interface generics, bound parameters, AnyPointer generics
+struct Cache(Key, Value) {
+  entries @0 :List(Entry);
+  struct Entry {
+    key @0 :Key;
+    value @1 :Value;
+    meta @2 :AnyPointer;
+  }
+}
+
+interface Store(Key, Value) {
+  get @0 (key :Key) -> (value :Value);
+  put @1 (key :Key, value :Value) -> ();
+  cache @2 () -> (cache :Cache(Key, Value));
+}
+
+struct TextStore {
+  inner @0 :Store(Text, Data);
+  nested @1 :Cache(Text, Cache(UInt32, List(Text)));
+}
+
+# Lists of every kind and defaults using each literal form
+struct Defaults {
+  bools @0 :List(Bool) = [true, false, true];
+  floats @1 :List(Float64) = [1.0, -2.5, 3e10, inf, -inf, nan];
+  texts @2 :List(Text) = ["one", "two"];
+  datas @3 :List(Data) = [0x"01", 0x"02 03"];
+  points @4 :List(Point) = [(x = 1.0), (y = 2.0), ()];
+  lists @5 :List(List(Text)) = [["a"], [], ["b", "c"]];
+  enums @6 :List(Colour) = [red, blue];
+  point @7 :Point = (x = 1.0, y = 2.0);
+  nestedStruct @8 :Wrapper(Text, Point) = (first = "x", second = (x = 0.0, y = 0.0));
+  unionStruct @9 :Shape = (area = 1.0, circle = (radius = 0.5), filled = true);
+  emptyStruct @10 :Point = ();
+  version @11 :UInt16 = 0x0102;
+  mask @12 :UInt32 = 0xFFFF_FFFF;
+  big @13 :UInt64 = 18_446_744_073_709_551_615;
+  octal @14 :UInt8 = 0o17;
+  binary @15 :UInt8 = 0b1111_0000;
+}
+
+# Annotation scopes combined, and annotations on annotations
+annotation tagged(struct, field, enum, enumerant) :Text;
+annotation experimental(*) :Void;
+annotation meta(annotation) :Text;
+annotation owner(file) :Text $meta("file-level");
+
+$owner("platform team");
+
+struct Combined $tagged("s") $experimental {
+  one @0 :Text $tagged("f") $experimental;
+  two :group $tagged("g") {
+    inner @1 :Text;
+  }
+}

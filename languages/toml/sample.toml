@@ -1,3 +1,4 @@
+# TOML 1.1 — syntax showcase
 # ── Comments ──
 # TOML showcase: every value type, table form and string form.
 # TODO: split per environment
@@ -26,6 +27,7 @@ literal_regex = '\d{3}-\d{4}'
 literal_quotes = 'Tom "Dubs" Preston-Werner'
 empty_basic = ""
 empty_literal = ''
+escape_e = "escape \e and hex \x41\x7a (TOML 1.1)"
 unicode_text = "Zürich ✓ 🏭 在庫"
 
 multi_basic = """
@@ -90,6 +92,10 @@ local_datetime_frac = 1979-05-27T00:32:00.5
 local_date = 1979-05-27
 local_time = 07:32:00
 local_time_frac = 00:32:00.999999
+# TOML 1.1: seconds are optional
+local_time_short = 07:32
+local_datetime_short = 1979-05-27T07:32
+offset_datetime_short = 1979-05-27T07:32Z
 
 # ── Arrays ──
 ports = [8080, 8443, 9090]
@@ -114,6 +120,12 @@ empty_inline = {}
 nested_inline = { outer = { inner = { deep = "value" } }, list = [1, 2, 3] }
 mixed_inline = { name = "hammer", sku = 738594937, tags = ["tool", "hand"], price = 9.99, active = true }
 quoted_inline = { "a key" = 1, 'b key' = 2 }
+# TOML 1.1: inline tables may span lines and take a trailing comma
+multiline_inline = {
+  host = "192.0.2.5",   # comment inside an inline table
+  port = 8080,
+  tags = ["a", "b"],
+}
 
 # ── Standard tables ──
 [database]

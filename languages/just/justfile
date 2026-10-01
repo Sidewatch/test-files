@@ -1,3 +1,4 @@
+# Just 1.4x — syntax showcase (just is not installed here; written against the Just manual)
 # ── Comments ──
 # Comment line: the project's task runner (`just --list` shows recipes).
 # TODO: add a deploy recipe
@@ -123,7 +124,7 @@ info:
     @echo "dir={{invocation_directory()}} home={{home_directory()}} just={{just_executable()}}"
     @echo "{{uppercase(app)}} {{lowercase(app)}} {{capitalize(app)}} {{replace(app, 'I', 'i')}} {{trim(' x ')}}"
     @echo "{{path_exists('Package.swift')}} {{file_name(justfile())}} {{extension('a.txt')}} {{parent_directory('/a/b')}}"
-    @echo "{{sha256('x')}} {{uuid()}} {{datetime('%Y-%m-%d')}} {{env('HOME', 'none')}} {{error_or("x")}}"
+    @echo "{{sha256('x')}} {{uuid()}} {{datetime('%Y-%m-%d')}} {{env('HOME', 'none')}}"
     @echo "{{ if config == 'debug' { 'D' } else { 'R' } }}"
 
 # Backtick evaluation and escaping
@@ -149,7 +150,6 @@ set dotenv-required
 set dotenv-override
 set export := false
 set no-exit-message
-set guards
 
 # every attribute
 [doc('Single-quoted doc')]
@@ -270,3 +270,21 @@ kebab-case_snake_Mixed123:
     echo ok
 _hidden-by-underscore:
     echo hidden
+
+# ── More attributes ──
+[default]
+[exit-message]
+[doc("Marked as the default recipe")]
+marked-default:
+    @echo "default recipe via attribute"
+
+[no-exit-message, private, group('internal')]
+quiet-failure:
+    @false
+
+# ── Built-in constants (string values, usable anywhere) ──
+constants:
+    @echo "{{ HEX }} {{ HEXLOWER }} {{ HEXUPPER }} {{ PATH_SEP }} {{ PATH_VAR_SEP }}"
+    @echo "{{ CLEAR }}{{ NORMAL }}{{ BOLD }}{{ ITALIC }}{{ UNDERLINE }}{{ INVERT }}{{ HIDE }}{{ STRIKETHROUGH }}"
+    @echo "{{ BLACK }}{{ RED }}{{ GREEN }}{{ YELLOW }}{{ BLUE }}{{ MAGENTA }}{{ CYAN }}{{ WHITE }}"
+    @echo "{{ BG_BLACK }}{{ BG_RED }}{{ BG_GREEN }}{{ BG_YELLOW }}{{ BG_BLUE }}{{ BG_MAGENTA }}{{ BG_CYAN }}{{ BG_WHITE }}"

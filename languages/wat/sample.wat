@@ -1,3 +1,4 @@
+;; WebAssembly 3.0 (text format) — syntax showcase
 ;; ── Comments ───────────────────────────────────────────────
 ;; WebAssembly text: a warehouse stock module.
 ;; TODO: add bulk-memory zeroing. FIXME: bounds checks.
@@ -351,5 +352,48 @@
   (data (memory $mem) (offset (i32.const 100)) "offset form" "\n\t\r\\\"\'\0a\ff")
   (elem (table $tbl) (offset (i32.const 1)) funcref (ref.func $add) (item (ref.func $fact)))
   (elem $declared declare funcref (ref.func $bump))
+    ;; ── Additions: Wasm 3.0 GC types, multi-memory, table64 ───
+  (type $shape (sub (struct (field $id i32))))
+  (type $circle (sub final $shape (struct (field $id i32) (field $r (mut f64)))))
+  (type $bytes (array (mut i8)))
+  (type $words (array (mut i16)))
+  (type $packed (struct (field $a i8) (field $b (mut i16)) (field $c (ref null $shape))))
+  (type $fn_t (func (param (ref null $shape)) (result (ref $circle))))
+  (rec (type $even (sub (struct (field (ref null $odd))))) (type $odd (sub (struct (field (ref null $even))))))
+  (table $typed 4 (ref null $fn_t) (ref.null $fn_t))
+  (table $wide i64 2 funcref)
+  (memory $second 1)
+  (data $second_init (memory $second) (i32.const 0) "second memory")
+  (global $k i31ref (ref.i31 (i32.const 7)))
+  (global $ext_off i32 (i32.sub (i32.mul (global.get $limit) (i32.const 2)) (i32.const 1)))
+
+  (func $multi_memory (param $a i32) (result i32)
+    (i32.store $second offset=4 (local.get $a) (i32.const 1))
+    (drop (memory.size $second))
+    (drop (memory.grow $second (i32.const 1)))
+    (memory.copy $mem $second (i32.const 0) (i32.const 0) (i32.const 4))
+    (memory.fill $second (i32.const 0) (i32.const 0) (i32.const 4))
+    (i32.load $second (local.get $a)))
+
+  (func $table64 (param $i i64) (result funcref)
+    (table.get $wide (local.get $i)))
+
+  (func $gc_extras (param $s (ref null $shape)) (result i32)
+    (local $c (ref null $circle))
+    (local $e eqref) (local $a anyref) (local $x externref) (local $n (ref none))
+    (local.set $c (ref.cast (ref null $circle) (local.get $s)))
+    (drop (struct.new $circle (i32.const 1) (f64.const 2.5)))
+    (drop (array.get_s $bytes (array.new_default $bytes (i32.const 4)) (i32.const 0)))
+    (drop (i31.get_u (ref.i31 (i32.const 3))))
+    (drop (ref.test i31ref (local.get $a)))
+    (drop (ref.test (ref null struct) (local.get $a)))
+    (drop (ref.cast (ref null array) (local.get $a)))
+    (br_on_cast_fail 0 (ref null any) (ref null $shape) (local.get $a))
+    (drop)
+    (struct.get $shape $id (ref.as_non_null (local.get $s))))
+
+  (func $legacy_names (result i32)
+    (i32.const 0))
+
   (start $init)
 )

@@ -1,3 +1,4 @@
+// Kotlin 2.2 — syntax showcase (kotlinc is not installed here; written against the 2.2 language reference)
 @file:JvmName("WarehouseKt")
 @file:Suppress("unused", "UNUSED_PARAMETER")
 
@@ -287,14 +288,29 @@ expect val platformId: String
 fun interface Visitor<in T> { fun visit(item: T): Unit }
 data object Singleton
 data class Pair3<out A, out B, out C>(val a: A, val b: B, val c: C)
-enum class Level : Comparable<Level> { LOW, MID, HIGH; companion object { val default = MID } }
+enum class Level {
+    LOW, MID, HIGH;
+
+    companion object {
+        val default = MID
+    }
+}
 enum class Op(val symbol: String) : java.util.function.IntBinaryOperator {
     PLUS("+") { override fun applyAsInt(a: Int, b: Int) = a + b },
     TIMES("*") { override fun applyAsInt(a: Int, b: Int) = a * b };
 }
 sealed class Tree<out T> { object Leaf : Tree<Nothing>(); data class Node<T>(val l: Tree<T>, val v: T, val r: Tree<T>) : Tree<T>() }
 abstract class Base<T> where T : Comparable<T>, T : java.io.Serializable { abstract fun f(): T }
-open class Outer { inner class In { fun o() = this@Outer }; class Nested; protected open val p = 1; internal fun i() {}; final override fun toString() = "O" }
+open class Outer {
+    inner class In {
+        fun o() = this@Outer
+    }
+
+    class Nested
+    protected open val p = 1
+    internal fun i() {}
+    final override fun toString() = "O"
+}
 class Ctors(val a: Int) {
     var b = 0
     constructor(a: Int, b: Int) : this(a) { this.b = b }
@@ -316,7 +332,11 @@ class Props {
     internal val int = 0
     public val pub = 0
     private val priv = 0
-    companion object { @JvmField val F = 1; @JvmStatic fun s() {}; const val C = 2 }
+    companion object {
+        @JvmField val F = 1
+        @JvmStatic fun s() {}
+        const val C = 2
+    }
 }
 object Obj : Runnable, Comparable<Obj> { override fun run() {}; override fun compareTo(other: Obj) = 0 }
 
@@ -413,3 +433,60 @@ typealias Handler<T> = (T) -> Unit
 typealias Matrix = Array<DoubleArray>
 var topLevelDelegate by kotlin.properties.Delegates.notNull<Int>()
 const val CONST_EXPR = 1 + 2 * 3
+
+// ── Kotlin 2.x additions ──
+// when with guard conditions (stable in 2.2)
+fun guarded(event: Event, limit: Int): String = when (event) {
+    is Event.Received if event.count > limit -> "bulk"
+    is Event.Received -> "receipt"
+    is Event.Shipped if event.carrier != null && event.count > 0 -> "shipped via ${event.carrier}"
+    else -> "other"
+}
+
+// definitely non-nullable types
+fun <T> nonNull(value: T & Any): T & Any = value
+fun <T> orFail(value: T?): T & Any = value ?: error("null")
+val parenthesised: (String)? = null
+val parenthesisedFunction: ((Int) -> Int)? = null
+
+// unlabelled break and continue, destructuring in lambdas and loops
+fun controlJumps(pairs: List<Pair<Int, String>>) {
+    for (i in 1..10) {
+        if (i % 2 == 0) continue
+        if (i > 7) break
+    }
+    while (true) {
+        break
+    }
+    pairs.forEach { (number, text) -> println("$number $text") }
+    for ((number, text) in pairs) println("$number $text")
+    val (head, tail) = pairs.first() to pairs.drop(1)
+    println(head.first + tail.size)
+}
+
+// annotation use-site targets and super with labels
+@Target(AnnotationTarget.VALUE_PARAMETER, AnnotationTarget.PROPERTY_SETTER)
+annotation class Marker
+
+class UseSites(@setparam:Marker var setting: Int = 0)
+
+open class Parent {
+    open fun hello() = "parent"
+}
+
+class Child : Parent() {
+    inner class Helper {
+        fun hello() = super@Child.hello() + this@Child.hello()
+    }
+    override fun hello() = "child"
+}
+
+// unicode escapes in characters and strings
+val escapedUnicode = "\u00e9 \u4E2D"
+val escapedChar = '\u0041'
+
+// Kotlin/JS only: the dynamic type
+// val untyped: dynamic = js("{}")
+
+// multi-dollar string interpolation (stable in 2.2)
+val templated = $$"""{"price": "$", "name": "$$name", "total": $${qty * 2}}"""

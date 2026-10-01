@@ -1,5 +1,5 @@
 @startuml
-' PlantUML showcase: sequence, class, use case, activity, state and more.
+' PlantUML 1.2025 — syntax showcase: sequence, class, use case, activity, state and more.
 /' A block comment
    over several lines '/
 !pragma teoz true
@@ -477,3 +477,358 @@ saturday are closed
 Todo
 Doing
 @endboard
+
+@startuml
+' ── Style blocks, themes, preprocessor sub-parts and layout controls ──
+<style>
+root {
+  BackgroundColor #FFFFFF
+  FontName Helvetica
+}
+sequenceDiagram {
+  participant {
+    LineColor #336699
+    BackGroundColor #E8F0FA
+  }
+  arrow {
+    LineColor green
+    LineThickness 2
+  }
+}
+.warn {
+  BackgroundColor #FFEECC
+  FontColor red
+}
+</style>
+!theme plain from https://example.com/themes
+!import library.zip
+!include_many <awslib/AWSCommon>
+!includesub common.puml!PART
+!startsub PART
+participant Sub
+!endsub
+!definelong BLOCK($a)
+note over $a : defined with !definelong
+!enddefinelong
+!define SQUARE($x) ($x * $x)
+!undef SQUARE
+!unquoted procedure $hello($who)
+  participant $who
+!endprocedure
+!$hello("Greeter")
+%call_user_func("$double", 4)
+%invoke_procedure("$note", "text")
+!$counter = %intval("0")
+!if %function_exists("$double")
+  !$counter = $double(2)
+!endif
+top to bottom direction
+scale 1.5
+scale 800 width
+scale max 1024x768
+skinparam linetype ortho
+skinparam nodesep 20
+skinparam ranksep 30
+skinparam dpi 150
+skinparam defaultTextAlignment center
+skinparam ParticipantPadding 10
+skinparam sequenceArrowThickness 2
+hide footbox
+hide unlinked
+mainframe **Frame title**
+title
+  Multi-line title
+  with <b>formatting</b>
+end title
+header
+  Multi-line header
+endheader
+footer
+  Multi-line footer
+endfooter
+participant "Styled" as St <<warn>>
+St -> St : with a style stereotype
+@enduml
+
+@startuml
+' ── Object, map, json and mixed diagrams ──
+allowmixing
+object Order
+object "Line item" as Line {
+  sku = "A-100"
+  qty = 2
+}
+map Config {
+  retries => 3
+  timeout => 5s
+  nested *-> Order
+}
+json Payload {
+  "id": 1,
+  "tags": ["a", "b"],
+  "nested": { "ok": true, "none": null }
+}
+Order --> Line
+Config::nested --> Order
+class Mixed
+Mixed ..> Order
+@enduml
+
+@startuml
+' ── Deployment and ArchiMate shapes ──
+agent Agent
+artifact Artifact
+boundary Boundary
+card Card
+circle Circle
+cloud Cloud
+collections Collections
+component Component
+control Control
+database Database
+entity Entity
+file File
+folder Folder
+frame Frame
+hexagon Hexagon
+interface Interface
+label Label
+node Node
+package Package
+person Person
+queue Queue
+rectangle Rectangle
+stack Stack
+storage Storage
+usecase Usecase
+archimate #Business "Business actor" as actor1 <<business-actor>>
+archimate #Technology "Device" as dev1 <<technology-device>>
+archimate #Application "App" as app1 <<application-component>>
+Rel_Serving(dev1, app1, "serves")
+actor1 --> app1
+Agent -[hidden]d- Artifact
+@enduml
+
+@startuml
+' ── Activity diagram (new syntax): shapes, labels, backward, kill ──
+start
+:Plain action;
+:Input shape<
+:Output shape>
+:Task shape]
+:Save shape|
+:Slash shape/
+:Brace shape}
+:Multi-line
+action with **creole**;
+#pink:Coloured action;
+:Action with note; <<procedure>>
+note left: left note
+floating note right: floating
+if (Test?) then (yes)
+  :A;
+elseif (Other?) then (maybe)
+  :B;
+else (no)
+  :C;
+  kill
+endif
+repeat :Again;
+  :Body;
+backward :Back step;
+repeat while (more?) is (yes) not (no)
+while (check) is (true)
+  label retry
+  :Work;
+  goto retry
+endwhile (done)
+split
+  :Left;
+split again
+  :Right;
+end split
+fork
+  :Fast;
+fork again
+  :Slow;
+end merge
+-> Labelled arrow;
+:After;
+detach
+legend right
+  Activity legend
+endlegend
+stop
+@enduml
+
+@startuml
+' ── State diagram extras: history, concurrency, entry/exit points ──
+state Composite {
+  [*] --> A
+  A --> [H]
+  A --> [H*]
+  state entry1 <<entryPoint>>
+  state exit1 <<exitPoint>>
+  state in1 <<inputPin>>
+  state out1 <<outputPin>>
+  state exp <<expansionInput>>
+  state exo <<expansionOutput>>
+  state sdl <<sdlreceive>>
+  ||
+  [*] --> B
+}
+state "With description" as WD : first line
+WD : second line
+state Concurrent {
+  state R1
+  --
+  state R2
+}
+[*] -[#green,dotted]-> Composite
+Composite -down-> WD : event [guard] / action
+@enduml
+
+@startuml
+' ── Class diagram extras: members, generics, notes, stereotypes ──
+namespace net.example {
+  class Service << (S,#FF7700) Singleton >> {
+    {field} +name : String
+    {method} +run() : void
+    {static} {abstract} -helper() : int
+    #{classifier} sealed()
+    --
+    ==
+    ..
+  }
+  enum Level {
+    LOW = 1
+    HIGH = 2
+  }
+}
+class Generic<T, U extends Number> {
+  +map(f : Function<T, U>) : List<U>
+}
+class "Quoted name" as Q
+class A { }
+class B { }
+A -- B
+A -> B : arrow
+A <-- B
+A --> B
+A -[#red,bold]-> B
+A -down-|> B
+A .up.> B
+A }-- B
+A +-- B
+A #-- B
+A x-- B
+A ^-- B
+A "1" *-- "many" B : owns >
+A o-left- B
+(A, B) .. Association
+note "multi\nline" as Note1
+note on link : on the previous link
+note left of A
+  block note
+end note
+@enduml
+
+@startsalt
+{+
+  {/ <b>General | Network | <i>Advanced }
+  {
+    Name: | "John Smith  "
+    [X] Remember me
+    [ ] Subscribe
+    (X) Option one
+    () Option two
+    ^Drop-down^
+    ^List^Item 1^Item 2^
+    [Save] | [Cancel]
+  }
+  {T
+    + Root
+    ++ Child
+    +++ Grandchild
+  }
+  {#
+    A | B | C
+    1 | 2 | 3
+  }
+  {S
+    Scrollable
+  }
+  {*
+    File | Edit | View
+  }
+  .
+  ..
+  ==
+  --
+}
+@endsalt
+
+@startmindmap
++ Root
+++ Right branch
++++_ Boxless leaf
+++++[#lightblue] Coloured leaf
+-- Left branch
+--- Left leaf
+*:Multi-line
+node;
+**[#FFBBCC] Styled
+@endmindmap
+
+@startuml
+' ── Sequence extras ──
+autoactivate on
+participant A
+participant B
+A -> B : call
+B --> A : return
+A -[#blue]->> B : coloured
+A -> B ++ : activate
+B -> B ++ : self activate
+B -> B -- : self deactivate
+A -> B -- : deactivate
+A ->] : to the right edge
+[-> A : from the left edge
+A ->[ : to the left edge
+]-> A : from the right edge
+A -> B : text with \n newline
+A -> B : [#red] stylised label
+group Alt text [group label]
+  A -> B
+else Other
+  B -> A
+end
+autonumber stop
+autonumber resume
+autonumber inc A
+autonumber 1 "<font color=red><b>Msg 00"
+note across : across all participants
+legend bottom
+  bottom legend
+endlegend
+@enduml
+
+@startdot
+digraph G {
+  rankdir=LR;
+  a -> b [label="edge"];
+}
+@enddot
+
+@startwire
+a -> b
+@endwire
+
+@startsdl
+state A
+@endsdl
+
+@starttree
+Root
+  Child
+@endtree

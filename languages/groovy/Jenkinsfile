@@ -1,4 +1,5 @@
 #!/usr/bin/env groovy
+// Jenkins Pipeline (Declarative and Scripted; Jenkins LTS 2.5, Groovy 4) — syntax showcase
 // Declarative and scripted Jenkins pipeline: build, test in parallel, deploy on main.
 /* Block comment. TODO: move shared steps into a library. FIXME: flaky lint stage. */
 
@@ -307,4 +308,99 @@ def call(Map args = [:], Closure body = null) {
         body()
     }
     return cfg
+}
+
+// ── More Declarative directives: agents, when conditions, options, sequential stages ──
+pipeline {
+    agent none
+    options {
+        quietPeriod(5)
+        skipStagesAfterUnstable()
+        parallelsAlwaysFailFast()
+        preserveStashes(buildCount: 5)
+        newContainerPerStage()
+        checkoutToSubdirectory('src')
+        durabilityHint('PERFORMANCE_OPTIMIZED')
+        overrideIndexTriggers(false)
+        disableResume()
+    }
+    parameters {
+        file(name: 'UPLOAD', description: 'A file')
+        credentials(name: 'CRED', credentialType: 'Username with password', required: true)
+        run(name: 'UPSTREAM', projectName: 'base')
+    }
+    libraries { lib('acme-shared@main') }
+    stages {
+        stage('Agents') {
+            agent {
+                dockerfile {
+                    filename 'Dockerfile.build'
+                    dir 'ci'
+                    additionalBuildArgs '--build-arg VERSION=1'
+                    reuseNode true
+                }
+            }
+            steps { echo 'dockerfile agent' }
+        }
+        stage('Kubernetes') {
+            agent {
+                kubernetes {
+                    yaml """
+                        apiVersion: v1
+                        kind: Pod
+                        spec:
+                          containers:
+                            - name: build
+                              image: example.com/build:latest
+                    """
+                    defaultContainer 'build'
+                }
+            }
+            steps { container('build') { sh 'make' } }
+        }
+        stage('Node') {
+            agent { node { label 'linux'; customWorkspace '/srv/ws' } }
+            environment { LOCAL = 'only in this stage' }
+            options { timeout(time: 10, unit: 'MINUTES'); retry(1) }
+            when {
+                beforeAgent true
+                beforeOptions true
+                equals expected: 'x', actual: params.TARGET
+                triggeredBy 'TimerTrigger'
+                buildingTag()
+                changelog '.*\\[ci skip\\].*'
+                changeset pattern: '**/*.java', caseSensitive: true
+                isRestartedRun()
+                tag 'v*'
+                changeRequest target: 'main', authorEmail: 'dev@example.com'
+                anyOf { not { branch 'wip/*' }; expression { env.CI } }
+            }
+            stages {
+                stage('First') { steps { echo 'sequential one' } }
+                stage('Second') { steps { echo 'sequential two' } }
+            }
+            post { success { echo 'stage ok' } }
+        }
+        stage('Any') {
+            agent any
+            steps {
+                load 'helpers.groovy'
+                library 'extra@v1'
+                echo libraryResource('config/default.yaml')
+                evaluate('1 + 1')
+                echo 'inline' // trailing comment
+                echo "unicode: café 日本語"
+            }
+        }
+    }
+}
+
+// ── Groovy 4 syntax usable in pipeline script blocks ──
+@NonCPS
+def groovy4Features(List items) {
+    var inferred = items.size()
+    def record = [x: 1, y: 2]
+    def (a, b) = [record.x, record.y]
+    def r = switch (a) { case 1 -> 'one'; default -> 'many' }
+    return items.stream().map(i -> i.toString()).toList() + [inferred, b, r]
 }

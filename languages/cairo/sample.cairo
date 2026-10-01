@@ -1,3 +1,4 @@
+// Cairo 2.12 (Scarb 2.12, Starknet contracts) — syntax showcase
 // Starknet warehouse inventory contract in Cairo 2.
 // Line comments use double slashes.
 // TODO: add pausable access control.
@@ -424,12 +425,10 @@ fn expressions() -> felt252 {
     let n: Nullable<u8> = NullableTrait::new(1);
     let closure = |x| x + 1;
     let typed_closure = |x: u8, y: u8| -> u8 { x * y };
-    let r#raw_ident = 1;
     let label = 'a long-ish short string';
     let result = match v {
         0 => 'zero',
         1 | 2 => 'small',
-        x if x > 100 => 'big',
         _ => 'other',
     };
     let ok: Result<u8, felt252> = Ok(1);
@@ -462,3 +461,246 @@ fn nopanic_fn() -> u8 nopanic { 1 }
 fn with_implicits() implicits(RangeCheck, GasBuiltin) {}
 fn panicking() -> u8 { panic_with_felt252('oops') }
 // TODO: replace the dictionary with a storage map.
+
+// ── Cairo 2.8 – 2.12: components, storage nodes, vectors ────────────
+#[starknet::interface]
+trait ICounter<TContractState> {
+    fn increment(ref self: TContractState);
+    fn current(self: @TContractState) -> u64;
+}
+
+#[starknet::component]
+mod counter_component {
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+
+    #[storage]
+    pub struct Storage {
+        count: u64,
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    pub enum Event {
+        Incremented: Incremented,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub struct Incremented {
+        pub new_value: u64,
+    }
+
+    #[embeddable_as(CounterImpl)]
+    impl Counter<
+        TContractState, +HasComponent<TContractState>,
+    > of super::ICounter<ComponentState<TContractState>> {
+        fn increment(ref self: ComponentState<TContractState>) {
+            let next = self.count.read() + 1;
+            self.count.write(next);
+            self.emit(Incremented { new_value: next });
+        }
+
+        fn current(self: @ComponentState<TContractState>) -> u64 {
+            self.count.read()
+        }
+    }
+
+    #[generate_trait]
+    pub impl InternalImpl<
+        TContractState, +HasComponent<TContractState>,
+    > of InternalTrait<TContractState> {
+        fn initializer(ref self: ComponentState<TContractState>, start: u64) {
+            self.count.write(start);
+        }
+    }
+}
+
+#[starknet::contract]
+mod Dashboard {
+    use starknet::ContractAddress;
+    use starknet::storage::{
+        Map, Vec, VecTrait, MutableVecTrait, StoragePathEntry, StoragePointerReadAccess,
+        StoragePointerWriteAccess,
+    };
+    use super::counter_component;
+
+    component!(path: counter_component, storage: counter, event: CounterEvent);
+
+    #[abi(embed_v0)]
+    impl CounterImpl = counter_component::CounterImpl<ContractState>;
+    impl CounterInternalImpl = counter_component::InternalImpl<ContractState>;
+
+    #[starknet::storage_node]
+    struct Settings {
+        enabled: bool,
+        limits: Map<felt252, u64>,
+        history: Vec<u64>,
+    }
+
+    #[storage]
+    struct Storage {
+        #[substorage(v0)]
+        counter: counter_component::Storage,
+        settings: Settings,
+        owners: Vec<ContractAddress>,
+        names: Map<ContractAddress, ByteArray>,
+        nested: Map<(felt252, felt252), Map<u8, u64>>,
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        CounterEvent: counter_component::Event,
+        Configured: Configured,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct Configured {
+        #[key]
+        by: ContractAddress,
+        #[key]
+        limit_key: felt252,
+        value: u64,
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, start: u64) {
+        self.counter.initializer(start);
+        self.settings.enabled.write(true);
+        self.settings.history.push(start);
+    }
+
+    #[abi(per_item)]
+    #[generate_trait]
+    impl ExternalImpl of ExternalTrait {
+        #[external(v0)]
+        fn set_limit(ref self: ContractState, key: felt252, value: u64) {
+            self.settings.limits.entry(key).write(value);
+            let len = self.settings.history.len();
+            let last = self.settings.history.at(len - 1).read();
+            let _ = last;
+        }
+
+        #[external(v0)]
+        fn add_owner(ref self: ContractState, owner: ContractAddress) {
+            self.owners.push(owner);
+            self.names.entry(owner).write("owner");
+            self.nested.entry((1, 2)).entry(3).write(4);
+        }
+    }
+
+    #[l1_handler]
+    fn on_l1_message(ref self: ContractState, from_address: felt252, payload: felt252) {
+        let _ = (from_address, payload);
+    }
+}
+
+// ── Traits with associated items, negative impls, operator traits ───
+trait Container<T> {
+    type Item;
+    const CAPACITY: u32;
+    fn first(self: @T) -> Option<Self::Item>;
+}
+
+impl ArrayContainer of Container<Array<u8>> {
+    type Item = u8;
+    const CAPACITY: u32 = 8;
+    fn first(self: @Array<u8>) -> Option<u8> {
+        self.get(0).map(|b| *b.unbox())
+    }
+}
+
+#[feature("negative-impls")]
+impl NoCopyForBox<T> of core::traits::Copy<Box<T>> {}
+
+impl PointDisplay of core::fmt::Display<Point<u8>> {
+    fn fmt(self: @Point<u8>, ref f: core::fmt::Formatter) -> Result<(), core::fmt::Error> {
+        write!(f, "({}, {})", *self.x, *self.y)
+    }
+}
+
+impl PointNeg of Neg<Point<i8>> {
+    fn neg(a: Point<i8>) -> Point<i8> { Point { x: -a.x, y: -a.y } }
+}
+
+impl PointMul of Mul<Point<u8>> {
+    fn mul(lhs: Point<u8>, rhs: Point<u8>) -> Point<u8> {
+        Point { x: lhs.x * rhs.x, y: lhs.y * rhs.y }
+    }
+}
+
+impl PointAddAssign of AddAssign<Point<u8>, Point<u8>> {
+    fn add_assign(ref self: Point<u8>, rhs: Point<u8>) {
+        self.x += rhs.x;
+        self.y += rhs.y;
+    }
+}
+
+impl PointIndex of core::ops::index::Index<Array<Point<u8>>, usize> {
+    type Target = Point<u8>;
+    fn index(self: @Array<Point<u8>>, index: usize) -> Point<u8> { *self.at(index) }
+}
+
+// ── Compile-time macros and generic const expressions ───────────────
+const COMPUTED: u32 = consteval_int!(2 * 3 + 4);
+const SELECTOR: felt252 = selector!("transfer");
+const SIZE: usize = 4;
+
+fn macros_demo() {
+    let message: ByteArray = format!("{} + {} = {}", 1, 2, 1 + 2);
+    println!("{}", message);
+    print!("no newline");
+    let formatted = format!("{:?}", array![1_u8, 2]);
+    let hex = format!("{:x}", 255_u32);
+    let _ = (formatted, hex);
+    assert!(SIZE == 4, "size is {}", SIZE);
+    let nested = array![array![1_u8], array![2_u8, 3_u8]];
+    let _ = nested;
+}
+
+fn generic_const<const N: usize>() -> usize { N }
+fn fixed_sum(values: [u8; 4]) -> u8 {
+    let [a, b, c, d] = values;
+    a + b + c + d
+}
+
+// ── Pattern matching: or-patterns, bindings, structs, ranges ────────
+fn patterns(value: Option<(u8, Point<u8>)>) -> u8 {
+    match value {
+        Option::Some((0, _)) => 0,
+        Option::Some((n, Point { x, y: 0 })) => n + x,
+        Option::Some((n, Point { x: _, y })) => n * y,
+        Option::None => 255,
+    }
+}
+
+fn range_patterns(n: u8) -> felt252 {
+    match n {
+        0 => 'zero',
+        1..=9 => 'digit',
+        10 | 20 | 30 => 'round',
+        _ => 'large',
+    }
+}
+
+fn loops_and_labels() -> u32 {
+    let mut total = 0_u32;
+    let mut i = 0_u32;
+    let result = loop {
+        i += 1;
+        if i % 2 == 0 {
+            continue;
+        }
+        total += i;
+        if i > 9 {
+            break total;
+        }
+    };
+    for j in 0..5_u32 {
+        total += j;
+    }
+    for (index, value) in array![10_u32, 20].into_iter().enumerate() {
+        total += index + value;
+    }
+    result + total
+}

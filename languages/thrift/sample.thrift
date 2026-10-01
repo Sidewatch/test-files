@@ -1,3 +1,4 @@
+// Apache Thrift 0.22 IDL — syntax showcase
 // ── Comments ──
 // Apache Thrift IDL: the warehouse inventory service.
 # Shell-style comments are accepted as well.
@@ -26,6 +27,7 @@ namespace perl Example::Inventory
 namespace swift ExampleInventory
 namespace netstd Example.Inventory
 namespace * example.inventory
+// deprecated forms, still accepted by the compiler:
 cpp_namespace example.legacy
 php_namespace Example\Legacy
 
@@ -161,7 +163,7 @@ service AdminOrders extends Orders {
 }
 
 service Streaming extends shared.SharedService {
-  stream<Order> watch(1: Status status),
+  list<Order> watch(1: Status status),
 }
 
 service Interactions {
@@ -169,11 +171,25 @@ service Interactions {
   i32 next() throws (1: NotFound nf),
 }
 
-// ── Interactions ──
-interaction Session {
-  void open()
-  void close()
+// ── Container annotations, deprecated keywords ──
+typedef map<string, i32> (cpp.template = "std::unordered_map") CountMap
+typedef list<i32> (cpp.template = "std::list") IntList
+typedef i32 (cpp.type = "uint32_t") Counter
+
+const LineItem DEFAULT_ITEM = { "sku": "A-1", "quantity": 2, "unitPrice": 9.99 }
+
+senum Color { "red", "green" } // deprecated
+typedef slist LegacyList // deprecated
+
+service Legacy {
+  async void notify(1: OrderId id), // deprecated alias of oneway
+  void a(), void b(); // comma and semicolon separators mix
 }
+
+struct XsdLegacy {
+  1: optional string name xsd_optional,
+  2: optional string nick xsd_nillable,
+} // xsd_* are deprecated
 
 // ── Reserved-looking identifiers and types in one place ──
 struct AllTypes {

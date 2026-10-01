@@ -1,4 +1,4 @@
-// Move showcase: inventory resources, events, generics and tests.
+// Move 2.2 (Aptos) / Move 2024 (Sui) — syntax showcase: inventory resources, events, generics and tests.
 /* A block comment
    over several lines. */
 /// Doc comment for the module.
@@ -307,4 +307,118 @@ script {
     fun main(account: signer) {
         inventory::init(&account);
     }
+}
+
+// ── Legacy address block form (Move 1 style) ──
+address 0x42 {
+module legacy_style {
+    use std::vector;
+    use 0x1::signer;
+    use 0x1::{vector as vec, option::Option};
+    struct Old has key { n: u64 }
+    public fun make(): Old { Old { n: 0 } }
+    public fun peek(a: address): u64 acquires Old { borrow_global<Old>(a).n }
+    fun unused(s: &signer) { let _ = signer::address_of(s); }
+}
+}
+
+// ── Move 2 syntax: enums, receiver functions, index notation, labels, lambdas ──
+#[lint::allow_unsafe_randomness]
+module sample::modern {
+    use std::vector;
+    use std::string::{Self, String};
+    use std::option::{Self as opt, Option};
+    use sample::inventory::{Self, Counter as Ctr};
+    use sample::inventory::Item;
+
+    // Sui-style (Move 2024) alternative to the braces above, one per file: `module sample::modern;`
+    // Sui-style imports: `use sui::object::{Self, UID};` and `use sui::tx_context::TxContext;`
+
+    public enum Shape has copy, drop, store {
+        Circle { radius: u64 },
+        Rect { w: u64, h: u64 },
+        Point,
+        Poly(vector<u64>),
+    }
+
+    public struct Holder<T: store + drop> has key, store { inner: T, tags: vector<String> }
+    public struct Coord(u64, u64) has copy, drop;
+
+    // receiver-style (method) calls and `use fun`
+    use fun area_of as Shape.area;
+    public use fun shape_name as Shape.name;
+
+    fun area_of(self: &Shape): u64 {
+        match (self) {
+            Shape::Circle { radius } => 3 * *radius * *radius,
+            Shape::Rect { w, h } => *w * *h,
+            Shape::Point => 0,
+            Shape::Poly(points) => points.length(),
+        }
+    }
+
+    fun shape_name(s: &Shape): String {
+        match (s) {
+            Shape::Circle { .. } => string::utf8(b"circle"),
+            Shape::Rect { w: _, h: _ } | Shape::Poly(_) => string::utf8(b"polygon"),
+            _ => string::utf8(b"other"),
+        }
+    }
+
+    fun tests_of_variants(s: Shape): bool {
+        s is Shape::Circle || s is Shape::Rect | Shape::Poly
+    }
+
+    fun index_notation(v: &mut vector<u64>, h: &mut Holder<u64>) {
+        v[0] = v[1] + 1;
+        let first = &mut v[0];
+        *first = *first + 1;
+        h.inner = h.inner + 1;
+        let n = h.tags.length();
+        let _ = n;
+    }
+
+    fun loops_and_lambdas(): u64 {
+        let total = 0;
+        for (i in 0..10) { total = total + i; };
+        let evens = vector[1, 2, 3, 4].filter!(|x| *x % 2 == 0);
+        let sum = evens.fold!(0, |acc, x| acc + x);
+        let found: Option<u64> = evens.find!(|x| *x > 2);
+        let _ = (sum, found);
+        'search: loop {
+            while (true) { break 'search; };
+        };
+        let value = 'blk: {
+            if (total > 5) return 'blk 1;
+            2
+        };
+        total + value
+    }
+
+    fun typed_and_casts(x: u8): u256 {
+        let wide = (x as u256);
+        let y: u16 = 1u16;
+        let z = 100u32 + (y as u32);
+        wide + (z as u256)
+    }
+
+    #[error]
+    const E_BAD: vector<u8> = b"bad input";
+    #[test, expected_failure(abort_code = 1)]
+    fun fails_with_code() { abort 1 }
+    #[test_only]
+    fun helper_for_tests(): u64 { 7 }
+
+    // ── Aptos Move 2.2 extras ──
+    #[randomness]
+    entry fun roll(_s: &signer) {}
+    #[deprecated]
+    public fun old_api() {}
+    #[resource_group(scope = global)]
+    struct Group {}
+    #[resource_group_member(group = sample::modern::Group)]
+    struct Member has key {}
+    public inline fun inline_fn(x: u64): u64 { x + 1 }
+    public fun with_signer(s: &signer): address { std::signer::address_of(s) }
+    public fun closure_param(f: |u64| u64 has copy + drop, x: u64): u64 { f(x) }
 }

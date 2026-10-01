@@ -1,4 +1,5 @@
 #!/usr/bin/env lua
+-- Lua 5.5 — syntax showcase (lua is not installed here; written against the 5.5 reference manual)
 -- ── Comments ──
 -- Line comment. TODO: cache the totals. FIXME: handle negative stock.
 --[[ Block comment
@@ -147,7 +148,6 @@ local ok3, lfs = pcall(require, "lfs")
 package.path = package.path .. ";./?.lua"
 print(_VERSION, _G._VERSION, _ENV == _G, arg and arg[0])
 
-
 -- ── Rare constructs ──
 ---@alias Sku string
 ---@type table<string, number>
@@ -258,4 +258,19 @@ local std = {
 }
 local ok_co, co_err = coroutine.close(coroutine.create(function() end))
 local cl <close> = setmetatable({}, { __close = function(_, e) print("closed", e) end })
+-- ── Lua 5.5: explicit global declarations ──
+global counter = 0
+global first, second = 1, 2
+global <const> LIMIT = 100
+global function report(name)
+  return "report " .. name
+end
+do
+  global <const> *
+end
+do
+  global *
+end
+
 return std, meta_all, obj, prec, tbl_a, numbers_more, escapes_more
+

@@ -1,10 +1,15 @@
 #!/usr/bin/env groovy
+// Gradle 9.1 (Groovy DSL, Groovy 4 language) — syntax showcase
 // Gradle (Groovy DSL): a Spring Boot service with a shadow jar, covering the build script syntax.
 /* Block comment: TODO migrate to the Kotlin DSL. FIXME: duplicate repositories. */
 
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import java.time.LocalDate
 import static java.util.Locale.ROOT
+import static java.lang.Math.*
+import java.util.concurrent.*
+import groovy.transform.*
+import groovy.json.JsonOutput as Json
 
 buildscript {
     repositories { mavenCentral() }
@@ -470,12 +475,103 @@ tasks.register('zipDist', Zip) {
 
 tasks.register('exec') {
     doLast {
-        exec { commandLine 'echo', 'hi'; workingDir = projectDir; ignoreExitValue = true }
-        project.javaexec { mainClass = 'Main'; classpath = sourceSets.main.runtimeClasspath }
+        // project.exec / project.javaexec were removed in Gradle 9; use ExecOperations or providers.exec
+        def echoed = providers.exec { commandLine 'echo', 'hi'; ignoreExitValue = true }.standardOutput.asText.get()
         ant.echo(message: 'from ant')
         file('out.txt').text = 'written'
         println providers.gradleProperty('x').getOrElse('none')
         println System.properties['os.name']
-        println buildFile.name + settingsDir + rootDir + projectDir + buildDir
+        println buildFile.name + settingsDir + rootDir + projectDir + layout.buildDirectory.get()
     }
 }
+
+// ── Gradle 9 DSL: test suites, toolchains, settings-file blocks, lazy properties ──
+testing {
+    suites {
+        test { useJUnitJupiter('5.12.0') }
+        integrationTest(JvmTestSuite) {
+            dependencies { implementation project() }
+            targets.all { testTask.configure { shouldRunAfter(test) } }
+        }
+    }
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+        vendor = JvmVendorSpec.ADOPTIUM
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 25
+    options.compilerArgs.addAll(['-parameters', '-Xlint:all'])
+}
+
+def versionProvider = providers.gradleProperty('appVersion').orElse(project.version.toString())
+def outputDir = layout.buildDirectory.dir('generated')
+tasks.register('generate') {
+    inputs.property('version', versionProvider)
+    outputs.dir(outputDir)
+    doLast { outputDir.get().file('VERSION').asFile.text = versionProvider.get() }
+}
+
+configurations {
+    consumable('apiElementsCustom') { attributes { attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, 'custom')) } }
+    resolvable('compileClasspathCustom')
+    dependencyScope('customScope')
+}
+
+// settings.gradle fragments
+plugins { id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0' }
+develocity { buildScan { termsOfUseUrl = 'https://gradle.com/help/legal-terms-of-use'; termsOfUseAgree = 'yes' } }
+buildCache { local { enabled = true } }
+
+// ── Groovy 4 language: records, sealed types, switch expressions, var, new operators ──
+record Point(int x, int y) {
+    Point { if (x < 0) throw new IllegalArgumentException('negative') }
+    double distance() { Math.sqrt(x * x + y * y) }
+}
+
+sealed interface Shape permits Circle, Square {}
+final class Circle implements Shape { double radius }
+final class Square implements Shape { double side }
+
+@groovy.transform.CompileStatic
+class Typed {
+    var inferred = 'var keyword'
+    final var constant = 1
+    static String describe(Object o) {
+        switch (o) {
+            case Integer -> 'int'
+            case String -> 'string'
+            default -> 'other'
+        }
+    }
+    def pick(int n) {
+        def label = switch (n) { case 1 -> 'one'; case 2, 3 -> 'few'; default -> { yield 'many' } }
+        label
+    }
+}
+
+@groovy.transform.Immutable class Money { BigDecimal amount; String currency }
+@groovy.transform.TupleConstructor @groovy.transform.ToString @groovy.transform.EqualsAndHashCode class Pair { String left; String right }
+@groovy.transform.Canonical class Canon { int a; int b }
+@groovy.transform.builder.Builder class Built { String name }
+@groovy.transform.Memoized static int slow(int n) { n * 2 }
+
+def notIn = 6 !in [1, 2, 3]
+def notInstance = 'a' !instanceof Integer
+def identical = r === r
+def notIdentical = r !== null
+def safeIndex = list?[0]
+def safeSpread = null*.size()
+def typedClosure = { String s -> s.size() } as Closure<Integer>
+def trailingLambda = list.collect { it.toUpperCase() }
+def multiAssign = { def (a, b) = [1, 2]; a + b }
+def textBlockLike = """\
+    line one
+    line two"""
+def dollarSlashyBlock = $/
+  multi-line $localName with / slashes and $$ dollars
+/$

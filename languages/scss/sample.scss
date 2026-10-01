@@ -1,3 +1,4 @@
+// SCSS — Dart Sass 1.9x syntax showcase (module system, modern CSS passthrough)
 @charset "UTF-8";
 
 // ── Comments ──
@@ -24,8 +25,13 @@
 @use "./tokens" as tokens with ($brand: #336699, $gap: 8px);
 @use "./helpers" as *;
 @forward "./theme" show theme-color, $theme-gap;
-@forward "./legacy" hide legacy-mixin as lg-*;
+@forward "./legacy" as lg-*;
+@forward "./legacy-extras" hide legacy-mixin, $legacy-var;
+@forward "./config" with ($gap: 4px !default);
+@use "sass:map" as m;
+// deprecated (still valid, slated for removal): @import is replaced by @use / @forward
 @import "legacy/reset", "legacy/print";
+@import url("plain.css") screen;
 
 // ── Variables ──
 $primary: #336699 !default;
@@ -181,7 +187,7 @@ ul > li:is(.a, .b):where(.c):has(> img) {
 }
 
 @media screen and (min-width: 600px) and (max-width: 1200px), print {
-  .card { padding: $spacing * 0.5; margin: -$spacing; width: 100% / 3; }
+  .card { padding: $spacing * 0.5; margin: -$spacing; width: 100% / 3; /* deprecated: slash division, use math.div */ }
 }
 
 @font-face {
@@ -209,7 +215,7 @@ ul > li:is(.a, .b):where(.c):has(> img) {
 }
 
 @each $status in $statuses {
-  .status-#{$status} { content: stock-label(index($statuses, $status)); }
+  .status-#{$status} { content: stock-label(index($statuses, $status)); /* index(): deprecated global, use list.index */ }
 }
 
 @for $i from 1 through 3 {
@@ -255,7 +261,6 @@ $query: "(min-width: 900px)";
 @media not all and (monochrome) { .colour { color: red; } }
 @supports not (display: grid) { .fallback { float: left; } }
 @include meta.load-css("theme/dark", $with: ("primary": #123456));
-@use "sass:map" as m;
 
 $merged: map.merge($config, ("extra": 1));
 $deep: map.get($config, "nested", "b");
@@ -281,3 +286,153 @@ $deep: map.get($config, "nested", "b");
   margin: { left: auto; right: auto; }
   --custom-prop: { a: b };
 }
+
+// ── Built-in modules (current API) ──
+$math-consts: math.$pi math.$e math.$epsilon math.$max-number;
+$math-fns: math.clamp(0, 5, 10) math.round(2.5) math.ceil(2.1) math.floor(2.9) math.abs(-3) math.pow(2, 8) math.sqrt(16) math.log(8, 2) math.hypot(3, 4) math.max(1, 2) math.min(1, 2) math.div(9, 3) math.percentage(.25) math.is-unitless(3) math.compatible(1px, 1in);
+$math-trig: math.sin(30deg) math.cos(0deg) math.tan(45deg) math.asin(.5) math.acos(.5) math.atan(1) math.atan2(1, 1);
+$list-fns: list.append((1 2), 3) list.join((1 2), (3 4), comma) list.index(a b c, b) list.nth(a b c, 2) list.set-nth(a b c, 2, x) list.length(a b) list.separator(a b) list.is-bracketed([a b]) list.zip(a b, c d) list.slash(1, 2);
+$string-fns: string.index("abc", "b") string.slice("abc", 1, 2) string.to-upper-case("a") string.to-lower-case("A") string.length("abc") string.insert("ac", "b", 2) string.quote(abc) string.unquote("abc") string.unique-id();
+$map-fns: map.set($config, "a", 1) map.has-key($config, "sku") map.keys($config) map.values($config) map.remove($config, "sku") map.deep-merge($config, ("nested": (c: 3))) map.deep-remove($config, "nested", "a");
+$color-fns: color.channel(#336699, "red", $space: rgb) color.scale($primary, $lightness: 20%) color.change($primary, $alpha: .5) color.complement($primary) color.invert($primary) color.grayscale($primary) color.is-legacy($primary) color.space($primary) color.to-space($primary, oklch) color.to-gamut(oklch(70% .4 150), $method: local-minde) color.is-in-gamut($primary) color.same($primary, #369);
+$selector-fns: selector.nest(".a", "&-b") selector.append(".a", ".b") selector.extend(".a .b", ".b", ".c") selector.replace(".a .b", ".b", ".c") selector.unify(".a", ".b") selector.is-superselector(".a", ".a.b") selector.simple-selectors(".a.b") selector.parse(".a .b");
+$meta-fns: meta.type-of(1) meta.unit(1px) meta.unitless(1) meta.variable-exists(primary) meta.global-variable-exists(primary) meta.function-exists("rem") meta.mixin-exists("flex") meta.feature-exists("at-error") meta.inspect((a: 1)) meta.get-function("rem") meta.call(meta.get-function("rem"), 32px) meta.module-functions("math") meta.module-variables("tokens");
+
+@mixin keywords-demo($args...) {
+  --kw: #{meta.inspect(meta.keywords($args))};
+  @if meta.content-exists() { @content; }
+}
+@mixin apply-demo { @include meta.apply(meta.get-mixin("flex"), column, 4px); }
+
+// ── Arguments: positional, named, rest, spread ──
+@mixin box($w, $h: $w, $opts...) { width: $w; height: $h; }
+.args {
+  @include box(10px);
+  @include box(10px, 20px);
+  @include box($h: 5px, $w: 6px);
+  @include box(1px, 2px, 3, 4);
+  @include box(list.join((1px, 2px), ()) ...);
+  @include box((w: 1px, h: 2px)...);
+  width: sum(1, 2, 3);
+  height: sum([1, 2, 3]...);
+  margin: rem($px: 24px, $base: 12px);
+}
+
+// ── if() function: legacy and CSS-style condition forms ──
+.if-forms {
+  legacy: if($enabled, 1px, 2px); // deprecated: if($condition, $if-true, $if-false)
+  modern: if(sass($enabled): 1px; else: 2px);
+  media: if(media(width >= 600px): 1px; else: 2px);
+  supports: if(supports(display: grid): grid; else: block);
+  style: if(style(--theme: dark): white; else: black);
+}
+
+// ── Nested rules: every nesting shape ──
+.nest {
+  color: red;
+  .descendant { color: blue; }
+  > .child { color: green; }
+  + .adjacent { color: green; }
+  ~ .general { color: green; }
+  &.compound { color: teal; }
+  &-suffix { color: teal; }
+  &:hover, &:focus-visible { color: navy; }
+  &::before { content: ""; }
+  .parent-context & { color: gray; }
+  :not(&) { color: silver; }
+  @media (width >= 600px) { color: black; }
+  @media (400px <= height <= 900px) { color: black; }
+  @supports (display: grid) { display: grid; }
+  @container card (inline-size > 30em) { display: flex; }
+  @layer overrides { color: purple; }
+  @scope (.inner) { img { border: 1px solid; } }
+  color: red; // declarations after nested rules (mixed declarations)
+  @at-root (without: media) { .no-media { color: pink; } }
+  @at-root (with: rule) { .with-rule { color: pink; } }
+  @starting-style { opacity: 0; }
+}
+
+// ── Modern CSS passed through ──
+.modern {
+  color: oklch(62% .19 255);
+  background: color-mix(in oklch, #336699 40%, white);
+  border-color: lab(50% 40 59.5 / .5);
+  outline-color: lch(52% 58 20) oklab(59% .1 .1) hwb(194 0% 0%);
+  fill: color(display-p3 1 .5 0);
+  caret-color: light-dark(#fff, #000);
+  color: rgb(from #336699 r g b / 50%);
+  color: oklch(from var(--brand) calc(l + .1) c h);
+  width: clamp(10rem, 50vw, 40rem);
+  inline-size: min(100%, 60ch);
+  block-size: max(2rem, 10dvh);
+  aspect-ratio: 16 / 9;
+  inset: 0;
+  container: card / inline-size;
+  container-type: inline-size;
+  text-wrap: balance;
+  view-transition-name: hero;
+  animation-timeline: scroll(root block);
+  anchor-name: --tip;
+  top: anchor(--tip bottom);
+  transition: opacity .2s allow-discrete;
+  scroll-snap-type: x mandatory;
+  field-sizing: content;
+  &:has(> img:only-child) { padding: 0; }
+  &:is(h1, h2):where(.a) { margin: 0; }
+  &:nth-child(2n of .x) { color: red; }
+  &::part(label) { color: red; }
+  &::slotted(span) { color: red; }
+  &:host(.themed) { color: red; }
+  &:focus-within { outline: auto; }
+  &:popover-open { opacity: 1; }
+  &::backdrop { background: rgb(0 0 0 / 50%); }
+  &:user-invalid { border-color: red; }
+}
+
+@supports selector(:has(a)) { .has-support { display: block; } }
+@supports font-tech(color-COLRv1) { .colr { font-palette: normal; } }
+@container style(--theme: dark) { .dark-only { color: white; } }
+@container card not (width < 300px) { .wide-card { display: flex; } }
+@layer reset, base, components.buttons, utilities;
+@layer base { html { color-scheme: light dark; } }
+@scope (.tabs) to (.tab-panel) { :scope > a { color: red; } }
+@view-transition { navigation: auto; }
+@counter-style thumbs { system: cyclic; symbols: "👍"; suffix: " "; }
+@font-feature-values Inventory Sans { @styleset { nice-style: 12; } }
+@font-palette-values --warm { font-family: "Inventory Sans"; base-palette: 1; }
+@media (prefers-color-scheme: dark), (hover: hover) and (pointer: fine) { .adaptive { color: white; } }
+@media (width >= 600px) and (not (orientation: portrait)) { .range-and { display: block; } }
+@keyframes slide { 0% { translate: 0; } 100% { translate: 100%; } }
+@page wide:left { size: A4 landscape; margin: 2cm; @top-center { content: "Inventory"; } }
+
+// ── Placeholder, extend and mixin edge cases ──
+%btn-base { padding: .5em 1em; }
+.btn-a { @extend %btn-base; }
+.btn-b { @extend %btn-base, .btn-a; }
+@media print { .btn-c { @extend %btn-base; } }
+@mixin no-args() { display: block; }
+@mixin with-content { @content; }
+.content-forms {
+  @include no-args();
+  @include no-args;
+  @include with-content { color: red; }
+  @include with-content() { color: red; }
+  @include button-variant(#369) using ($bg) { border-color: $bg; }
+}
+
+// ── Strings, interpolation and special values ──
+$interp: "a#{1 + 2}b" 'c#{"d"}e' #{unquoted}#{-suffix};
+$selector-interp: ".item-#{1 + 1}";
+#{$selector-interp}, [data-#{"key"}="v"], .a-#{$n}-b { color: red; }
+@media #{"screen"} and (min-width: #{600px}) { .interp-media { color: red; } }
+.interp-prop { #{"margin"}-#{"left"}: 1px; --#{"custom"}: 2px; }
+.special { content: "\f101" "\"" '\'' url(  spaced.png  ) format("woff2"); width: calc(1px + #{$spacing}); height: calc(100% - var(--gap, #{$spacing})); }
+$bool-ops: true and false or not true;
+$str-cmp: "a" == "a" and "a" != "b";
+$num-cmp: 1 < 2 and 2 > 1 and 1 <= 1 and 1 >= 1;
+$null-ops: null or 1;
+$trailing-comma: (1, 2, 3,);
+$map-trailing: (a: 1, b: 2,);
+$empty-map: ();
+$single-list: (1,);
+$slash-sep: list.slash(1, 2);

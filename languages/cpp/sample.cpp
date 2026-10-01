@@ -1,3 +1,5 @@
+// C++23 (with C++26 additions marked) — syntax showcase
+
 // ── Comments ──
 // Line comment. TODO: shard the bins. FIXME: handle overflow.
 /* Block comment
@@ -494,3 +496,248 @@ constinit int kConstInit = 2;
 thread_local std::string tls_name;
 
 } // namespace extras
+
+// ══ Latest-standard additions ══════════════════════════════════════════
+#include <expected>
+#include <print>
+#include <utility>
+
+#ifdef ACME_WIN
+#  define ACME_API __declspec(dllexport)
+#elifdef ACME_POSIX
+#  define ACME_API __attribute__((visibility("default")))
+#elifndef ACME_OTHER
+#  define ACME_API
+#else
+#  define ACME_API
+#endif
+#warning "C++23 #warning directive"
+#line 900 "generated.cpp"
+
+namespace latest {
+
+// ── Alternative tokens and remaining operators ──
+bool tokens(unsigned a, unsigned b) {
+    unsigned x = a bitand b;
+    unsigned y = a bitor b;
+    unsigned z = compl a;
+    unsigned w = a | b;
+    unsigned v = a ^ b;
+    unsigned s = a >> 2;
+    short sh = 1;
+    signed int si = -1;
+    void* null = NULL;
+    (void)null; (void)sh; (void)si;
+    return (a not_eq b) and (x or y) and (z xor w) and (v != s);
+}
+std::vector<std::vector<int>> nested_templates;
+static_assert(offsetof(extras::Point3, y) == sizeof(int));
+
+// ── Raw string prefixes ──
+const wchar_t*  kLR   = LR"(wide raw)";
+const char16_t* kuR   = uR"(utf16 raw)";
+const char32_t* kUR   = UR"(utf32 raw)";
+const char8_t*  ku8R  = u8R"(utf8 raw)";
+
+// ── C++23 literals and escapes ──
+constexpr std::size_t kSize = 42uz;
+constexpr std::ptrdiff_t kDiff = 42z;
+
+// ── Explicit object parameter (deducing this), static operators ──
+struct Counter {
+    int n = 0;
+    int get(this const Counter& self) { return self.n; }
+    template <typename Self>
+    auto&& value(this Self&& self) { return std::forward<Self>(self).n; }
+    static int operator()(int x) { return x + 1; }
+    static int operator[](int x, int y) { return x * y; }
+    int ref_get() const & { return n; }
+    int ref_take() && { return n; }
+    virtual int pure() const noexcept = 0;
+    virtual void later() volatile && = 0;
+    template <typename T> T cast() const { return static_cast<T>(n); }
+};
+template <typename T> struct Box {
+    T t;
+    template <typename U> U as() const { return static_cast<U>(t); }
+};
+template <typename B> int use_template_method(B& b) {
+    return b.template as<int>() + b.template as<long>();
+}
+
+// ── Lambdas, latest forms ──
+template <typename... Xs>
+auto init_pack_capture(Xs... xs) {
+    return [... captured = xs] { return sizeof...(captured); };
+}
+void lambdas() {
+    int x = 1, y = 2;
+    int arr[3] = {1, 2, 3};
+    auto a = [x = 10, &r = y] { return x + r; };
+    auto b = [x, y]() noexcept -> int { return x + y; };
+    auto c = [] static { return 0; };
+    auto d = [] consteval { return 1; };
+    auto e = []<typename T>(T t) requires std::integral<T> { return t; };
+    auto f = [&](this auto&& self, int n) -> int { return n <= 1 ? 1 : n * self(n - 1); };
+    (void)a; (void)b; (void)c; (void)d; (void)e; (void)f; (void)arr;
+}
+
+// ── if consteval, auto(x), assume, [[no_unique_address]] ──
+constexpr int cx(int n) {
+    if consteval { return n; } else { return n + 1; }
+}
+constexpr int cx2(int n) {
+    if !consteval { return n; }
+    return auto(n) + 1;
+}
+int assumed(int v) {
+    [[assume(v > 0)]];
+    return v;
+}
+struct Empty {};
+struct Holder { [[no_unique_address]] Empty e; int v [[maybe_unused]]; int arr [[deprecated]] [3]; };
+
+// ── Constraints: disjunction, conjunction, nested requirements ──
+template <typename T>
+concept Number = std::integral<T> || std::floating_point<T>;
+template <typename T>
+concept Printable = requires(T t, std::ostream& os) {
+    { os << t } -> std::same_as<std::ostream&>;
+    requires sizeof(T) > 0;
+    typename T::value_type;
+    { t.size() } noexcept;
+};
+template <typename T>
+    requires std::integral<T> or std::floating_point<T>
+T mixed(T v) { return v; }
+
+// ── Dependent names ──
+template <typename T>
+struct Dep {
+    using value = typename T::value_type;
+    using rebound = typename T::template rebind<int>::other;
+    typename T::value_type member;
+    static constexpr auto n = T::template count<3>();
+};
+
+// ── Explicit instantiation ──
+template <typename T> T clamp_qty_t(T v) { return v; }
+template int clamp_qty_t<int>(int);
+} // namespace latest
+namespace acme::warehouse {
+template class Ring<int, 4>;
+extern template class Ring<long, 8>;
+}
+namespace latest {
+
+// ── Comma expressions and designated array initialisers ──
+void commas() {
+    int i = 0, j = 10;
+    int r = (i++, j--, i + j);
+    for (i = 0, j = 5; i < j; ++i, --j) { r += i; }
+    (void)r;
+}
+int designated[4] = {[1] = 5, [2] = 6};
+int ranged[6] = {[0 ... 2] = 1, [3 ... 5] = 2};
+
+// ── std::expected, std::print, placeholder `_` (C++26) ──
+std::expected<int, std::string> parse(std::string_view s) {
+    if (s.empty()) return std::unexpected("empty");
+    return 1;
+}
+void print_all() {
+    std::print("{} {}\n", 1, "two");
+    std::println("{:>8}", 3.5);
+}
+void placeholder() {
+    auto _ = parse("x");
+    auto _ = parse("y");
+}
+
+// ── Compiler extensions ──
+void gnu_extensions(int in) {
+    int out = 0;
+    asm("mov %1, %0" : "=r"(out) : "r"(in) : "cc");
+    asm volatile("" : "+r"(out) : : "memory");
+    asm goto("jmp %l0" : : : : done);
+done:
+    int v = __extension__ 5;
+    extras::Guarded gd;
+    int extras::Guarded::* mp = &extras::Guarded::v;
+    int (extras::Guarded::*fp)() const = &extras::Guarded::get;
+    extras::Guarded* gp = &gd;
+    int viaDot = gd.*mp + (gd.*fp)();
+    int viaArrow = gp->*mp + (gp->*fp)();
+    (void)viaDot; (void)viaArrow;
+    switch (in) { case 1 ... 3: break; default: break; }
+    auto g = _Generic(in, int: 1, long: 2, default: 3);
+    (void)v; (void)g;
+}
+__attribute__((noreturn)) void die();
+[[noreturn]] void die2();
+
+} // namespace latest
+
+// ── Microsoft extensions (labelled; accepted by MSVC/clang-cl only) ──
+#ifdef ACME_MSVC
+__declspec(dllexport) int ms_exported();
+__declspec(align(16)) struct MsAligned { int x; };
+int __cdecl ms_cdecl(int);
+int __stdcall ms_stdcall(int);
+int __fastcall ms_fastcall(int);
+void ptr_modifiers(int* __ptr32 p32, int* __ptr64 p64, int* __restrict r, int* __unaligned u,
+                   int* __sptr s, int* __uptr uu);
+char __based(void) *based_ptr;
+void seh() {
+    __try {
+        ms_cdecl(1);
+        __leave;
+    } __except (1) {
+    }
+    __try {
+        ms_cdecl(2);
+    } __finally {
+    }
+}
+#endif
+
+// ── Modules (a separate translation unit; shown here for syntax only) ──
+#ifdef ACME_MODULE_UNIT
+module;
+#include <cstdint>
+export module acme.warehouse:inventory;
+export import :stock;
+import std;
+import <vector>;
+import "local.h";
+export module acme.warehouse [[deprecated]];
+export namespace acme { int exported_fn(); }
+export { int a(); int b(); }
+export template <typename T> T exported_tpl(T v) { return v; }
+module :private;
+#endif
+
+// ── C++26: reflection, expansion statements, contracts, annotations ──
+#ifdef ACME_CPP26
+namespace cpp26 {
+constexpr auto info = ^^Item;
+constexpr auto global = ^^::;
+constexpr auto typ = ^^int;
+using Spliced = typename [: ^^int :];
+[: info :] make_item();
+constexpr int spliced_value = [: ^^kDecimal :];
+template <auto R> struct Splice { using T = typename [: R :]; };
+void expand() {
+    template for (auto x : std::tuple{1, 2.0, 'c'}) { (void)x; }
+}
+const char* kNamed = "\N{LATIN CAPITAL LETTER A}";
+const char* kDelim = "\u{1F4E6} \x{41} \o{101}";
+struct NoCopy {
+    NoCopy(const NoCopy&) = delete("copying is disabled");
+};
+template <typename... Ts>
+using First = Ts...[0];
+int checked(int x) pre(x > 0) post(r : r > 0) { contract_assert(x != 3); return x; }
+[[=1]] int annotated;
+}
+#endif

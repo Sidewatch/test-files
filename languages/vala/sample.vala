@@ -1,3 +1,4 @@
+// Vala 0.56 — syntax showcase
 // ── Comments ───────────────────────────────────────────────
 // Line comment. TODO: persist the stock. FIXME: rounding.
 /* Block comment
@@ -157,7 +158,7 @@ namespace Warehouse {
     public class Box<T> : Object {
         public T content;
         public Box (T content) { this.content = content; }
-        public T get_content<V> (V extra) where V : Object { return content; }
+        public T get_content<V> (V extra) { return content; }
     }
 }
 
@@ -419,11 +420,6 @@ void statements (int argc) {
     print ("done\n");
 }
 
-int yield_demo () {
-    yield return 1;
-    return 0;
-}
-
 extern void external_function (int x);
 static int module_static = 0;
 public const string[] NAMES = { "a", "b" };
@@ -441,3 +437,70 @@ public class Window : Gtk.ApplicationWindow {
     [GtkChild] private unowned Gtk.Button button;
     [GtkCallback] private void on_click (Gtk.Button b) {}
 }
+
+// ── Additions: more class, namespace and member forms ──────
+namespace Warehouse.Inner {
+    public class Counter : Object {
+        public static int total = 0;
+        public class int version = 1;           // class-level member
+        public int value { get; set; }
+        public signal void changed (int new_value);
+
+        [Signal (detailed = true)]
+        public virtual signal void detail_changed ();
+
+        public virtual int step () { return 1; }
+        public abstract class Base : Object {
+            public abstract void run ();
+        }
+        public Counter () {}
+        public Counter.from_value (int v) { this.value = v; }
+    }
+}
+
+using Warehouse.Inner;
+
+public class Child : Counter {
+    public override int step () { return base.step () + 1; }
+    public override void dispose () { base.dispose (); }
+}
+
+public struct Vec2 {
+    public double x;
+    public double y;
+    public Vec2 (double x, double y) { this.x = x; this.y = y; }
+    public Vec2 add (Vec2 o) { return Vec2 (x + o.x, y + o.y); }
+}
+
+[Print]
+public struct Tagged { public int a; }
+
+public interface Stack<T> : Object {
+    public abstract void push (T item);
+    public abstract T pop ();
+}
+
+public delegate void Notify (string message, ...);
+public delegate T Factory<T> () throws GLib.Error;
+
+void extra_statements () {
+    var v = Vec2 (1, 2).add (Vec2 (3, 4));
+    string? maybe_null = null;
+    string safe = maybe_null ?? "fallback";
+    unowned string s = safe;
+    int[] a = new int[] { 1, 2, 3 };
+    foreach (int x in a) { print ("%d\n", x); }
+    var chars = "héllo".get_char (0);
+    string up = "abc".up ();
+    string joined = string.joinv (",", { "a", "b" });
+    bool b = "abc".has_prefix ("a") && !("abc".contains ("z"));
+    var dict = new HashTable<string, string> (str_hash, str_equal);
+    dict.insert ("k", "v");
+    Value val = Value (typeof (int));
+    val.set_int (3);
+    var obj = Object.new (typeof (Object));
+    print ("%s %s %d %c\n", up, joined, a.length, (char) chars);
+    _ = (v, s, b, obj);
+}
+
+// Not shown: generic `where` constraints and `yield return` do not exist in Vala.

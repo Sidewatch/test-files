@@ -1,4 +1,5 @@
 #!/usr/bin/env elixir
+# Elixir 1.19 — syntax showcase
 # ── Comments ──
 # Line comment. TODO: persist bins. FIXME: handle negative stock.
 
@@ -77,11 +78,13 @@ defmodule Acme.Warehouse do
     bool = true and not false
     string = "Warehouse \"north\"\t\n é \u{1F4E6} \x41 \e[0m"
     interp = "Total: #{integer} and #{Float.round(float, 2)} and #{"nested #{integer}"}"
+    # deprecated: single-quoted charlists, prefer ~c
     charlist = 'charlist #{integer}'
     heredoc = """
     Heredoc with #{integer} interpolation
       indented line
     """
+    # deprecated: charlist heredoc, prefer ~c
     raw_heredoc = '''
     Charlist heredoc
     '''
@@ -154,6 +157,7 @@ defmodule Acme.Warehouse do
       :few
     end
 
+    # unless is deprecated since 1.18, prefer `if not`
     unless Enum.empty?(items), do: :has_items
 
     case mode do
@@ -223,7 +227,7 @@ defmodule Acme.Warehouse do
     _ = "a" <> "b"
     _ = a |> to_string() |> String.upcase()
     _ = a && b || nil
-    _ = a ||| b &&& a ^^^ b <<< 1 >>> 1
+    _ = a ||| b &&& a <<< 1 >>> 1
     _ = ~~~a
     _ = a =~ ~r/x/
     _ = if a, do: 1, else: 2
@@ -303,7 +307,7 @@ defmodule Acme.Warehouse.Extras do
   defmacro ast(expr), do: Macro.escape(expr)
 
   def unicode do
-    {"café 日本語 📦", ?é, ?\s, ?\\, ?é, ?\x41, <<0xE9::utf8>>, "\u{1F4E6}", 'ünïcode'}
+    {"café 日本語 📦", ?é, ?\s, ?\\, ?é, ?\x41, <<0xE9::utf8>>, "\u{1F4E6}", ~c"ünïcode"}
   end
 
   def numbers do
@@ -316,7 +320,7 @@ defmodule Acme.Warehouse.Extras do
       a and b, a or b, not a, a && b, a || b, !a,
       a == b, a != b, a === b, a !== b, a < b, a > b, a <= b, a >= b,
       a |> b, a <~> b, a ~> b, a <~ b, a ~>> b, a <<~ b, a <<< b, a >>> b,
-      a &&& b, a ||| b, a ^^^ b, ~~~a, a in b, a not in b, a =~ b,
+      a &&& b, a ||| b, bxor(a, b), ~~~a, a in b, a not in b, a =~ b,
       a..b, a..b//2, &(&1 + &2), &Kernel.+/2, &{&1, &2}, &[&1], & &1, ^a
     ]
   end
@@ -465,4 +469,93 @@ defmodule Acme.WarehouseTest do
     end
     test "pending", do: flunk("not yet")
   end
+end
+
+# ── Elixir 1.15–1.19 additions and remaining forms ──
+defmodule Acme.Warehouse.Modern do
+  @moduledoc false
+  require Record
+  Record.defrecord(:bin, :bin, code: nil, qty: 0)
+
+  @typedoc "A sized bin."
+  @type t :: %__MODULE__{code: String.t()}
+  defstruct [:code]
+
+  def sigils do
+    x = 1
+    {~s"double quoted", ~s'single quoted', ~s|pipes|, ~s[brackets], ~s<angles>, ~s{braces},
+     ~S"""
+     raw heredoc \n #{not_interpolated}
+     """,
+     ~s'''
+     single-quote heredoc #{1 + 1}
+     ''', ~c"charlist #{x}", ~C"raw charlist", ~w[a b]c, ~W(raw words #{x}),
+     ~r"regex"imsxfUu, ~R/raw regex #{x}/}
+  end
+
+  def nested_access(data) do
+    data |> get_in([:a, :b]) |> then(&put_in(data, [:a, :b], &1))
+    update_in(data[:a][:b], &(&1 + 1))
+    data[:a][:b]
+    data.a.b
+    pop_in(data[:a])
+    tap(data, &IO.inspect/1)
+    is_non_struct_map(data)
+  end
+
+  def comprehensions do
+    for x <- 1..3, y <- 1..3, x < y, uniq: true, do: {x, y}
+    for <<a, b <- <<1, 2, 3, 4>>>>, into: [], do: a + b
+    for x <- [1, 2], reduce: %{} do
+      acc -> Map.put(acc, x, x * 2)
+    end
+  end
+
+  def macros(opts) do
+    quote do
+      def unquote(:"dyn_#{opts}")(), do: unquote(opts)
+    end
+    ast = quote(do: 1 + 2)
+    {:+, _meta, [1, 2]} = ast
+    Macro.expand(ast, __ENV__)
+    caller = __CALLER__
+    {__DIR__, __ENV__.line, caller}
+  end
+
+  def anonymous do
+    f = fn -> :no_args end
+    g = fn %{a: a}, b when is_integer(a) -> a + b end
+    h = &Acme.Warehouse.clamp/3
+    i = & &1
+    {f.(), g.(%{a: 1}, 2), h.(1, 2, 3), i.(:x)}
+  end
+
+  def one_line_forms(x), do: if(x, do: 1, else: 2)
+
+  def block_forms(x) do
+    if x do
+      1
+    else
+      2
+    end
+  end
+
+  def atoms do
+    [:"quoted atom", :"with-dash", Elixir.Enum, :erlang, :+, :<<>>, :{}, :%{}, nil, true, false,
+     :ok?, :done!, "é" <> "ü", __MODULE__.Sub, Foo.Bar.Baz]
+  end
+
+  def stdlib_newer do
+    [1, 2, 3] |> Enum.map(&(&1 * 2)) |> dbg()
+    Date.shift(~D[2026-03-01], month: 1)
+    Duration.new!(month: 1)
+    ~U[2026-03-01 00:00:00Z] |> DateTime.add(1, :hour)
+    JSON.encode!(%{a: 1})
+    Keyword.validate!([a: 1], [:a, b: 2])
+    :erlang.system_time(:millisecond)
+  end
+
+  # Set-theoretic types are inferred in 1.18+; `dynamic()` is usable in specs.
+  @spec any_value() :: dynamic()
+  def any_value, do: 1
 end

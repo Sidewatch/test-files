@@ -1,4 +1,5 @@
 #!/usr/bin/env zsh
+# Zsh 5.9 — syntax showcase
 # ── Comments ───────────────────────────────────────────────
 # ~/.zshrc — interactive shell setup for a warehouse developer machine.
 # TODO: move work aliases to a separate file. FIXME: slow compinit on cold start.
@@ -294,6 +295,42 @@ r
 alias -m 'g*'
 local IFS=$'\n\t'
 break; continue
+
+# ── Additions: modules, array and assoc forms, tests ───────
+zmodload zsh/mathfunc zsh/datetime zsh/files zsh/parameter zsh/zutil zsh/pcre
+typeset -T COLON_LIST colon_list ':'
+typeset -aU unique_list
+unique_list+=(one two one)
+sku_names+=(WGT-300 "Wrench")
+sku_names[extra]=value
+nums=(5 3 9 1)
+print ${(on)nums} ${(On)nums} ${nums:#3} ${(M)nums:#<4->} ${nums[(r)9]} ${nums[(Ie)9]} ${(j:+:)nums}
+print ${(f)"$(<file.txt)"} ${(ps:\n:)raw} ${(@)${(f)text}[2,-1]} ${(Z:Cn:)line} ${~${(j:|:)tags}}
+print ${${(%):-%x}:A:h} ${(%):-%N} ${(S)file#*/} ${(I:2:)file//a/b} ${(*)glob_var}
+print $(( sqrt(16) + sin(0) + floor(2.5) + abs(-3) )) $(( rand48() )) $(strftime '%Y-%m-%d' $EPOCHSECONDS)
+[[ -v tags ]] && [[ -o extendedglob ]] && [[ ! -t 1 ]] && [[ $file -ef $file ]]
+[[ abc == a(b|c)# ]] && [[ $sku -pcre-match '^[A-Z]+' ]]
+[[ ${(t)tags} == *array* && ${(t)sku_names} == *association* ]]
+(( ${#tags} > 1 )) && (( ratio < 1 )) || print "limits"
+coproc { while read -r line; do print "got $line"; done }
+print -p "message" && read -p reply_line
+function named_widget() {
+  local -a args=("$@")
+  local -A opts
+  zparseopts -D -E -A opts -- h -help v:: -verbose=v
+  : ${opts[-v]:=default}
+  print -- "${(@)args}" "${(kv)opts}"
+}
+name=value cmd_with_env_prefix --flag
+{ print one; print two } > combined.txt
+print one && { print two; print three } || print four
+for (( i = 0, j = 10; i < j; i++, j-- )) print $i $j
+for f in *(N); do :; done
+if [[ -e /nonexistent ]] { print yes } else { print no }
+() { print "anonymous with args: $@" } 1 2 3
+alias -g G='| grep -i'
+alias -s py=python3
+print ${${(M)path:#*bin*}[1]} ${#${(f)"$(ls)"}}
 
 # ── Plugins and tools ──────────────────────────────────────
 source "${ZDOTDIR:-$HOME}/.zsh/plugins/syntax-highlighting/zsh-syntax-highlighting.zsh" 2>/dev/null

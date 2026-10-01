@@ -1,3 +1,4 @@
+// Cypher 25 (Neo4j 2025.x) — syntax showcase
 // ── Comments ──
 // Line comment. TODO: add indexes. FIXME: revisit the shortest-path cost.
 /* Block comment
@@ -29,7 +30,7 @@ RETURN 42 AS integer,
        false AS no,
        null AS nothing,
        'single \'quoted\' \n string' AS s1,
-       "double \"quoted\" \t string é \u{1F4E6}" AS s2,
+       "double \"quoted\" \t string \u00e9 \u0041" AS s2,
        `back-ticked identifier` AS ident,
        [1, 2, 3] AS list,
        {sku: 'A-100', qty: 5, tags: ['x', 'y']} AS map,
@@ -172,15 +173,15 @@ MATCH (n) WHERE n:Item AND NOT n:Archived RETURN n;
 MATCH (n) WHERE (n)-[:STORED_IN]->() AND NOT (n)<-[:SUPPLIES]-() RETURN n;
 
 // Ordering, null handling, predicates
-MATCH (n:Item) RETURN n ORDER BY n.qty DESC NULLS LAST, n.name ASCENDING;
+MATCH (n:Item) RETURN n ORDER BY n.qty DESC, n.name ASCENDING;
 MATCH (n:Item) RETURN n SKIP $skip LIMIT $limit;
-MATCH (n:Item) WHERE n.qty BETWEEN 1 AND 5 OR n.name =~ '.*x' OR n.tags[0] = 'a' RETURN n;
-MATCH (n:Item) WHERE exists(n.notes) AND n.notes <> '' AND n.qty >= 0 RETURN n;
+MATCH (n:Item) WHERE n.qty >= 1 AND n.qty <= 5 OR n.name =~ '.*x' OR n.tags[0] = 'a' RETURN n;
+MATCH (n:Item) WHERE n.notes IS NOT NULL AND n.notes <> '' AND n.qty >= 0 RETURN n;
 RETURN [1, 2, 3][1..], [1, 2, 3][..2], [1, 2, 3][-2..-1], {a: 1}['a'], {a: 1}.a;
 RETURN 1 IN [1, 2] AS inList, 'a' + 1 AS mixed, -1 AS neg, 2 ^ 10 AS pow, 7 % 3 AS modulo, 7 / 2 AS div;
 RETURN abs(-1), ceil(1.2), floor(1.8), round(1.5), sign(-3), rand(), sqrt(4), exp(1), log(10), log10(100), pi(), e();
 RETURN toUpper('a'), toLower('A'), trim('  a  '), ltrim(' a'), rtrim('a '), replace('abc', 'b', 'x'), substring('hello', 1, 3), left('abc', 1), right('abc', 1), split('a,b', ','), reverse('abc');
-RETURN head([1, 2]), last([1, 2]), tail([1, 2]), keys({a: 1}), labels(n), type(r), id(n), elementId(n), properties(n), nodes(p), relationships(p);
+RETURN head([1, 2]), last([1, 2]), tail([1, 2]), keys({a: 1}), labels(n), type(r), elementId(n), id(n) /* deprecated: use elementId */, properties(n), nodes(p), relationships(p);
 RETURN date.truncate('month', date()), datetime.fromepoch(0, 0), localtime(), localdatetime(), time(), duration.between(date('2026-01-01'), date('2026-03-01')), date().year;
 RETURN point.distance(point({x: 0, y: 0}), point({x: 3, y: 4})), vector.similarity.cosine([1, 2], [3, 4]);
 RETURN count(*), count(DISTINCT n), collect(n.name)[0], percentileCont(n.qty, 0.9), sum(n.qty), avg(n.qty), stDevP(n.qty);
@@ -213,3 +214,28 @@ CREATE ROLE auditor IF NOT EXISTS;
 GRANT ROLE auditor TO clerk;
 RENAME USER clerk TO picker;
 DROP USER picker IF EXISTS;
+
+// ── Cypher 25: version selection and new clauses ──
+CYPHER 25 MATCH (n:Item) RETURN n;
+CYPHER 5 MATCH (n:Item) RETURN n;
+MATCH (n:Item)
+LET total = n.qty * n.price, label = n.name + '!'
+FILTER total > 100
+RETURN label, total
+ORDER BY total DESC
+OFFSET 2 LIMIT 5;
+MATCH (n:Item) FINISH;
+INSERT (:Item {sku: 'N-1'})-[:STORED_IN]->(:Bin {code: 'N-01'});
+MATCH (n:Item) RETURN n.sku AS sku
+NEXT
+MATCH (m:Item) WHERE m.sku = sku RETURN m;
+MATCH (n:Item)
+WHEN n.qty = 0 THEN SET n.status = 'out'
+WHEN n.qty < 5 THEN SET n.status = 'low'
+ELSE SET n.status = 'ok';
+MATCH REPEATABLE ELEMENTS (a)-[:NEXT]->(b)-[:NEXT]->(c) RETURN a, c;
+MATCH DIFFERENT RELATIONSHIPS (a)-[:NEXT]->(b)-[:NEXT]->(c) RETURN a, c;
+MATCH (a:Bin)-[:NEXT]->{1,}(b:Bin) RETURN a, b;
+MATCH (a:Bin)-[:NEXT]->+(b:Bin) RETURN a, b;
+MATCH ALL SHORTEST (a:Bin)-[:NEXT]-+(b:Bin) RETURN a, b;
+MATCH SHORTEST 2 GROUPS (a:Bin)-[:NEXT]-+(b:Bin) RETURN a, b;

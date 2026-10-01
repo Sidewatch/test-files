@@ -1,13 +1,14 @@
+// go.mod (Go 1.25) — syntax showcase
 // Module file for the inventory service.
 // Comments use C++ style; block comments are not supported.
 
 module github.com/example/inventory
 
-go 1.23.0
+go 1.25.0
 
-toolchain go1.23.4
+toolchain go1.25.1
 
-godebug default=go1.21
+godebug default=go1.25
 godebug (
 	panicnil = 1
 	httplaxcontentlength = 1
@@ -63,7 +64,7 @@ retract (
 	[v1.2.0, v1.2.9]
 )
 
-// Tool directives (Go 1.24).
+// Tool directives (Go 1.24; replaces the tools.go idiom).
 tool golang.org/x/tools/cmd/stringer
 
 tool (

@@ -1,4 +1,5 @@
 #!/usr/bin/env -S godot --headless --script
+# GDScript (Godot 4.5) — syntax showcase
 @tool
 @icon("res://icons/player.svg")
 @static_unload
@@ -398,3 +399,56 @@ class Concrete extends AbstractThing:
 	func do_it() -> void: pass
 	func get_value() -> int: return 1
 
+
+# ── Godot 4.5 additions: variadic functions, super, is_instance_valid, typed collections ──
+func variadic_sum(...numbers: Array) -> int:
+	var total := 0
+	for n in numbers:
+		total += n
+	return total
+
+func variadic_with_fixed(label: String, ...rest: Array) -> String:
+	return label + str(rest.size())
+
+func _notification(what: int) -> void:
+	match what:
+		NOTIFICATION_READY:
+			pass
+		NOTIFICATION_PREDELETE:
+			pass
+
+class Child extends Inventory:
+	func _init(initial: int = 1) -> void:
+		super(initial)
+	func add(n: int) -> void:
+		super.add(n * 2)
+		super(n)
+
+var typed_in_loop := func() -> void:
+	for i: int in [1, 2, 3]:
+		print(i)
+	for key: String in {"a": 1}:
+		print(key)
+
+var typed_dict_literal: Dictionary[StringName, Array] = {&"a": [1]}
+var typed_array_of_arrays: Array[Array] = [[1], [2]]
+var ternary_chain := "a" if _lives > 2 else "b" if _lives > 1 else "c"
+
+func pattern_matching_extras(value: Variant) -> String:
+	match value:
+		null: return "null"
+		true, false: return "bool"
+		0: return "zero"
+		-1: return "minus one"
+		0x10: return "hex"
+		"str": return "string"
+		&"name": return "string name"
+		[]: return "empty array"
+		[var first, var second]: return "pair %s %s" % [first, second]
+		[1, ..]: return "starts with one"
+		{}: return "empty dict"
+		{"a": 1}: return "has a"
+		{"k": var kv, ..}: return str(kv)
+		State.IDLE, State.RUNNING: return "enum"
+		var x when x is int and x > 100: return "big"
+		var y: return "other %s" % y

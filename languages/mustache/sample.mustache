@@ -1,3 +1,4 @@
+{{! Mustache spec v1.4 (with optional lambdas, inheritance and dynamic names) — syntax showcase }}
 {{! A comment tag: never rendered. }}
 {{!
   A multi-line comment
@@ -85,3 +86,28 @@ Line with only a standalone tag:
   {{/standalone}}
 Unicode: {{名前}} {{café}} {{emoji_📦}}
 <input value="{{value}}" data-x='{{x}}' {{#disabled}}disabled{{/disabled}}>
+
+{{! ── Remaining spec forms ── }}
+{{#a}}{{#b}}{{#c}}three levels{{/c}}{{/b}}{{/a}}
+{{^a}}{{^b}}nested inverted{{/b}}{{/a}}
+{{! Inheritance: parent with overridable blocks, child overriding them }}
+{{<parent}}
+  {{$title}}Child title{{/title}}
+  {{$body}}
+    Child body with {{value}}
+  {{/body}}
+{{/parent}}
+{{! Dynamic names (optional spec): partial and parent chosen at runtime }}
+{{>*partialName}}
+{{<*parentName}}{{$slot}}x{{/slot}}{{/parentName}}
+{{! Lambdas: section receives raw text, interpolation may return templates }}
+{{#wrapped}}raw {{text}} passed to the lambda{{/wrapped}}
+{{! Indentation of standalone partials is preserved }}
+  {{>indented}}
+{{! Set delimiters inside sections }}
+{{#items}}{{=<% %>=}}<% name %><%={{ }}=%>{{/items}}
+{{! Names with dots, dashes, underscores, digits and spaces }}
+{{a.b.c}} {{a-b}} {{a_b}} {{a1}} {{ a.b }} {{.}} {{&a.b}} {{{a.b}}}
+{{! CRLF and tab whitespace in tags }}
+{{	tab	}}
+{{#list}}{{.}}{{/list}} {{^list}}empty{{/list}}

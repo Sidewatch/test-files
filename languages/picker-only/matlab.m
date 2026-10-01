@@ -1,4 +1,4 @@
-% MATLAB: warehouse inventory analysis. This file DETECTS AS OBJECTIVE-C (.m is shared) —
+% MATLAB R2025b — syntax showcase: warehouse inventory analysis (no MATLAB or Octave installed here; written against the language reference). This file DETECTS AS OBJECTIVE-C (.m is shared) —
 % pick MATLAB from the language picker.
 %% ── Section break (cell mode) ──
 % Line comment. TODO: vectorise the loop. FIXME: handle NaN prices.
@@ -50,7 +50,7 @@ elementwise = v .* v ./ 2 .^ 2;
 leftDiv = M \ [1; 2; 3];
 cmp = (a < b) || (a >= b) && (a ~= b) | (a == b) & ~(a > b);
 shortCircuit = xor(true, false) && any(v) || all(v);
-incr = a; incr += 1; incr -= 1; incr *= 2; incr /= 2;
+incr = a; incr = incr + 1; incr = incr - 1; incr = incr * 2; incr = incr / 2;
 transposeOps = v' * v;
 ternary = ifelse(a > b, 'greater', 'not greater');
 
@@ -192,15 +192,15 @@ clear all; close all; clc
 
 %% Rare constructs
 % numbers and literals
-nums = [1e3, 1E-3, .5, 5., 0x1F, 0b101, 0xFFu8, 0b11s16, 1e3f, 3i, 3.5j, 1e3i, 1_000, 0.1e+2, Inf, -Inf, NaN, eps(1), pi, e];
+nums = [1e3, 1E-3, .5, 5., 0x1F, 0b101, 0xFFu8, 0b11s16, 3i, 3.5j, 1e3i, 0.1e+2, Inf, -Inf, NaN, eps(1), pi, e];
 types = {int8(1), uint16(2), int32(3), uint64(4), single(1.5), double(2), logical(1), char(65), string("s"), 'c', true, false};
 strs = {'single ''quoted'' \n not escaped', "double ""quoted"" \n escaped\t", ['con' 'cat'], ["con" + "cat"], 'it''s', "it's", 'say "hi"', "say 'hi'", ''};
 cmd_syntax_a = 1;
 
 % operators
-ops = {a + b, a - b, a * b, a / b, a \ b, a ^ b, a .* b, a ./ b, a .\ b, a .^ b, a', a.', a == b, a ~= b, a != b, a < b, a <= b, a > b, a >= b, ...
-       a & b, a | b, ~a, !a, a && b, a || b, xor(a, b), a:b, a:s:b, a(:), a(:, 1), a(end), a(end-1:end), a(:, end+1), a(1, :) , a{1}, a{end}, a.field, a.(name), ...
-       @sin, @(x) x.^2, @(x, y) x + y, @() disp('hi'), @plus, f(1)(2), (1:3)', [1, 2; 3, 4]', {1, 'a'; 2, 'b'}', a(a > 2 & a < 5), a(~isnan(a))};
+ops = {a + b, a - b, a * b, a / b, a \ b, a ^ b, a .* b, a ./ b, a .\ b, a .^ b, a', a.', a == b, a ~= b, a < b, a <= b, a > b, a >= b, ...
+       a & b, a | b, ~a, a && b, a || b, xor(a, b), a:b, a:s:b, a(:), a(:, 1), a(end), a(end-1:end), a(:, end+1), a(1, :) , a{1}, a{end}, a.field, a.(name), ...
+       @sin, @(x) x.^2, @(x, y) x + y, @() disp('hi'), @plus, (1:3)', [1, 2; 3, 4]', {1, 'a'; 2, 'b'}', a(a > 2 & a < 5), a(~isnan(a))};
 ranged = 1:10; stepped = 0:0.5:5; downward = 10:-2:0; empty_range = 5:1;
 continued = [1, 2, ...  comment after continuation
              3, 4];
@@ -299,3 +299,16 @@ fprintf('%d %s %f %g %e %x %c %5.2f %-8s %+d %%\n', 1, 'a', 1.5, 2.5, 1e3, 255, 
 sprintf("%s", "string"); disp(num2str(pi, 8)); mat2str([1 2; 3 4]); int2str(3.7); str2double('1.5'); regexp('abc', '(?<n>b)', 'names'); regexprep('abc', 'b', 'x'); strsplit('a,b', ','); strjoin({'a', 'b'}, ', ');
 x(2, :) = []; x(:) = 0; x(x > 1) = []; [m, i] = max(x); [~, idx] = sort(x, 'descend'); [q, r] = deal(1, 2); [a, b, c] = size(x);
 !echo shell escape line
+
+%% Name=Value arguments, string functions and newer syntax (R2021a onwards)
+figure; plot(1:10, (1:10).^2, LineWidth=2, Color="red", Marker="o");
+title("Name=Value syntax", FontSize=14);
+opts = struct(Name="stock", Count=3);
+words = ["alpha" "beta" "gamma"];
+joined = join(words, ", ") + "!";
+contains(words, "a") | startsWith(words, "g");
+tf = isempty(words) || strlength(words(1)) > 3;
+cleanup = onCleanup(@() disp("cleaned up"));
+result = arrayfun(@(k) k^2, 1:3, UniformOutput=false);
+A = magic(4);  B = A(2:end, :) .* (A(1:end-1, :) > 5);
+z = 3 + 4i; mag = abs(z); angleDeg = rad2deg(angle(z));

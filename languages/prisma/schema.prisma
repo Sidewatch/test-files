@@ -1,3 +1,4 @@
+// Prisma ORM 6 — schema syntax showcase
 // ── Comments ──
 // Prisma schema for a warehouse inventory system.
 // Line comment. TODO: add soft deletes. FIXME: index the audit trail.
@@ -6,6 +7,16 @@
 /// They appear in the generated client's documentation.
 
 // ── Generators and datasources ──
+generator esm {
+  provider               = "prisma-client"
+  output                 = "../generated/prisma"
+  runtime                = "nodejs"
+  moduleFormat           = "esm"
+  generatedFileExtension = "ts"
+  importFileExtension    = "ts"
+  previewFeatures        = ["postgresqlExtensions", "relationJoins", "typedSql", "queryCompiler", "driverAdapters", "omitApi", "nativeDistinct", "strictUndefinedChecks"]
+}
+
 generator client {
   provider        = "prisma-client-js"
   output          = "../generated/client"
@@ -27,6 +38,8 @@ datasource db {
   directUrl = env("DIRECT_URL")
   schemas   = ["public", "audit"]
   extensions = [pg_trgm, pgcrypto(schema: "public")]
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+  relationMode = "foreignKeys"
 }
 
 // ── Enums ──
@@ -229,3 +242,140 @@ model Literals {
 
   @@index([a, b(sort: Asc, length: 10)], map: "literals_idx", name: "literals_name")
 }
+
+// ── Every field type, modifier and native type ──
+model Everything {
+  id         Int       @id @default(autoincrement())
+  bigId      BigInt    @default(autoincrement())
+  seq        Int       @default(sequence(minValue: 1, maxValue: 9999, start: 1, increment: 1, cache: 10))
+  str        String
+  strOpt     String?
+  strList    String[]
+  bool       Boolean
+  intVal     Int
+  floatVal   Float
+  decimalVal Decimal
+  dateTime   DateTime
+  json       Json
+  bytes      Bytes
+  bigInt     BigInt
+  enumVal    Role      @default(USER)
+  enumList   Role[]
+  uuid4      String    @default(uuid(4))
+  uuid7      String    @default(uuid(7))
+  cuid1      String    @default(cuid(1))
+  cuid2      String    @default(cuid(2))
+  ulid       String    @default(ulid())
+  nano       String    @default(nanoid())
+  dbGen      String    @default(dbgenerated())
+  dbGenExpr  Int       @default(dbgenerated("1 + 1"))
+  now        DateTime  @default(now())
+  updated    DateTime  @updatedAt
+  text       String    @db.Text
+  vc         String    @db.VarChar(255)
+  ch         String    @db.Char(2)
+  citext     String    @db.Citext
+  xml        String    @db.Xml
+  inet       String    @db.Inet
+  bit        String    @db.Bit(8)
+  varbit     String    @db.VarBit(8)
+  money      Decimal   @db.Money
+  small      Int       @db.SmallInt
+  oid        Int       @db.Oid
+  real       Float     @db.Real
+  double     Float     @db.DoublePrecision
+  dec        Decimal   @db.Decimal(20, 6)
+  date       DateTime  @db.Date
+  time       DateTime  @db.Time(6)
+  timetz     DateTime  @db.Timetz(6)
+  ts         DateTime  @db.Timestamp(6)
+  tstz       DateTime  @db.Timestamptz(6)
+  jsonb      Json      @db.JsonB
+  jsonPlain  Json      @db.Json
+  bin        Bytes     @db.ByteA
+  uid        String    @db.Uuid
+  geo        Unsupported("geometry(Point, 4326)")?
+  tsv        Unsupported("tsvector")?
+
+  @@id([id], map: "everything_pkey", length: 8, sort: Asc, clustered: false)
+  @@unique([str, intVal], name: "str_int", map: "str_int_key", length: 10, sort: Desc, clustered: false)
+  @@index([dateTime(sort: Desc), floatVal], map: "dt_idx", type: Brin)
+  @@index([json(ops: JsonbPathOps)], type: Gin)
+  @@index([str(ops: raw("gist_trgm_ops(siglen=32)"))], type: Gist)
+  @@index([intVal], type: SpGist)
+  @@index([bool], where: raw("bool = true"))
+  @@fulltext([str, text], map: "ft")
+  @@map("everything")
+  @@schema("public")
+}
+
+// ── Relations: every shape and referential action ──
+model Parent {
+  id       Int      @id
+  children Child[]
+  one      OneToOne?
+  m2m      Tag[]
+  explicit TagOnParent[]
+}
+
+model Child {
+  id        Int    @id
+  parentId  Int
+  parent    Parent @relation(fields: [parentId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "child_parent_fk")
+  altId     Int?
+  alt       Parent? @relation("Alt", fields: [altId], references: [id], onDelete: SetDefault, onUpdate: SetNull)
+  other     Parent? @relation(name: "Other", fields: [otherId], references: [id], onDelete: Restrict)
+  otherId   Int?
+}
+
+model OneToOne {
+  id       Int    @id
+  parentId Int    @unique
+  parent   Parent @relation(fields: [parentId], references: [id])
+}
+
+model Tag {
+  id      Int      @id
+  parents Parent[]
+}
+
+model TagOnParent {
+  parentId Int
+  tagId    Int
+  parent   Parent @relation(fields: [parentId], references: [id])
+  @@id([parentId, tagId])
+}
+
+// ── MongoDB-style models and composite types ──
+type Address {
+  street String
+  city   String
+  geo    Geo?
+  tags   String[]
+}
+
+type Geo {
+  lat Float
+  lng Float
+}
+
+model MongoUser {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  address   Address
+  history   Address[]
+  refId     String   @db.ObjectId
+  createdAt DateTime @default(now()) @db.Date
+  meta      Json?
+  @@map("mongo_users")
+}
+
+// ── Comments in odd places ──
+model Commented { // trailing comment on the block line
+  id Int @id // trailing comment on a field
+  /// doc comment on a field
+  name String
+  // standalone comment inside a block
+  @@map("commented") // trailing comment on an attribute
+}
+

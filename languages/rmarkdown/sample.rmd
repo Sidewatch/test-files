@@ -1,4 +1,5 @@
 ---
+# R Markdown (rmarkdown 2.29, bookdown, knitr 1.50) — syntax showcase
 title: "Warehouse revenue report"
 subtitle: "R Markdown syntax showcase"
 author:
@@ -27,6 +28,21 @@ params:
 bibliography: references.bib
 link-citations: true
 runtime: html_document
+csl: apa.csl
+lang: en-GB
+geometry: margin=2.5cm
+fontsize: 11pt
+header-includes:
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+includes:
+  in_header: header.html
+  after_body: footer.html
+toc-title: "Contents"
+tables: true
+site: bookdown::bookdown_site
+documentclass: book
+github-repo: example/inventory
 ---
 
 <!-- An HTML comment: not rendered. TODO: add the regional breakdown. -->
@@ -248,6 +264,173 @@ Right.
 # References {-}
 
 <div id="refs"></div>
+
+# More chunk features {#chunk-features}
+
+```{r opts-demo, echo=TRUE, results='hold', collapse=TRUE, comment="#>", fig.show='hold', fig.keep='all', out.width='50%', out.extra='style="border:1px"', class.source='bg-info', class.output='bg-success', attr.source='.numberLines', attr.output='.details summary="Output"', R.options=list(digits=3), cache.extra=file.mtime("orders.csv"), dependson="load", purl=FALSE, error=TRUE, warning=FALSE, tidy='styler', fig.process=identity, dev.args=list(bg='transparent'), fig.retina=2, fig.asp=0.6, fig.ext='svg', fig.pos='H', fig.scap='Short caption', fig.subcap=c('a', 'b'), fig.align='left', animation.hook='gifski', interval=0.2, engine='R', lang='r', opts.label='mine', child.command='include', code=readLines('code.R'), include=TRUE}
+#| fig-cap: "Chunk options may also be written as YAML comment lines"
+#| echo: false
+plot(1:10)
+```
+
+```{r eval=params$run, echo=if (params$show) TRUE else FALSE}
+1 + 1
+```
+
+```{r results='asis', echo=FALSE}
+cat("::: {.note}\n", "Generated fenced div.\n", ":::\n", sep = "")
+for (i in 1:2) cat("\n\n### Generated heading", i, "\n\n")
+```
+
+```{r fig-cap-expr, fig.cap=paste("Revenue for", params$warehouse)}
+plot(cars)
+```
+
+```{r include-graphics}
+knitr::include_graphics("images/logo.png")
+```
+
+```{r kable-extra}
+library(kableExtra)
+kbl(summary_tbl, booktabs = TRUE) %>% kable_styling(latex_options = c("striped", "hold_position"))
+```
+
+```{r datatable, echo=FALSE}
+DT::datatable(head(orders), options = list(pageLength = 5))
+```
+
+```{r shiny-input, echo=FALSE}
+shiny::selectInput("sku", "SKU", choices = c("AC-1001", "AC-1002"))
+shiny::renderPlot({ plot(1:10) })
+```
+
+```{r read-chunk}
+knitr::read_chunk("chunks.R")
+```
+
+```{r named-chunk-ref, ref.label=c("load", "plot"), echo=TRUE, eval=FALSE}
+```
+
+```{r, tab-engine, engine='stan', output.var='model'}
+parameters { real mu; }
+model { mu ~ normal(0, 1); }
+```
+
+```{r}
+# an unnamed chunk with default options
+print("unnamed")
+```
+
+```{r, echo = FALSE, message = FALSE}
+# chunk header with a leading comma and spaces around equals
+x <- 1
+```
+
+```{asis, echo=params$show}
+Text emitted verbatim when the chunk option is true.
+```
+
+```{tikz, fig.cap="A TikZ figure", fig.ext="png", cache=TRUE}
+\begin{tikzpicture}\draw (0,0) -- (1,1);\end{tikzpicture}
+```
+
+```{mermaid}
+graph LR; A-->B;
+```
+
+```{ojs}
+viewof n = Inputs.range([1, 10])
+```
+
+```{julia}
+using Statistics
+```
+
+```{rcpp}
+#include <Rcpp.h>
+// [[Rcpp::export]]
+int add(int a, int b) { return a + b; }
+```
+
+```{stan output.var="m"}
+data { int<lower=0> N; }
+```
+
+```{r}
+#| label: yaml-style-option
+#| echo: true
+#| fig-width: 5
+summary(cars)
+```
+
+# (PART) Reference material {-}
+
+# (APPENDIX) Appendices {-}
+
+# Bookdown syntax {#bookdown}
+
+See Chapter \@ref(intro), Section \@ref(chunk-features), Figure \@ref(fig:plot), Table \@ref(tab:table) and Equation \@ref(eq:pythagoras).
+
+(ref:cap-text) A text reference used as a long caption with *markdown* and `code`.
+
+```{r with-text-ref, fig.cap="(ref:cap-text)"}
+plot(cars)
+```
+
+\begin{equation}
+  a^2 + b^2 = c^2 (\#eq:pythagoras)
+\end{equation}
+
+$$ E = mc^2 (\#eq:einstein) $$
+
+::: {.theorem #thm-main name="Main theorem"}
+Every order has a total.
+:::
+
+::: {.proof}
+Trivial.
+:::
+
+```{theorem, thm-label, name="Named theorem"}
+A theorem written as a chunk engine.
+```
+
+<!--chapter:end:index.Rmd-->
+
+# Flexdashboard layout {-}
+
+Column {data-width=650 .tabset}
+-------------------------------------
+
+### Chart A {data-height=350}
+
+```{r}
+plot(1:3)
+```
+
+Row {data-height=200}
+-------------------------------------
+
+### Value box {.value-box}
+
+```{r}
+flexdashboard::valueBox(42, "orders")
+```
+
+# Presentation slides {-}
+
+## A slide {.smaller .build data-background="#ccc"}
+
+- Point one
+- Point two
+
+## Two columns {.columns-2}
+
+Text in two columns.
+
+<div class="notes">
+Speaker notes for ioslides or Slidy.
+</div>
 
 # Appendix {#appendix .unnumbered}
 

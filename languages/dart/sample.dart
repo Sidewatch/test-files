@@ -1,4 +1,5 @@
 #!/usr/bin/env dart
+// Dart 3.10 — syntax showcase
 // ── Comments ──
 // Line comment. TODO: persist bins. FIXME: handle negative stock.
 /* Block comment /* with nested block */ still comment */
@@ -20,6 +21,11 @@ import 'dart:math' show pi;
 import 'package:meta/meta.dart';
 import 'dart:math' show Random, max, min;
 import 'package:collection/collection.dart' deferred as collection;
+// conditional import
+import 'src/stub.dart'
+    if (dart.library.io) 'src/io.dart'
+    if (dart.library.js_interop) 'src/web.dart'
+    if (dart.library.html == 'true') 'src/html.dart';
 export 'src/bins.dart';
 part 'bins.g.dart';
 
@@ -262,7 +268,7 @@ Future<void> main(List<String> args) async {
   var (x, y) = (1, 2);
   var [first, ...rest] = [1, 2, 3];
   var {'sku': sku} = {'sku': 'A-1'};
-  if (case [int p, int q] = [1, 2]) print(p + q);
+  if ([1, 2] case [int p, int q]) print(p + q);
   switch ((x, y)) {
     case (1, _) || (_, 1):
       break;
@@ -439,3 +445,109 @@ class Annotated {
 
 int get getter => 1;
 set setter(int v) {}
+
+// ── Class modifiers (Dart 3) ──
+base class Foundation {}
+abstract base class AbstractFoundation {}
+base mixin BaseMixin {}
+final class Leaf extends Foundation {}
+sealed class Expr {}
+abstract final class Util {}
+
+// ── Mixin applications and redirecting constructors ──
+class Combined = Object with Auditable, Loggable;
+abstract class Scale = Object with Walker;
+class Point3 {
+  final int x, y, z;
+  const Point3(this.x, this.y, this.z);
+  const Point3.origin() : this(0, 0, 0);
+  factory Point3.unit() = _UnitPoint;
+  factory Point3.zero() = Point3.origin;
+  Point3.fromList(List<int> l)
+      : x = l[0],
+        y = l[1],
+        z = l[2],
+        assert(l.length == 3, 'three values');
+}
+class _UnitPoint extends Point3 {
+  const _UnitPoint() : super(1, 1, 1);
+}
+
+// ── part-of (cannot coexist with `part` above) ──
+// A part file instead starts with one of:
+//   part of 'warehouse.dart';
+//   part of acme.warehouse;
+
+// ── More operators and assignment forms ──
+void operators2() {
+  var a = 8, b = 2;
+  a /= b;
+  a >>>= 1;
+  var ratio = a / b;
+  var inline = a /* inline block comment */ + b;
+  String? s;
+  var sb = StringBuffer()
+    ?..write('x')
+    ..write('y');
+  var (p, q) = (1, 2);
+  (p, q) = (q, p);
+  [p, q] = [q, p];
+  ({'k': p} = {'k': 3});
+  var cond = a > b ? throw StateError('no') : a;
+  var cast = switch (a) { var n as int => n, _ => 0 };
+  if (a case var n!) print(n);
+  void local(int x) => print(x);
+  int localBlock(int x) {
+    return x + 1;
+  }
+  ;
+  var fn = (int x) { return x; };
+  var tear = List<int>.filled;
+  var ctorTear = Item.new;
+  var rawTriple = r'''raw \n $x
+  triple''';
+  var rawTripleDouble = r"""raw "quoted" \t""";
+  var nullableCall = s?.toUpperCase()?.length;
+  var nullIndex = <int>[1]?[0];
+}
+
+// ── Operator overloads ──
+class Grid {
+  final _cells = <int, int>{};
+  int operator [](int i) => _cells[i] ?? 0;
+  void operator []=(int i, int v) => _cells[i] = v;
+  Grid operator ~() => this;
+  Grid operator -() => this;
+  bool operator <(Grid o) => false;
+  bool operator >=(Grid o) => true;
+  Grid operator <<(int n) => this;
+  Grid operator >>(int n) => this;
+  Grid operator >>>(int n) => this;
+  Grid operator &(Grid o) => this;
+  Grid operator |(Grid o) => this;
+  Grid operator ^(Grid o) => this;
+  Grid operator *(int n) => this;
+  Grid operator /(int n) => this;
+  Grid operator ~/(int n) => this;
+  Grid operator %(int n) => this;
+}
+
+// ── Function types with named and optional parameters ──
+typedef Named = void Function({int a, required String b});
+typedef Optional = void Function(int, [String, double]);
+typedef Mixed = int Function(int x, {bool flag});
+void takesFns(void Function({int a}) f, int Function([int]) g, Function h) {}
+
+// ── Qualified names ──
+final codec = convert.JsonCodec();
+final decoded = convert.jsonDecode('{}');
+final cls = collection.PriorityQueue<int>.new;
+
+// ── Dot shorthands (Dart 3.10) ──
+enum Color { red, green }
+void dotShorthands() {
+  Color c = .red;
+  Item i = .new('A-1');
+  Duration d = .zero;
+  List<Color> cs = [.red, .green];
+}

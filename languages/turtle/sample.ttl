@@ -1,4 +1,4 @@
-# Turtle (RDF): a warehouse inventory graph.
+# Turtle 1.2 (RDF 1.2) — syntax showcase: a warehouse inventory graph.
 # ── Directives ──────────────────────────────────────────────
 @prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
@@ -152,3 +152,7 @@ VERSION "1.2"
 :claim ex:says << :bin-a1 ex:holds :widget-100 >> .
 :ltr ex:text "Hello"@en--ltr , "مرحبا"@ar--rtl .
 :reified ex:about <<( :gadget-200 ex:quantity 40 )>> .
+:widget-100 ex:quantity 12 ~ :count-1 .
+:widget-100 ex:quantity 12 ~ :count-2 {| ex:source :count-sheet |} .
+:widget-100 ex:quantity 12 ~ .
+<< :gadget-200 ex:quantity 40 ~ :count-3 >> ex:assertedBy :audit-2026 .

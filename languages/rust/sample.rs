@@ -1,3 +1,5 @@
+#!/usr/bin/env -S cargo +nightly -Zscript
+// Rust 1.90, edition 2024 — syntax showcase
 #![allow(dead_code, unused_variables, unused_imports, unused_mut, clippy::all)]
 #![warn(missing_docs)]
 //! # Inventory showcase
@@ -386,12 +388,20 @@ mod rare {
     pub(self) fn private_fn() {}
     pub(super) struct SuperVisible;
 
-    extern "C" {
-        fn abs(input: i32) -> i32;
+    unsafe extern "C" {
+        pub safe fn abs(input: i32) -> i32;
+        pub unsafe fn strlen(s: *const u8) -> usize;
+        fn printf(fmt: *const u8, ...) -> i32;
         static environ: *const *const u8;
+        pub safe static ERRNO_LIKE: i32;
     }
 
-    #[no_mangle]
+    unsafe extern "C-unwind" {
+        fn may_unwind();
+    }
+
+    #[unsafe(no_mangle)]
+    #[unsafe(export_name = "exported_name")]
     pub extern "C" fn exported(x: i32) -> i32 { x + 1 }
 
     pub extern "system" fn callback() {}
@@ -545,6 +555,194 @@ mod rare {
     impl<T> Default for Wrapper2<T> where T: Default { fn default() -> Self { Wrapper2(T::default()) } }
     impl<T: Clone> Clone for Wrapper2<T> { fn clone(&self) -> Self { Self(self.0.clone()) } }
     impl<T> From<T> for Wrapper2<T> { fn from(t: T) -> Self { Self(t) } }
+}
+
+// ── Edition 2024 and recent stable additions ──
+mod modern {
+    use std::fmt::Display;
+    use std::collections::HashMap;
+
+    // let chains (stable in 1.88, edition 2024)
+    fn let_chains(a: Option<i32>, b: Option<&str>) -> bool {
+        if let Some(x) = a && x > 0 && let Some(s) = b && !s.is_empty() {
+            return true;
+        }
+        let mut n = 3;
+        while let Some(v) = Some(n) && v > 0 {
+            n -= 1;
+        }
+        false
+    }
+
+    // precise capturing: use<..> bounds
+    fn capturing<'a, T: Display>(x: &'a str, t: T) -> impl Display + use<T> { t }
+    fn capture_all<'a>(x: &'a str) -> impl Iterator<Item = char> + use<'a> { x.chars() }
+    fn capture_none(x: &str) -> impl Sized + use<> { 0u8 }
+
+    // higher-ranked bounds in different positions
+    fn hrtb<F: for<'a> Fn(&'a str) -> &'a str>(f: F) {}
+    fn hrtb_where<F>(f: F) where for<'a, 'b> F: Fn(&'a str, &'b str) -> &'a str {}
+    fn hrtb_dyn(f: &dyn for<'a> Fn(&'a u8) -> &'a u8) {}
+    struct Holder where for<'a> &'a u8: Display { x: u8 }
+
+    // turbofish and qualified paths
+    fn paths() {
+        let v = Vec::<u8>::with_capacity(4);
+        let p = "5".parse::<i32>().unwrap();
+        let c = std::iter::repeat::<u8>(1).take(2).collect::<Vec<_>>();
+        let d = <Vec<u8> as Default>::default();
+        let e = <u8 as std::str::FromStr>::from_str("1");
+        let f: <Vec<u8> as IntoIterator>::Item = 0;
+        let g = <[u8]>::len(&[1, 2]);
+        let h = <&str>::default();
+        let i = Option::<i32>::None;
+        let j = std::mem::size_of::<HashMap<u8, u8>>();
+        let k: Option<Vec<<u8 as std::ops::Add>::Output>> = None;
+        let Some::<i32>(m) = Some(1) else { return };
+        let Option::<i32>::Some(n) = Some(2) else { return };
+    }
+
+    // turbofish in struct expressions and bare generic patterns
+    struct Pt<T> { x: T }
+    fn turbofish_forms() {
+        let p = Pt::<u8> { x: 1 };
+        let Pt::<u8> { x } = p;
+        match None::<i32> { None::<i32> => {}, Some(_) => {} }
+    }
+
+    // struct update syntax
+    #[derive(Default, Debug, Clone)]
+    struct Settings { width: u32, height: u32, title: String }
+    fn update_syntax() -> Settings {
+        let base = Settings { width: 1, ..Default::default() };
+        Settings { height: 2, ..base.clone() }
+    }
+
+    // #[default] on enum variants and empty statements
+    #[derive(Default)]
+    enum Mode { #[default] Fast, Slow }
+    fn empty_statements() { ; ; let _ = 1;; }
+
+    // associated consts, async fn in traits, trait upcasting
+    trait Service {
+        const NAME: &'static str;
+        async fn call(&self, req: u8) -> u8;
+        fn name(&self) -> &str { Self::NAME }
+    }
+    trait Base { fn base(&self) {} }
+    trait Derived: Base {}
+    fn upcast(d: &dyn Derived) -> &dyn Base { d }
+
+    // C string literals
+    const C1: &core::ffi::CStr = c"hello";
+    const C2: &core::ffi::CStr = cr#"raw "c" string"#;
+
+    // macro fragment specifiers (edition aware)
+    macro_rules! old_expr { ($e:expr_2021) => { $e }; }
+    macro_rules! old_pat { ($p:pat_param | $q:pat_param) => {}; }
+    macro_rules! new_pat { ($p:pat) => {}; }
+    macro_rules! nested_rep { ($($k:ident => [$($v:expr),*]);* $(;)?) => {}; }
+
+    // inline const, const blocks in patterns, assoc const generics
+    fn consts() {
+        let a = const { 1 + 2 };
+        let arr = [const { Vec::<u8>::new() }; 3];
+    }
+
+    // closures: all forms
+    fn closure_forms() {
+        let _ = |x: u8| x;
+        let _ = |x: u8| -> u8 { x };
+        let _ = move || 1;
+        let _ = async || 1;
+        let _ = async move |x: u8| x;
+        let _ = static_closure_free();
+        let _ = |&(a, b): &(u8, u8), mut c: u8, _: u8| a + b + c;
+    }
+    fn static_closure_free() -> u8 { 0 }
+
+    // labeled blocks, break with value, ranges in all forms
+    fn flow() -> i32 {
+        let v = 'a: { if true { break 'a 1; } 2 };
+        let w = 'l: loop { break 'l 3; };
+        let _r = (.., 0.., ..1, 0..1, ..=1, 0..=1);
+        v + w
+    }
+
+    // visibility forms
+    pub struct V1; pub(crate) struct V2; pub(super) struct V3; pub(self) struct V4; pub(in crate::modern) struct V5;
+
+    // extern crate / use forms
+    extern crate alloc as alloc_crate;
+    use ::std::vec::Vec as V;
+    use self::Mode::*;
+    use crate::modern::{self as m, Settings as S, Service as _};
+    use std::{fmt::{self, Debug}, io::{*}};
+
+    // attributes: inner, outer, nested meta
+    #[allow(unused)]
+    #[cfg_attr(all(), derive(Debug))]
+    #[doc(hidden)]
+    #[doc = include_str!("sample.rs")]
+    struct Attr;
+    #[rustfmt::skip]
+    #[clippy::cognitive_complexity = "10"]
+    fn skipped() {}
+
+    // type-level forms
+    type A1 = [u8; 4];
+    type A2 = *const dyn Fn();
+    type A3 = &'static dyn Display;
+    type A4 = Box<dyn Fn(&str) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>>>;
+    type A5<T> = Option<T>;
+    type A6 = impl_free::Alias;
+    mod impl_free { pub type Alias = u8; }
+    type A7 = <u8 as std::ops::Add>::Output;
+    type A8 = unsafe extern "C" fn(u8, ...);
+    type A9 = for<'a> fn(&'a u8) -> &'a u8;
+
+    // generic associated types and where clauses
+    trait Lend { type Item<'a> where Self: 'a; fn lend<'a>(&'a mut self) -> Self::Item<'a>; }
+    impl<T, const N: usize> Lend for [T; N] { type Item<'a> = &'a mut [T] where T: 'a; fn lend<'a>(&'a mut self) -> &'a mut [T] { self } }
+
+    // raw identifiers and unicode identifiers
+    fn r#match(r#in: u8) -> u8 { r#in }
+    fn naïve_café() {}
+
+    // operators: every compound assignment and unary
+    fn operators() {
+        let mut x = 5u32;
+        x += 1; x -= 1; x *= 2; x /= 2; x %= 3; x &= 7; x |= 1; x ^= 2; x <<= 1; x >>= 1;
+        let _ = (!x, -(x as i32), *&x, &x, &mut x.clone(), x as u64, x == 1, x != 2, x < 3, x > 0, x <= 5, x >= 0);
+        let _ = (true && false) || !true;
+        let _ = x.pow(2) + (x << 2) - (x >> 1) * 3 / 2 % 5 & 1 | 2 ^ 3;
+        let _ = ..;
+    }
+
+    // await, try, ? and async blocks
+    async fn awaiting() -> std::result::Result<u8, std::io::Error> {
+        let a = async { 1 }.await;
+        let b = async move { a + 1 }.await;
+        let r: std::result::Result<u8, std::io::Error> = Ok(b);
+        let c = r?;
+        Ok(c)
+    }
+
+    // statics, unsafe, union, repr
+    #[repr(C, packed)] struct Packed { a: u8, b: u32 }
+    #[repr(transparent)] struct Transparent(u32);
+    #[repr(align(16))] struct Aligned(u8);
+    #[unsafe(no_mangle)] pub static EXPORTED: u32 = 1;
+    unsafe fn unsafe_ops() { let p = &raw const EXPORTED; let _ = unsafe { p.read() }; }
+    unsafe impl Send for Packed {}
+    union U { a: u8, b: u8 }
+
+    // trait items: default generics, supertraits with where
+    trait Tr<T = Self>: Sized where T: ?Sized { fn f(self) -> Self { self } }
+    impl<T: ?Sized> Tr<T> for u8 {}
+    impl dyn Base { fn extra(&self) {} }
+    struct Wrapper3<T>(*const T);
+    impl<F> Service for F where F: Fn(u8) -> u8 { const NAME: &'static str = "fn"; async fn call(&self, req: u8) -> u8 { self(req) } }
 }
 
 // ── Main ──

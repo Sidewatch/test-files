@@ -57,12 +57,16 @@ Fixed: #161
 Implements: #162
 Bug: 163
 Change-Id: I0123456789abcdef0123456789abcdef01234567
+Co-developed-by: Pair Partner <pair@example.com>
+Release-Notes: tabs replace stacked tables
+Unreleased: true
 Helped-by: Contributor <helper@example.com>
 Reported-by: Reporter <reporter@example.com>
 Tested-by: Tester <tester@example.com>
 Suggested-by: Suggester <suggester@example.com>
 Co-authored-by: Pair Partner <pair@example.com>
 
+# Git 2.5x commit message (Conventional Commits 1.0, trailers) — syntax showcase
 # Conflicts:
 #	Sources/Preview/DatabasePreview.swift
 #	README.md
@@ -89,9 +93,12 @@ Co-authored-by: Pair Partner <pair@example.com>
 # On branch main
 # Your branch is ahead of 'origin/main' by 2 commits.
 #   (use "git push" to publish your local commits)
+#   (use "git restore --staged <file>..." to unstage)
 #
 # Changes to be committed:
 #	modified:   Sources/Preview/DatabasePreview.swift
+#	typechange: Sources/link.swift
+#	copied:     Sources/A.swift -> Sources/B.swift
 #	new file:   Sources/Preview/ArchivePreview.swift
 #	deleted:    Sources/Preview/StackedLayout.swift
 #	renamed:    Sources/Old.swift -> Sources/New.swift

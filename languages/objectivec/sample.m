@@ -1,4 +1,4 @@
-// Objective-C showcase: classes, protocols, categories, blocks, literals and runtime calls.
+// Objective-C 2.0 (clang 21, C23 / gnu23) — syntax showcase: classes, protocols, categories, blocks, literals and runtime calls.
 /* A block comment
    over several lines. */
 /// A documentation comment.
@@ -415,3 +415,114 @@ double dbl = 1.0e10 + 0x1p4;
 float flt = 1.5f;
 const char *kStr = "a" "b" "\n";
 wchar_t wide_str[] = L"wide";
+
+// ── Modern clang Objective-C: generics, ARC attributes, availability, C23 ──
+#if __has_include(<Foundation/Foundation.h>) && __has_feature(objc_generics)
+#define HAVE_GENERICS 1
+#elifdef HAVE_GENERICS
+#define C23_ELIFDEF 1
+#elifndef NEVER_DEFINED
+#define C23_ELIFNDEF 1
+#else
+#define NO_GENERICS 1
+#endif
+#ifdef __has_attribute
+#endif
+
+@class Forward1, Forward2;
+@protocol ForwardProto;
+
+@interface Cache<KeyType : id<NSCopying>, ObjectType : NSObject *> : NSObject
+@property (nonatomic, strong, readonly) NSDictionary<KeyType, ObjectType> *storage;
+- (nullable ObjectType)objectForKey:(KeyType)key;
+- (void)setObject:(ObjectType)object forKey:(KeyType)key NS_REQUIRES_SUPER;
+- (void)enumerate:(void (NS_NOESCAPE ^)(KeyType key, ObjectType object))block;
+- (void)resultOrError:(void (^)(id _Nullable_result result, NSError * _Nullable error))completion;
+@end
+
+@implementation Cache
+- (nullable id)objectForKey:(id)key { return self.storage[key]; }
+- (void)setObject:(id)object forKey:(id)key {}
+- (void)enumerate:(void (NS_NOESCAPE ^)(id, id))block { block(@"k", @"v"); }
+- (void)resultOrError:(void (^)(id _Nullable_result, NSError * _Nullable))completion { completion(nil, nil); }
+- (void)autoreleasing:(NSError * __autoreleasing *)error {
+    if (error) { *error = [NSError errorWithDomain:@"d" code:1 userInfo:nil]; }
+}
+- (void)availability {
+    if (@available(macOS 14.0, iOS 17.0, *)) { NSLog(@"new"); }
+    else if (@available(macOS 12.0, *)) { NSLog(@"older"); }
+    if (__builtin_available(macOS 13.0, *)) { NSLog(@"builtin"); }
+    if (@available(*)) {}
+}
+@end
+
+NS_HEADER_AUDIT_BEGIN(nullability, sendability)
+NS_SWIFT_SENDABLE
+@interface SendableThing : NSObject
+@property (nonatomic, readonly, copy) NSString *label NS_SWIFT_NAME(label);
+@end
+NS_SWIFT_UI_ACTOR
+@interface MainThing : NSObject @end
+NS_HEADER_AUDIT_END(nullability, sendability)
+
+typedef NS_ENUM(uint8_t, Small) { SmallA, SmallB };
+typedef NS_OPTIONS(uint32_t, SmallFlags) { SmallFlagA = 1u << 0, SmallFlagB = 1u << 1 };
+typedef NS_CLOSED_ENUM(NSInteger, Closed) { ClosedA, ClosedB };
+typedef NS_ERROR_ENUM(OrderErrorDomain, OrderError) { OrderErrorNone = 0 };
+typedef NSString *Mode NS_TYPED_ENUM;
+NS_SWIFT_NAME(Mode.fast) extern Mode const ModeFast;
+
+// C23 additions available in Objective-C with -std=gnu23
+constexpr int kLimit = 10;
+static constexpr double kPi = 3.14159;
+bool c23_bool = true;
+bool c23_false = false;
+void *c23_null = nullptr;
+int c23_digits = 1'000'000;
+int c23_bin = 0b1010'1010;
+unsigned char c23_u8 = u8'a';
+const char *c23_u8s = u8"utf8";
+[[nodiscard]] int c23_nodiscard(void);
+[[maybe_unused]] static int c23_unused;
+[[deprecated("old")]] int c23_deprecated(void);
+[[noreturn]] void c23_noreturn(void);
+typeof_unqual(c23_digits) c23_unq = 0;
+unsigned _BitInt(12) c23_bitint = 5uwb;
+auto c23_auto = 5;
+enum Wide : unsigned long { WideA = 1ul << 40 };
+static_assert(sizeof(int) >= 4, "int is at least 4 bytes");
+#if __has_embed("data.bin")
+static const char c23_embed[] = {
+#embed "data.bin" limit(4)
+};
+#endif
+_Alignas(16) static char aligned_buf[16];
+_Noreturn void legacy_noreturn(void);
+_Complex double cplx;
+_Bool legacy_bool;
+static void c11_exprs(void) {
+    size_t al = _Alignof(max_align_t);
+    const char *g = _Generic(1, int: "int", default: "other");
+    long e = __builtin_expect(1, 1);
+    asm volatile("nop");
+    __asm__ __volatile__("" ::: "memory");
+    (void)al; (void)g; (void)e;
+}
+
+// ── Compound literals, designated initialisers, VLAs, statement expressions ──
+static void c_forms(int n) {
+    int vla[n];
+    struct Pair p = (struct Pair){ .a = 1, .b = 2 };
+    int *arr = (int[]){ 1, 2, 3 };
+    int v = ({ int t = 5; t * 2; });
+    union IntOrFloat u = { .f = 1.0f };
+    int idx[5] = { [0] = 1, [4] = 5 };
+    char *s = "a" "b";
+    long r = n ?: 7;
+    void *lbl = &&target;
+    goto *lbl;
+target:
+    (void)vla; (void)p; (void)arr; (void)v; (void)u; (void)idx; (void)s; (void)r;
+    for (int i = 0, j = 10; i < j; i++, j--) {}
+    switch (n) { case 1 ... 5: break; default: break; }
+}

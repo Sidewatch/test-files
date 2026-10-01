@@ -1,4 +1,4 @@
-# Nix showcase: a flake with packages, shells, overlays and the expression language.
+# Nix 2.30 (nixpkgs 25.05) — syntax showcase: a flake with packages, shells, overlays and the expression language.
 # TODO: add a NixOS module output
 /* A block comment
    over several lines. */
@@ -6,7 +6,7 @@
   description = "Inventory service: dev shell and package";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
     flake-utils.url = "github:numtide/flake-utils";
     local.url = "path:./vendor";
     legacy = { url = "git+https://example.com/legacy.git?ref=main"; flake = false; };
@@ -84,6 +84,94 @@
         builtinCalls = builtins.map (x: x * 2) [ 1 2 3 ];
         fromJson = builtins.fromJSON ''{"k": [1, 2, null, true]}'';
         throwing = if falsy then throw "never" else abort "unused";
+
+        # ── Standalone expression forms ──
+        expressions = let
+          inherit (builtins) map filter;
+          inherit ({ a = 1; b = 2; }) a b;
+          x = 5;
+          fix = f: let result = f result; in result;
+        in rec {
+          pathInterp = ./src/${toString x}/file.nix;
+          dynamicAttr.${"key"} = 1;
+          strAttr."a-b".c = 2;
+          curriedCall = builtins.foldl' (acc: v: acc + v) 0 [ 1 2 3 ];
+          floatMath = 1.5 * 2.0 - 0.5 / 0.25;
+          cmp = 1 < 2 && 2 >= 1 || !(3 == 4);
+          isNull = builtins.isNull null;
+          trace = builtins.trace "msg" x;
+          toJSON = builtins.toJSON { a = [ 1 2 ]; };
+          fetch = builtins.fetchurl "https://example.com/file";
+          readDir = builtins.readDir ./.;
+          match = builtins.match "(a)(b)" "ab";
+          split = builtins.split "," "a,b";
+          sub = builtins.substring 0 3 "abcdef";
+          len = builtins.stringLength "abc";
+          hash = builtins.hashString "sha256" "x";
+          path = builtins.path { path = ./.; name = "src"; };
+          currentSystem = builtins.currentSystem;
+          nixVersion = builtins.nixVersion;
+          langVersion = builtins.langVersion;
+          unsafeDiscard = builtins.unsafeDiscardStringContext "x";
+          functor = { __functor = self: arg: arg + 1; };
+          outPath = { outPath = "/nix/store/example"; };
+          mergeable = { a.b = 1; a.c = 2; };
+          emptySet = { };
+          emptyList = [ ];
+          nestedInterp = "a${"b${"c"}"}d";
+          escapes = "\r \\ \" \${ $ $$";
+          indentedEsc = '' ''$ ''\t ''' ${"x"} '';
+          lambdaPat = { a, b ? { c = 1; }, ... }@args: a;
+          uriLiteral = http://example.com/path?query=1; # deprecated: unquoted URL literal
+          path2 = a/b/c.nix;
+          absolutePath = /nix/store;
+          searchPath = <nixpkgs/nixos>;
+          negNumber = -5 + - 3;
+          with_ = with builtins; length [ 1 2 3 ];
+          assert_ = assert true; "yes";
+          ifChain = if x == 1 then "one" else if x == 2 then "two" else "many";
+          letNested = let a = let b = 1; in b; in a;
+          pipeOp = 5 |> (n: n * 2);
+          backPipe = (n: n * 2) <| 5;
+        };
+
+        # ── nixpkgs idioms ──
+        idioms = {
+          finalAttrsPackage = pkgs.stdenv.mkDerivation (finalAttrs: {
+            pname = "demo";
+            version = "0.1.0";
+            src = pkgs.fetchFromGitHub {
+              owner = "example";
+              repo = "demo";
+              rev = "v${finalAttrs.version}";
+              hash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+            };
+            strictDeps = true;
+            __structuredAttrs = true;
+            meta.mainProgram = "demo";
+          });
+          overridden = pkgs.hello.overrideAttrs (old: { patches = (old.patches or [ ]) ++ [ ./fix.patch ]; });
+          script = pkgs.writeShellApplication {
+            name = "greet";
+            runtimeInputs = [ pkgs.coreutils ];
+            text = ''
+              echo "hello ${version}"
+            '';
+          };
+          file = pkgs.writeText "note.txt" "text";
+          run = pkgs.runCommand "run" { nativeBuildInputs = [ pkgs.jq ]; } "touch $out";
+          goModule = pkgs.buildGoModule { pname = "g"; version = "1"; src = ./.; vendorHash = null; };
+          rustCrate = pkgs.rustPlatform.buildRustPackage { pname = "r"; version = "1"; src = ./.; cargoLock.lockFile = ./Cargo.lock; };
+          fileset = lib.fileset.toSource { root = ./.; fileset = lib.fileset.unions [ ./src ./Cargo.toml ]; };
+          merged = lib.mkMerge [ { a = 1; } (lib.mkIf truthy { b = 2; }) (lib.mkDefault { c = 3; }) (lib.mkForce { d = 4; }) (lib.mkOverride 50 { e = 5; }) ];
+          option = lib.mkOption { type = lib.types.listOf lib.types.str; default = [ ]; example = [ "a" ]; };
+          pkgOption = lib.mkPackageOption pkgs "hello" { };
+          piped2 = lib.pipe [ 1 2 3 ] [ (map (x: x * 2)) (lib.foldl' (a: b: a + b) 0) ];
+          flakeRef = builtins.getFlake "github:NixOS/nixpkgs";
+          impure = builtins.getEnv "HOME";
+          structured = builtins.toFile "x" "y";
+          curPos = __curPos;
+        };
       in {
         packages.default = stdenv.mkDerivation {
           pname = "inventory";
@@ -143,54 +231,3 @@
         };
       };
 }
-
-# ── Standalone expression forms (a second file would normally hold these) ──
-# let
-#   inherit (builtins) map filter;
-#   inherit ({ a = 1; b = 2; }) a b;
-#   x = 5;
-#   fix = f: let result = f result; in result;
-# in
-# rec {
-#   pathInterp = ./src/${toString x}/file.nix;
-#   dynamicAttr.${"key"} = 1;
-#   strAttr."a-b".c = 2;
-#   curriedCall = builtins.foldl' (acc: v: acc + v) 0 [ 1 2 3 ];
-#   floatMath = 1.5 * 2.0 - 0.5 / 0.25;
-#   cmp = 1 < 2 && 2 >= 1 || !(3 == 4);
-#   isNull = builtins.isNull null;
-#   trace = builtins.trace "msg" x;
-#   toJSON = builtins.toJSON { a = [ 1 2 ]; };
-#   fetch = builtins.fetchurl "https://example.com/file";
-#   readDir = builtins.readDir ./.;
-#   match = builtins.match "(a)(b)" "ab";
-#   split = builtins.split "," "a,b";
-#   sub = builtins.substring 0 3 "abcdef";
-#   len = builtins.stringLength "abc";
-#   hash = builtins.hashString "sha256" "x";
-#   path = builtins.path { path = ./.; name = "src"; };
-#   currentSystem = builtins.currentSystem;
-#   nixVersion = builtins.nixVersion;
-#   langVersion = builtins.langVersion;
-#   unsafeDiscard = builtins.unsafeDiscardStringContext "x";
-#   functor = { __functor = self: arg: arg + 1; };
-#   outPath = { outPath = "/nix/store/example"; };
-#   mergeable = { a.b = 1; a.c = 2; };
-#   emptySet = { };
-#   emptyList = [ ];
-#   nestedInterp = "a${"b${"c"}"}d";
-#   escapes = "\r \\ \" \${ $ $$";
-#   indentedEsc = '' ''$ ''\t ''' ${"x"} '';
-#   lambdaPat = { a, b ? { c = 1; }, ... }@args: a;
-#   uri2 = http://example.com/path?query=1#frag;
-#   path2 = a/b/c.nix;
-#   absolutePath = /nix/store;
-#   searchPath = <nixpkgs/nixos>;
-#   negNumber = -5 + - 3;
-#   with_ = with builtins; length [ 1 2 3 ];
-#   assert_ = assert true; "yes";
-#   ifChain = if x == 1 then "one" else if x == 2 then "two" else "many";
-#   letNested = let a = let b = 1; in b; in a;
-#   pipeOp = 5 |> (n: n * 2);
-#   backPipe = (n: n * 2) <| 5;
-# }

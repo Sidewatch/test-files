@@ -1,3 +1,4 @@
+<%# ERB (Ruby 3.4 / erb 5, Rails 8 helpers) — syntax showcase %>
 <%# ── Comments ── ERB comment tag: renders nothing. TODO: paginate. FIXME: escape notes. %>
 <%# Stock index — Rails view; @bins, current_user and flash come from the controller. %>
 <%# frozen_string_literal: true %>
@@ -112,3 +113,29 @@ block comment inside a scriptlet
 </style>
 
 <footer>&copy; <%= Time.current.year %> Acme Inc. <%= Rails.env %> <%= __FILE__ %>:<%= __LINE__ %></footer>
+
+<%# ── Newer Ruby in tags ── %>
+<% names = @bins.map { it.code } %>
+<% pairs = @bins.map { [_1.code, _1.qty] } %>
+<%= names.sum("") { it.upcase } %>
+<%= pairs.to_h { |code, qty| [code.to_sym, qty] }.inspect %>
+<% case [@bins.size, flash[:notice]]
+   in [0, _] %>
+  <p>none</p>
+<% in [Integer => n, String => note] if n > 3 %>
+  <p><%= n %>: <%= note %></p>
+<% in {size:} %>
+  <p><%= size %></p>
+<% end %>
+<%= turbo_frame_tag "bins", src: bins_path(format: :turbo_stream), loading: :lazy do %>
+  <p>Loading…</p>
+<% end %>
+<%= render(BinComponent.new(bin: @bins.first)) { |c| c.with_header { "Head" } } %>
+<%= tag.div class: %w[a b], data: { controller: "stock" } do %>
+  <%= tag.span "inline", class: "x" %>
+<% end %>
+<%- 2.times do |i| -%>
+  <%= i -%>
+<%- end -%>
+<%= "%d%% done" % 50 %>
+<%% literal open tag, %%> literal close tag

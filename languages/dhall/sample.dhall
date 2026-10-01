@@ -1,3 +1,4 @@
+-- Dhall 23.x (standard) — syntax showcase
 -- ── Comments ──
 -- Line comment. TODO: split into modules. FIXME: tighten the types.
 {- Block comment
@@ -230,6 +231,19 @@ let lambdaUnicode = λ(x : Type) → λ(y : x) → y
 let arrowUnicode = ∀(x : Type) → x → x
 let combine = { a = 1 } ∧ { b = 2 } ⫽ { c = 3 }
 let showExample = Natural/show 5 ++ Integer/show -3 ++ Double/show 1.5 ++ Text/show "q"
+
+-- ── Recent builtins (standard 23.x) ──
+let recent =
+      { subtract = Natural/subtract 2 5
+      , constructor = showConstructor (< A | B : Natural >.B 1)
+      , timeType = [ Date, Time, TimeZone ]
+      , dateShow = Date/show 2026-03-01
+      , timeShow = Time/show 08:30:00
+      , zoneShow = TimeZone/show +01:00
+      , textAppend = Text/replace "\${" "" "x"
+      , indexed = List/indexed Natural [ 10, 20 ]
+      , optionalBuild = Optional/build Natural (\(optional : Type) -> \(some : Natural -> optional) -> \(none : optional) -> some 1)
+      }
 
 in  { services
     , items

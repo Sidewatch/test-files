@@ -1,3 +1,4 @@
+@* Razor (ASP.NET Core 10, C# 14) — syntax showcase *@
 @page "/orders/{id:int?}"
 @model OrdersModel
 @using Inventory.Web.Helpers
@@ -166,6 +167,135 @@ finally
 @await Component.InvokeAsync("Cart", new { count = 3 })
 @(await Stock.CountAsync())
 <p>@Html.DisplayNameFor(m => m.Sku) @Html.DisplayFor(m => m.Total)</p>
+@* ── Blazor component syntax ──
+   (Razor Pages / MVC views and Blazor components use the same Razor language; a real file uses one flavour,
+   both are shown here so every directive and construct is highlighted) *@
+@page "/counter"
+@page "/counter/{start:int}"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@rendermode InteractiveAuto
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Routing
+@attribute [StreamRendering]
+@attribute [Authorize]
+@implements IAsyncDisposable
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<PageTitle>Counter</PageTitle>
+<HeadContent><meta name="description" content="Counter page" /></HeadContent>
+
+<h2>Current count: @current</h2>
+<button class="btn" @onclick="Increment">Click</button>
+<button @onclick="() => current += 5">Add 5</button>
+<button @onclick="async () => await SaveAsync()" @onclick:preventDefault @onclick:stopPropagation>Save</button>
+<button @ondblclick="Reset" @onmouseover="@(e => Hover(e))" disabled="@(current > 10)">Reset</button>
+<input @bind="name" @bind:event="oninput" @bind:after="OnNameChanged" />
+<input @bind:get="name" @bind:set="SetName" />
+<input @bind="current" @bind:format="N0" @bind:culture="culture" />
+<input type="checkbox" @bind="flag" />
+<input @ref="inputRef" @key="current" @attributes="extra" @onkeydown="OnKey" @onkeydown:preventDefault="true" />
+<select @bind="selected">
+    @foreach (var opt in options)
+    {
+        <option value="@opt" selected="@(opt == selected)">@opt</option>
+    }
+</select>
+
+<EditForm Model="form" OnValidSubmit="Submit" FormName="order" Enhance>
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <AntiforgeryToken />
+    <InputText @bind-Value="form.Sku" class="form-control" />
+    <InputNumber @bind-Value="form.Quantity" @bind-Value:after="Recalc" />
+    <InputSelect @bind-Value="form.Status">
+        @foreach (var s in Enum.GetValues<OrderStatus>())
+        {
+            <option value="@s">@s</option>
+        }
+    </InputSelect>
+    <ValidationMessage For="() => form.Sku" />
+    <button type="submit">Send</button>
+</EditForm>
+
+<CascadingValue Value="theme" Name="Theme" IsFixed="true">
+    <ThemedPanel Title="Panel" OnChange="@((int v) => current = v)">
+        <ChildContent>Inner content</ChildContent>
+        <Footer Context="footer">Footer @footer.Text</Footer>
+    </ThemedPanel>
+</CascadingValue>
+
+<Virtualize Items="items" Context="item" ItemSize="30">
+    <ItemContent><div>@item.Name</div></ItemContent>
+    <Placeholder>Loading...</Placeholder>
+</Virtualize>
+
+<DynamicComponent Type="componentType" Parameters="parameters" />
+<GenericList TItem="Order" Items="orders" Context="o"><RowTemplate>@o.Number</RowTemplate></GenericList>
+<NavLink class="nav-link" href="counter" Match="NavLinkMatch.All">Counter</NavLink>
+<ErrorBoundary><ChildContent>@ChildContent</ChildContent><ErrorContent Context="ex">Oops: @ex.Message</ErrorContent></ErrorBoundary>
+<Router AppAssembly="typeof(Program).Assembly"><Found Context="routeData"><RouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)" /></Found></Router>
+<Routes @rendermode="InteractiveServer" />
+<script>window.focusElement = (el) => el.focus();</script>
+
+@* ── Razor expression and code-block forms ── *@
+@{
+    Layout = "_Layout";
+    var items2 = new[] { 1, 2, 3 };
+    int Square(int x) => x * x;
+    static string Shout(string s) => s.ToUpperInvariant();
+    string multi = """
+        Raw multi-line
+        string literal
+        """;
+    List<int> coll = [1, 2, 3, ..items2];
+    var tuple = (Id: 1, Name: "x");
+    var (id, nm) = tuple;
+    var pattern = Model switch { { Count: > 3 } => "many", { Count: 0 } => "none", _ => "few" };
+    if (Model is not null && Model.Items is [var first, .., var last]) { }
+    var nullable = Model?.Name;
+    Model!.Items.Add(1);
+    var lambda = (int a, int b) => a + b;
+    Func<int, int> f = static x => x + 1;
+    await Task.Delay(1);
+    using var scope = Services.CreateScope();
+    nullable ??= "default";
+    var local = nameof(List<>);
+    var span = "abc".AsSpan()[1..];
+    var index = items2[^1];
+    var range = items2[1..^1];
+    var cond = flag ? 1 : 2;
+    var casted = (double)id / 3;
+    var typeOf = typeof(Dictionary<,>);
+    var anon = new { Name = "x", Value = 1 };
+    var record = new Point(1, 2) with { X = 5 };
+    var query = from o in orders where o.IsPaid orderby o.Total descending select new { o.Number, o.Total };
+}
+<p>@Square(4) @Shout("hi") @multi @tuple.Name @pattern @(items2.Length > 2 ? "big" : "small") @(Html.Raw("<b>")) @(nameof(Model))</p>
+<p>@(Model?.Name ?? "none") @Model!.Name @Model.Items[0] @Model.Items.Count() @(await GetAsync()) @(new Func<int>(() => 1)())</p>
+<p>@Html.ActionLink("Home", "Index", "Home", null, new { @class = "nav" }) @Url.Action("Index") @Url.Page("/Order", new { id = 1 })</p>
+<p>@ViewBag.Title @ViewData["Key"] @TempData["Msg"] @User.Identity?.Name @Context.Request.Path @Request.Query["q"] @Html.AntiForgeryToken()</p>
+@if (User.IsInRole("admin")) { <b>Admin</b> } else { <i>User</i> }
+@foreach (var (key, value) in dictionary) { <li>@key = @value</li> }
+@foreach (var o in orders.Where(x => x.IsPaid).Take(3)) { <li>@o.Number</li> }
+@{ RenderFragment fragment = @<p>Inline template @DateTime.Now</p>; }
+@fragment
+@{ Func<dynamic, object> tpl = @<em>@item</em>; }
+@tpl("templated")
+<div class="@(a ? "x" : "y") @cls" data-v="@val" @(flag ? "hidden" : "")>Attributes</div>
+<input value="@val" disabled="@isDisabled" checked="@(isChecked)" required />
+<a href="mailto:user@@example.com">user@example.com</a>
+@("@escaped") @@ literal
+@Html.Raw("@")
+<text>Unwrapped @name</text>
+@:Single-line text @name
+@section Footer { <footer>Footer</footer> }
+@section Scripts { @await Html.PartialAsync("_ValidationScripts") }
+@RenderSection("Footer", required: false)
+@* Multi-line Razor comment
+   spanning lines *@
+<!-- HTML comment @name -->
 @code {
     [Parameter] public int Start { get; set; }
     [Parameter] public EventCallback<int> OnChange { get; set; }
@@ -181,4 +311,36 @@ finally
 
     private void Increment() => current++;
     public void Dispose() { }
+
+    [SupplyParameterFromForm] private OrderForm form { get; set; } = new();
+    [SupplyParameterFromQuery(Name = "q")] public string? Query { get; set; }
+    [Parameter, EditorRequired] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment<Order>? RowTemplate { get; set; }
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? extra { get; set; }
+    [Inject] private ILogger<Counter> Log { get; set; } = default!;
+    private ElementReference inputRef;
+    private string? name;
+    private string culture = "en-GB";
+    private bool flag;
+    private string selected = "a";
+    private readonly string[] options = ["a", "b", "c"];
+
+    // C# 14: the field keyword in accessors, extension members, null-conditional assignment
+    public string Title { get => field ?? "untitled"; set => field = value?.Trim(); }
+    private void Touch() { Model?.Items = []; }
+    private async Task SaveAsync() { await JS.InvokeVoidAsync("console.log", "saved"); }
+    private Task OnNameChanged() => Task.CompletedTask;
+    private void SetName(string value) => name = value;
+    private void Hover(MouseEventArgs e) { }
+    private void OnKey(KeyboardEventArgs e) { }
+    private void Reset() => current = 0;
+    private void Recalc() { }
+    private Task Submit() => Task.CompletedTask;
+    public async ValueTask DisposeAsync() { await Task.CompletedTask; }
+    protected override void BuildRenderTree(RenderTreeBuilder builder) { }
+    protected override bool ShouldRender() => true;
+    protected override async Task OnParametersSetAsync() { }
+    protected override async Task OnAfterRenderAsync(bool firstRender) { if (firstRender) await inputRef.FocusAsync(); }
+    private record Point(int X, int Y);
+    private class OrderForm { [Required, StringLength(8)] public string Sku { get; set; } = ""; public int Quantity { get; set; } }
 }

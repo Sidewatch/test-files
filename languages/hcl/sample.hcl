@@ -1,3 +1,4 @@
+# HCL2 (Terraform 1.14, Nomad 1.10) — syntax showcase
 # ── Comments ──
 # HCL: Terraform and Nomad style configuration for the inventory API.
 // Double-slash comments are valid too.
@@ -416,3 +417,130 @@ build {
 # Single-line block and non-ASCII value
 settings { enabled = true }
 unicode_key = "café 日本語 ☕"
+
+# ── Terraform 1.8–1.14: ephemeral resources, write-only attributes, actions, provider functions ──
+ephemeral "aws_secretsmanager_secret_version" "db" {
+  secret_id = aws_secretsmanager_secret.db.id
+}
+
+resource "aws_db_instance" "main" {
+  identifier          = "inventory"
+  engine              = "postgres"
+  username            = "inventory"
+  password_wo         = ephemeral.aws_secretsmanager_secret_version.db.secret_string
+  password_wo_version = 1
+
+  lifecycle {
+    action_trigger {
+      events  = [after_create, after_update]
+      actions = [action.aws_lambda_invoke.notify]
+    }
+  }
+}
+
+action "aws_lambda_invoke" "notify" {
+  config {
+    function_name = "notify-ops"
+    payload       = jsonencode({ event = "database-ready" })
+  }
+}
+
+variable "api_token" {
+  type      = string
+  ephemeral = true
+  sensitive = true
+}
+
+locals {
+  arn_parts   = provider::aws::arn_parse("arn:aws:iam::123456789012:role/example")
+  rendered    = templatestring("Hello ${name}", { name = "inventory" })
+  prefix_ok   = startswith(var.region, "eu-") && endswith(var.region, "-1") && strcontains(var.region, "west")
+  nullable    = ephemeralasnull(var.api_token)
+  applying    = terraform.applying
+  lookups     = one(aws_instance.web[*].id)
+  sensitive_v = sensitive("hidden")
+  nonsens     = nonsensitive(var.settings).name
+  type_conv   = [tostring(1), tonumber("2"), tobool("true"), tolist(["a"]), toset(["a"]), tomap({ a = 1 })]
+  collections = [flatten([[1], [2]]), distinct([1, 1]), concat([1], [2]), slice([1, 2, 3], 0, 2), zipmap(["a"], [1]), transpose({ a = ["x"] })]
+  strings     = [trimspace(" x "), replace("a-b", "-", "_"), regex("[a-z]+", "abc1"), regexall("[0-9]", "a1b2"), split(",", "a,b"), join("-", ["a", "b"]), substr("abcdef", 1, 3), title("hi"), lower("A"), upper("a")]
+  encoding    = [base64encode("x"), base64decode("eA=="), urlencode("a b"), yamlencode({ a = 1 }), yamldecode("a: 1"), jsondecode("{\"a\":1}"), md5("x"), sha256("x"), uuid(), cidrsubnet("10.0.0.0/16", 8, 1)]
+  numeric     = [abs(-1), ceil(1.2), floor(1.8), min(1, 2), max(1, 2), parseint("ff", 16), pow(2, 3), signum(-5), log(8, 2)]
+  time        = [timestamp(), timeadd("2026-01-01T00:00:00Z", "24h"), formatdate("YYYY-MM-DD", timestamp()), plantimestamp()]
+  fs          = [abspath(path.root), basename("/a/b"), dirname("/a/b"), pathexpand("~"), fileexists("x"), filebase64("x"), fileset(path.module, "*.tf")]
+}
+
+module "per_env" {
+  source     = "./modules/env"
+  for_each   = toset(["dev", "prod"])
+  name       = each.key
+  providers  = { aws = aws.west }
+  depends_on = [module.network]
+}
+
+import {
+  for_each = { a = "i-aaa", b = "i-bbb" }
+  to       = aws_instance.imported[each.key]
+  id       = each.value
+}
+
+# ── Terraform query files (.tfquery.hcl) and test files (.tftest.hcl) ──
+list "aws_instance" "all" {
+  provider = aws
+  config {
+    region = "eu-west-1"
+  }
+}
+
+run "validate_instance_count" {
+  command = plan
+  variables {
+    instance_count = 3
+  }
+  assert {
+    condition     = length(aws_instance.web) == 3
+    error_message = "Expected three instances."
+  }
+  expect_failures = [var.instance_count]
+}
+
+mock_provider "aws" {
+  mock_resource "aws_instance" {
+    defaults = { id = "i-mock" }
+  }
+}
+
+# ── Nomad additions ──
+job "batch" {
+  type = "batch"
+  periodic {
+    crons            = ["*/15 * * * *"]
+    prohibit_overlap = true
+  }
+  group "g" {
+    restart {
+      attempts = 2
+      interval = "30m"
+      delay    = "15s"
+      mode     = "fail"
+    }
+    volume "data" {
+      type   = "host"
+      source = "inventory-data"
+    }
+    task "t" {
+      driver = "exec"
+      config {
+        command = "/bin/echo"
+        args    = ["hello", "${NOMAD_ALLOC_ID}"]
+      }
+      template {
+        data        = <<-EOT
+          {{ with secret "secret/data/inventory" }}{{ .Data.data.key }}{{ end }}
+        EOT
+        destination = "local/secrets.env"
+        env         = true
+      }
+      vault { policies = ["inventory"] }
+    }
+  }
+}

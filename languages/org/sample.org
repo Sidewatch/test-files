@@ -1,3 +1,4 @@
+# Org 9.7 — syntax showcase (comment line)
 #+TITLE: Inventory service notes
 #+SUBTITLE: Org-mode syntax showcase
 #+AUTHOR: Warehouse team
@@ -304,6 +305,139 @@ SCHEDULED: <2026-09-24 Thu>
 
 * Footnotes
 [fn:1] The footnote definition, with =verbatim= text.
+
+* Export, citation and publishing keywords
+#+DESCRIPTION: Notes about the inventory service
+#+KEYWORDS: inventory, stock, reorder
+#+LATEX_CLASS: article
+#+LATEX_CLASS_OPTIONS: [11pt,a4paper]
+#+LATEX_COMPILER: xelatex
+#+LATEX_HEADER_EXTRA: \usepackage{graphicx}
+#+HTML_HEAD: <link rel="stylesheet" href="style.css" />
+#+HTML_HEAD_EXTRA: <style>.note { color: red }</style>
+#+HTML_LINK_HOME: https://example.com/
+#+HTML_LINK_UP: ../
+#+HTML_DOCTYPE: html5
+#+HTML_CONTAINER: section
+#+INFOJS_OPT: view:info toc:nil
+#+BEAMER_THEME: Madrid
+#+BEAMER_HEADER: \setbeamercovered{transparent}
+#+ODT_STYLES_FILE: styles.odt
+#+TEXINFO_FILENAME: inventory.info
+#+CITE_EXPORT: biblatex authoryear
+#+BIBLIOGRAPHY: refs.bib
+#+PRINT_BIBLIOGRAPHY:
+#+TOC: headlines 2
+#+TOC: listings
+#+TOC: tables
+#+TOC: headlines 1 local
+#+INDEX: stock level
+#+CINDEX: concept index entry
+#+STARTUP: showall inlineimages latexpreview entitiespretty logdone
+#+STARTUP: align fold nofold content showeverything
+#+CAPTION[Short caption]: A long caption for the table
+#+RESULTS[hash]: named
+#+NAME: table-with-all
+#+HEADER: :var rows=orders
+#+header: :results table
+#+EXPORT_AUTHOR: Warehouse team
+#+EXPORT_DATE: 2026-09-24
+#+EXPORT_OPTIONS: toc:nil
+#+OPTIONS: ':t *:t -:t ::t <:t \n:nil e:t f:t pri:nil stat:t tags:t tasks:t timestamp:t title:t
+#+OPTIONS: author:t broken-links:mark date:t email:nil num:nil p:nil prop:nil toc:t todo:t |:t
+
+** Heading properties of every kind
+:PROPERTIES:
+:ID:       d9c1f3a2-0000-4000-8000-000000000001
+:CREATED:  [2026-09-24 Thu 09:00]
+:VISIBILITY: folded
+:COOKIE_DATA: todo recursive
+:LOGGING:  logdone lognotedone(!)
+:STYLE:    habit
+:ORDERED:  t
+:BLOCKED:  nil
+:TRIGGER:  chain-siblings(NEXT)
+:LAST_REPEAT: [2026-09-23 Wed 09:00]
+:header-args+: :results silent
+:header-args:python: :session py
+:EXPORT_FILE_NAME: heading-export
+:CLOCK_MODELINE_TOTAL: today
+:END:
+SCHEDULED: <2026-09-24 Thu 09:00 .+1d/3d> DEADLINE: <2026-09-30 Wed ++1w/2w -2d>
+
+** Repeating tasks and logbook notes
+*** TODO Weekly report
+SCHEDULED: <2026-09-24 Thu +1w>
+:PROPERTIES:
+:LAST_REPEAT: [2026-09-17 Thu 10:00]
+:END:
+:LOGBOOK:
+- State "DONE"       from "TODO"       [2026-09-17 Thu 10:00]
+- State "WAITING"    from "TODO"       [2026-09-16 Wed 09:00] \\
+  Reason for waiting
+- Rescheduled from "[2026-09-10 Thu]" on [2026-09-09 Wed 08:00]
+- Refiled on [2026-09-08 Tue 12:00]
+- Note taken on [2026-09-07 Mon 11:00] \\
+  Free-form note
+- Clocked out
+CLOCK: [2026-09-24 Thu 09:00]--[2026-09-24 Thu 10:15] =>  1:15
+:END:
+
+** Babel: header arguments and noweb
+#+PROPERTY: header-args:sh :results output :shebang "#!/bin/sh"
+#+NAME: helper
+#+BEGIN_SRC python :var x=1 y="two" :colnames yes :rownames no :hlines yes :wrap example :post fmt(*this*) :cache yes :eval never-export :noweb-ref part1
+return x
+#+END_SRC
+#+BEGIN_SRC emacs-lisp :lexical t :prologue "(require 'cl-lib)" :epilogue "(message \"done\")" :tangle-mode (identity #o755) :comments link :padline no
+(message "hi")
+#+END_SRC
+#+call: helper(x=2) :results value
+#+BEGIN_SRC org
+Nested *org* syntax inside a source block.
+#+END_SRC
+#+BEGIN_SRC
+A source block with no language.
+#+END_SRC
+#+BEGIN_SRC c++ -n 10 +n -i
+int main() { return 0; } /* (ref:end) */
+#+END_SRC
+
+** Math, environments and fixed-width
+\begin{align*}
+a &= b + c \\
+d &= e
+\end{align*}
+\begin{tikzpicture}
+\draw (0,0) -- (1,1);
+\end{tikzpicture}
+$$ x = \frac{-b \pm \sqrt{b^2-4ac}}{2a} $$
+Inline $a_i$, \(b^2\), \[c\] and \$ escaped dollar, 5 dollars: $5 and $6.
+:  fixed width with *no* markup
+:
+
+** Lists: every marker
+1. one
+2. two
+10. ten
+a. alpha (with org-list-allow-alphabetical)
+b. beta
+- bullet :: description with =verbatim=
++ plus
+  1. nested ordered
+     - deeper bullet
+  2. back out
+- [ ] task [0/2]
+  - [ ] sub a
+  - [X] sub b
+- Item with a
+  multi-line body
+
+  and a paragraph break.
+- Item with a block:
+  #+BEGIN_QUOTE
+  Quoted in a list.
+  #+END_QUOTE
 
 * COMMENT Local variables
 # Local Variables:

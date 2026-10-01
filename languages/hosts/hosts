@@ -1,4 +1,5 @@
 ##
+# hosts(5) format (IPv4 and IPv6, RFC 952/1123 host names) — syntax showcase
 # Host database — sample entries for local development.
 #
 # localhost is used to configure the loopback interface
@@ -81,3 +82,16 @@ fe80::1%en0     zone-index.example.com
 
 # Unicode comment: café 日本語 ☕
 
+# ── Further address spellings and entries ──
+0x7f.0.0.1      hex-dotted-loopback.example.com
+0177.0.0.1      octal-dotted-loopback.example.com
+2130706433      decimal-loopback.example.com
+2001:DB8::ABCD  upper-case-hex.example.com
+2001:db8::192.0.2.1 embedded-ipv4.example.com
+::ffff:0:192.0.2.1 siit.example.com
+fd00::1         unique-local.example.com
+ff05::2         site-routers.example.com
+100.64.0.1      cgnat.example.com
+198.18.0.1      benchmarking.example.com
+192.0.2.70      xn--80ak6aa92e.example.com wildcard-not-supported.example.com
+192.0.2.71      first second third fourth fifth sixth seventh eighth

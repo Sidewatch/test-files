@@ -1,3 +1,4 @@
+###. Textile 2 (current reference dialect) — syntax showcase
 ###. Comment block: not rendered. Textile showcase for the inventory service.
 ###. TODO: add the supplier appendix
 ###. FIXME: footnote numbering restarts per section
@@ -222,6 +223,45 @@ p. Percent signs and *asterisks* inside words: 100% sure, foo*bar*baz.
 p. Escaped markup: ==*not bold*== and a backslash \*literal asterisk\*.
 
 p. Unicode: Zürich — größe ✓ 🏭 在庫管理.
+
+h2. Additional forms
+
+bc(ruby#sample-code). puts "Code block with a language class and id"
+
+bc(ruby). def stock(sku)
+  ledger[sku]
+end
+
+bq(note){color:#333}[en]. Quote with class, style and language.
+
+p. Auto-numbered footnote reference[#] and another[#].
+
+fn#. Auto-numbered footnote body.
+
+p. Inline code with markup characters: @a *b* _c_@ and a span with style %{color:green}green text%.
+
+p. Ordered list inside a paragraph flow is closed by a blank line.
+
+# One
+# Two
+
+p. Unordered list with a class and id:
+
+*(tags#tag-list) First
+* Second
+
+p. Table with caption and row groups:
+
+table(summary).
+|=. Caption of the table
+|^.
+|_. Head |_. Value |
+|~.
+| Foot | total |
+|-.
+| Body | 1 |
+
+p. Raw <code>code tag</code> and <pre>pre tag</pre> inline, and <del>del</del>, <ins>ins</ins>.
 
 h2. Page structure
 

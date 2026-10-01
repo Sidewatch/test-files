@@ -1,3 +1,4 @@
+{# Jinja 3.1 — syntax showcase (no Jinja installed here; checked against the 3.1 template designer docs) #}
 {# ── Comments ── #}
 {# Single-line comment #}
 {#
@@ -241,3 +242,26 @@ line string literal" }}
 {% raw %}{% endraw %}{% raw %}{% raw %}{% endraw %}{% endraw %}
 ## line comment prefix (when configured)
 # line statement prefix (when configured)
+
+{# ── Internationalisation extension (i18n) ── #}
+{% trans trimmed %}
+  Welcome to the warehouse.
+{% endtrans %}
+{% trans trimmed user=user.name, count=items|length %}
+  {{ user }} has one item.
+{% pluralize count %}
+  {{ user }} has {{ count }} items.
+{% endtrans %}
+{% trans notrimmed %}  keeps   spacing  {% endtrans %}
+{{ _("Hello, World!") }} {{ gettext("Shipped") }} {{ ngettext("%(num)d item", "%(num)d items", count) }}
+{{ _("Hello %(name)s", name=user.name) }} {{ pgettext("menu", "Open") }} {{ npgettext("menu", "%(n)d file", "%(n)d files", count) }}
+{{ gettext("%(count)s units")|format(count=count) }}
+
+{# ── Expression statements and loop controls (extensions) ── #}
+{% do items.append(none) %}
+{% for item in items %}{% if item is none %}{% continue %}{% endif %}{% if loop.index > 3 %}{% break %}{% endif %}{{ item }}{% endfor %}
+
+{# ── Conditional import / include forms ── #}
+{% include "partials/footer.j2" if show_footer else "partials/footer-min.j2" %}
+{% set greeting = "hello" if flag_on %}
+{% for entry in (entries or []) | sort(attribute="name", case_sensitive=false) %}{{ entry.name }}{% endfor %}

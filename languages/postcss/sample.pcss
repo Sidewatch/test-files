@@ -1,5 +1,7 @@
 @charset "UTF-8";
 
+/* PostCSS 8.5 — syntax showcase (CSS as browsers ship it in 2026 plus common plugin syntax) */
+
 /* ── Comments ──
    PostCSS showcase for a warehouse dashboard: nesting, custom media,
    custom selectors, mixins, variables, functions and at-rules.
@@ -237,3 +239,189 @@ continued";
 
 @custom-media --print-only print;
 @media (--print-only) { .no-print { display: none; } }
+
+/* ── Modern CSS: colour ── */
+.colour {
+  color: oklch(62% 0.2 250);
+  background: oklab(70% -0.05 0.1 / 80%);
+  border-color: lch(50% 60 30);
+  outline-color: lab(55 20 -40);
+  fill: hwb(200 10% 20%);
+  stroke: color(display-p3 0.9 0.4 0.1);
+  caret-color: color(srgb-linear 0.5 0.2 0.1 / 0.5);
+  accent-color: light-dark(#036, #9cf);
+  color-scheme: light dark;
+  background-color: color-mix(in oklch longer hue, red 30%, blue);
+  --derived: oklch(from var(--primary) calc(l + 0.1) c h);
+  border-block-color: rgb(from var(--accent) r g b / 50%);
+  box-shadow: 0 0 0 1px hsl(from var(--primary) h s calc(l * 0.8));
+  background-image: linear-gradient(in oklch to right, red, blue), conic-gradient(from 90deg at 50% 50%, red, blue), radial-gradient(circle at top, #fff, #000), repeating-linear-gradient(45deg, #eee 0 10px, #ddd 10px 20px);
+}
+
+/* ── Modern CSS: layout and logical properties ── */
+.layout {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-template-rows: masonry;
+  container-type: inline-size;
+  container-name: card;
+  container: sidebar / inline-size;
+  inset-inline: 0;
+  margin-inline: auto;
+  padding-block-start: 1rem;
+  border-start-start-radius: 1rem;
+  inline-size: min(100%, 60ch);
+  block-size: fit-content;
+  width: stretch;
+  gap: 1rem 2rem;
+  place-items: center;
+  aspect-ratio: auto 4 / 3;
+  text-wrap: balance;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior: contain;
+  field-sizing: content;
+  interpolate-size: allow-keywords;
+  height: calc-size(auto, size + 2rem);
+}
+
+/* ── Modern CSS: anchor positioning, popover, view transitions, scroll-driven animation ── */
+.anchor { anchor-name: --trigger; }
+.tooltip {
+  position: absolute;
+  position-anchor: --trigger;
+  position-area: block-end span-inline-end;
+  top: anchor(bottom, 0.5rem);
+  left: anchor(--trigger center);
+  width: anchor-size(width);
+  position-try-fallbacks: flip-block, flip-inline, --custom-try;
+  position-try-order: most-height;
+  position-visibility: anchors-visible;
+}
+@position-try --custom-try { inset-area: top; margin: 0 0 0.5rem; }
+[popover]:popover-open { opacity: 1; }
+dialog::backdrop { background: rgb(0 0 0 / 50%); }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.3s; }
+::view-transition-group(*) { animation-timing-function: ease-in-out; }
+@view-transition { navigation: auto; }
+.reveal {
+  animation: fade-in linear both;
+  animation-timeline: view();
+  animation-range: entry 0% cover 40%;
+  scroll-timeline: --list block;
+  view-timeline: --item inline;
+}
+@keyframes fade-in { from { opacity: 0; translate: 0 2rem; } to { opacity: 1; translate: 0 0; } }
+
+/* ── Modern CSS: selectors, @scope, @container, @layer, @property ── */
+:is(h1, h2):where(.title) > :not(.sub, .sup) { margin: 0; }
+.parent:has(> img:not([alt])):has(+ .sibling) { outline: 1px dashed red; }
+:root:has(dialog[open]) { overflow: hidden; }
+a:any-link:focus-visible, input:user-invalid, input:placeholder-shown, :host(.x), :host-context(.dark), :defined, :modal, :fullscreen, :target-within, :open { color: red; }
+:nth-child(2n + 1 of .item), :dir(rtl), :state(checked), :heading, :active-view-transition { color: inherit; }
+::first-letter, ::first-line, ::marker, ::placeholder, ::file-selector-button, ::highlight(search), ::target-text, ::grammar-error, ::spelling-error, ::details-content, ::scroll-marker, ::picker(select) { color: inherit; }
+@scope (.card) to (.card__footer) { :scope { border: 1px solid; } img { block-size: auto; } & > p { margin: 0; } }
+@container card (min-width: 400px) and (max-width: 800px) { .title { font-size: 2rem; } }
+@container style(--theme: dark) { .title { color: white; } }
+@container scroll-state(stuck: top) { .header { box-shadow: var(--shadow); } }
+@container (inline-size > 30em) or (not (width < 10em)) { .x { display: flex; } }
+@layer base { html { color: canvastext; } }
+@layer components.buttons { .btn { padding: 0.5em 1em; } }
+
+@import "theme.css" layer(theme);
+@import "print.css" layer(print) supports(display: grid) print;
+@property --gap { syntax: "<length> | auto"; inherits: true; initial-value: 0px; }
+@counter-style thumbs { system: cyclic; symbols: "👍"; suffix: " "; }
+@font-feature-values Inter { @styleset { nice: 1; } }
+@font-palette-values --brand { font-family: Bixa; base-palette: 1; override-colors: 0 #f00; }
+@media (width >= 600px) and (height < 900px) and (prefers-color-scheme: dark) and (hover: hover) and (pointer: fine) { .x { display: block; } }
+@media (not (color)), (update: slow), (forced-colors: active), (prefers-contrast: more), (prefers-reduced-transparency: reduce), (dynamic-range: high), (scripting: none) { .x { display: none; } }
+@media screen { @media (min-width: 40em) { .nested-at { color: red; } } }
+@supports selector(:has(a)) and font-tech(color-COLRv1) and (not font-format(woff2)) { .x { color: red; } }
+@supports not (display: grid) { .x { float: left; } }
+
+/* ── Modern CSS: native nesting and relaxed nesting ── */
+.native {
+  color: red;
+  &:hover { color: blue; }
+  .child { color: green; }
+  > .direct { color: teal; }
+  + .adjacent { color: navy; }
+  ~ .general { color: purple; }
+  &.compound { color: black; }
+  :is(&, .other) .deep { color: gray; }
+  @media (width > 40em) { color: orange; & .inner { color: pink; } }
+  @container (min-width: 20em) { padding: 1rem; }
+  @supports (display: grid) { display: grid; }
+  @layer overrides { color: crimson; }
+  @scope (.x) { color: gold; }
+  width: 100px;
+  & & { margin: 0; }
+}
+
+/* ── Modern CSS: functions and math ── */
+.functions {
+  width: calc(100% - 2 * var(--gap, 1rem));
+  height: round(nearest, 100% / 3, 1px);
+  margin: mod(-18px, 5px) rem(10px, 3px);
+  padding: sin(30deg) cos(60deg) tan(45deg) asin(0.5) acos(0.5) atan(1) atan2(1, 1);
+  inset: pow(2, 3)px sqrt(16)px hypot(3px, 4px) log(10) exp(1) abs(-5px) sign(-3);
+  font-size: clamp(1rem, 2.5vw + 0.5rem, 2rem);
+  line-height: max(1.2, min(1.6, 1.4));
+  translate: calc(infinity * 1px) calc(NaN * 1px) calc(pi * 1px) calc(e * 1px);
+  background: image-set("a.png" 1x, "a-2x.png" 2x), cross-fade(url(a.png) 50%, url(b.png)), element(#id), paint(my-worklet);
+  content: attr(data-label type(<string>), "none") counter(item, decimal) counters(item, ".") "\201C";
+  transform: matrix(1, 0, 0, 1, 0, 0) perspective(100px) rotate3d(1, 1, 0, 45deg) translate3d(0, 0, 0) skew(10deg, 5deg);
+  filter: blur(2px) drop-shadow(0 0 2px #000) hue-rotate(90deg) contrast(120%);
+  clip-path: polygon(0 0, 100% 0, 50% 100%) circle(50% at center) inset(10px round 5px) path("M0 0 L10 10") shape(from 0 0, line to 10px 10px);
+  grid-area: 1 / 2 / span 2 / -1;
+  grid-template: [full-start] minmax(1em, 1fr) [main-start] minmax(0, 40em) [main-end] minmax(1em, 1fr) [full-end] / auto;
+  transition: all 0.3s linear(0, 0.25 25%, 1), opacity 1s steps(4, jump-end) allow-discrete;
+  width: fit-content(20em);
+  scale: 1 1;
+  inset-area: top left;
+  counter-reset: item 0 sub-item 1;
+  font-variation-settings: "wght" 400, "wdth" 100;
+  font-feature-settings: "liga" 1, "tnum";
+  --custom: { a: b };
+  --toggle:;
+  --space: ;
+  zoom: 1;
+  unicode-bidi: isolate;
+  src: local("Inter"), url(a.woff2) format("woff2") tech(variations);
+}
+
+/* ── PostCSS plugins: extend, apply, functions, property lookup, nested ancestors ── */
+%placeholder { color: red; }
+.extender { @extend %placeholder; @extend .card; }
+:root { --toolbar-theme: { background-color: hsl(120, 70%, 95%); border-radius: 4px; }; }
+.toolbar { @apply --toolbar-theme; }
+.lookup { width: 100px; height: @width; margin: @(width); }
+.parent-a { .child-b { ^&-sibling { color: red; } ^&:hover { color: blue; } } }
+.fn { width: add(1px, 2px); color: darken(var(--primary), 10%); font-size: rem(16px); size: em(20px, 16px); }
+.size { @size 20px 10px; }
+@custom-selector :--enter :hover, :focus;
+@custom-selector :--all-headings h1, h2, h3;
+:--enter > :--all-headings { color: red; }
+.bg { background: url("a.png"); background-image: image-set(url(a.png) 1x); }
+@media (--narrow) and (--reduced), (--wide) { .x { display: none; } }
+@media (width < 600px) { .x { display: none; } }
+.vars { margin: $gap; padding: $(gap)px; width: calc($columns * 1px); }
+@import "partials/*.pcss";
+@define-mixin flex $dir: row, $gap: 0 { display: flex; flex-direction: $dir; gap: $gap; }
+.flex { @mixin flex column, 1rem; }
+.mixed { @mixin badge #c33, #fff { color: red; } }
+@mixin-content;
+@path-alias "@" "src";
+@lost-column 1/3;
+.lost { lost-column: 1/3 3 60px; lost-utility: clearfix; }
+@svg-load logo url(logo.svg) { fill: red; }
+.with-svg { background: svg-load("icon.svg", fill=#fff); }
+@tailwind base;
+@apply font-bold py-2 px-4 rounded;
+@theme { --color-brand: oklch(0.7 0.2 250); }
+@utility tab-4 { tab-size: 4; }
+@variant dark (&:where(.dark, .dark *));
+@source "../src";
+@plugin "@tailwindcss/typography";
+@config "./tailwind.config.js";
+@reference "../app.css";

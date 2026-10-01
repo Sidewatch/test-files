@@ -1,4 +1,4 @@
-<?hh // strict
+// Hack (HHVM 2025; .hack files carry no <?hh header) — syntax showcase
 // ── Comments ──
 // Hack: a typed repository with async loading, shapes, generics and attributes.
 # Hash-style comment. TODO: split into files. FIXME: rounding.
@@ -179,7 +179,6 @@ function literals(): void {
   $keyset = keyset['x', 'y'];
   $tuple = tuple(1, 'two', 3.0);
   $shape = shape('sku' => 'A-1', 'qty' => 2, 'price' => 9.5);
-  $legacy = array(1, 2, 3);
   $short = vec[];
   $xhp = <div class="box">{$double}</div>;
   $lambda = $x ==> $x + 1;
@@ -198,9 +197,9 @@ function operators(int $a, int $b, ?string $s): void {
   $r ??= 'default';
   $bits = ($a & $b) | ($a ^ $b) | ~$a | ($a << 2) | ($a >> 1);
   $bits &= 1; $bits |= 2; $bits ^= 3; $bits <<= 1; $bits >>= 1;
-  $logic = ($a > $b && $b < $a) || !($a === $b) || ($a !== $b and $a <= $b) or ($a >= $b xor true);
+  $logic = ($a > $b && $b < $a) || !($a === $b) || ($a !== $b && $a <= $b) || ($a >= $b);
   $cmp = $a <=> $b;
-  $loose = $a == $b || $a != $b || $a <> $b;
+  $loose = $a == $b || $a != $b;
   $tern = $a > $b ? 'big' : 'small';
   $short = $a ?: 'zero';
   $coalesce = $s ?? 'none';
@@ -213,12 +212,11 @@ function operators(int $a, int $b, ?string $s): void {
   $as = $s as string;
   $nullas = $s ?as string;
   $inst = $s instanceof Stringish;
-  $silent = @file_get_contents('x');
   $new = new Repository(new AsyncMysqlConnection());
   $static = Repository::REORDER_POINT;
   $classname = Repository::class;
   $nameof = nameof Repository;
-  $cast = (string)$a . (int)'5' . (float)'1.5' . (bool)1 . (array)$a;
+  $cast = (string)$a . (int)'5' . (float)'1.5' . (bool)1;
 }
 
 // ── Control flow ──
@@ -282,7 +280,7 @@ class Handle implements IDisposable { public function __dispose(): void {} }
 
 // ── Unit tests and top level ──
 function using_asserts(): void {
-  invariant($GLOBALS !== null, 'globals must exist');
+  invariant(true, 'always holds');
   invariant_violation('unreachable');
   exit(0);
 }
@@ -369,7 +367,7 @@ function callables(): void {
 function legacy_statements(): void {
   echo __FILE__, __LINE__, __DIR__, __FUNCTION__, __CLASS__, __METHOD__, __NAMESPACE__, __TRAIT__, \PHP_EOL;
   print "print statement\n";
-  $a = isset($x) && !empty($y);
+  $a = isset($x);
   unset($z);
   list($p, $q) = tuple(1, 2);
   list(, $second) = tuple(1, 2);
@@ -378,11 +376,10 @@ function legacy_statements(): void {
   Heredoc with double-quoted tag $a
   QUOTED;
   $nested = "Nested: {$a->b['c']->d()} and $a[0] and $a->prop and {$a}";
-  $arr = array('a' => 1, 'b' => array(2, 3));
+  $arr = dict['a' => 1, 'b' => vec[2, 3]];
   $v = vec[1, 2, 3]
   |> Vec\map($$, $x ==> $x * 2)
   |> Vec\filter($$, $x ==> $x > 2);
-  declare(ticks=1);
   require_once 'file.php';
   include 'other.php';
   exit;
@@ -415,3 +412,65 @@ async function consume(): Awaitable<void> {
 /* HH_FIXME[4110] suppressed type error */
 /* HH_IGNORE_ERROR[4110] legacy suppression */
 function suppressed(): int { return 'string'; }
+
+// ── Current type system: dynamic, nothing, noreturn, num, class-like types, where clauses ──
+type Numeric = num;
+type Anything = dynamic;
+type Never = nothing;
+type Key = arraykey;
+type NonNull = nonnull;
+type Callable = (function(int ...$rest): void);
+type Inout = (function(inout int): void);
+type AsyncFn = (function(string): Awaitable<vec<int>>);
+type Closed = shape('a' => int, 'b' => ?string);
+type Open = shape('a' => int, ...);
+type OptionalField = shape(?'a' => int);
+type ClassName = classname<Repository>;
+type Nested = vec<dict<string, keyset<int>>>;
+
+function never_returns(): noreturn {
+  throw new \Exception('never');
+}
+
+function constrained<Tx as Stringish, Ty super int>(Tx $x, Ty $y): string where Tx as string {
+  return (string)$x;
+}
+
+abstract class WithTypeConstants {
+  abstract const type TId as arraykey;
+  const type TName = string;
+  const type TShape = shape('id' => int);
+  abstract const ctx C;
+  const ctx D = [defaults];
+  public static function make(): this::TName { return 'x'; }
+}
+
+interface HasDefault {
+  const int DEFAULT = 0;
+  require extends WithTypeConstants;
+}
+
+function is_checks(mixed $m): void {
+  if ($m is int) {}
+  if ($m is (int, string)) {}
+  if ($m is shape('a' => int)) {}
+  if ($m is vec<_>) {}
+  if ($m is Repository) {}
+  $x = $m as ?int;
+  $y = $m ?as int;
+}
+
+async function async_forms(): Awaitable<void> {
+  $a = async () ==> 1;
+  $b = async (int $x) ==> { return $x; };
+  $c = async function(): Awaitable<int> { return 2; };
+  $d = await $a();
+  $e = await Dict\map_async(dict['k' => 1], async ($v) ==> $v);
+  await using $handle = new Handle();
+}
+
+function late_static(): void {
+  $self = self::class;
+  $parent = parent::class;
+  $static = static::class;
+}

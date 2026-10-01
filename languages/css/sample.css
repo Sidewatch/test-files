@@ -1,4 +1,5 @@
 @charset "UTF-8";
+/* CSS as shipped in browsers, October 2026 (Nesting, Cascade Layers, Container Queries, Scope, Anchor Positioning) — syntax showcase */
 /* ── Comments ── */
 /* Block comment
    across lines. TODO: split into partials. FIXME: legacy prefixes. */
@@ -183,10 +184,6 @@ svg|rect, *|*, |circle { fill: none; }
 @media (min-resolution: 2dppx), (-webkit-min-device-pixel-ratio: 2) { .hi-dpi { image-rendering: crisp-edges; } }
 @media only screen and (min-aspect-ratio: 16/9) and (max-height: 40em) { .wide { display: flex; } }
 @media not print { .screen-only { display: block; } }
-@custom-media --narrow (max-width: 30em);
-@custom-selector :--heading h1, h2, h3;
-@tailwind base;
-@apply font-bold py-2;
 
 /* Shadow DOM and web components */
 :host, :host(.active), :host-context(.dark) { display: block; }
@@ -205,7 +202,6 @@ a[href^='http' s], a[title="a\"b"], [data-x=unquoted], [data-n="1"][data-m] { bo
 .ünïcode-class, .日本語 { margin: 0; }
 div > p ~ span + em  strong { margin: 0; }
 .parent:has(> img:not([alt])) .child:nth-child(odd):not(:last-child)::after { content: "\201C"; }
-a || b, a >> b { color: red; }
 
 /* Colors and color functions */
 .colors {
@@ -236,7 +232,7 @@ a || b, a >> b { color: red; }
   cursor: url(cursor.png) 4 12, auto; list-style: "– "; counter-reset: a 1 b 2;
   content: counter(item, upper-roman) ". " open-quote attr(title) close-quote;
   will-change: transform, opacity; contain: layout paint; scroll-snap-type: x mandatory;
-  anchor-name: --anchor; position-anchor: --anchor; inset-area: top span-right;
+  anchor-name: --anchor; position-anchor: --anchor; position-area: top span-right;
   field-sizing: content; text-wrap: balance; interpolate-size: allow-keywords;
   animation-timeline: scroll(root block); view-timeline: --section block;
   --custom: calc(1px + 2px); --str: 'string'; --url: url(x.png); --num: 3.5; --ident: foo;
@@ -257,3 +253,79 @@ continued line \\ backslash '\''"; }
 @scope { :scope > p { margin: 0; } }
 @media (width >= 600px) and (width <= 900px), (height > 200px) { .range { display: none; } }
 @import "print.css" print;
+
+/* ── Newer features ── */
+@function --negate(--value <number>) returns <number> {
+  result: calc(-1 * var(--value));
+}
+.modern {
+  width: if(media(width >= 600px): 50%; else: 100%);
+  height: calc-size(auto, size + 2rem);
+  margin-inline: --negate(4);
+  inline-size: anchor-size(width);
+  top: anchor(--anchor bottom, 0px);
+  position-try-fallbacks: --flip, flip-block;
+  position-visibility: anchors-visible;
+  order: sibling-index();
+  z-index: sibling-count();
+  width: attr(data-w type(<length>), 0px);
+  color: contrast-color(var(--brand-primary));
+  background: light-dark(white, black);
+  corner-shape: squircle;
+  border-radius: 1rem;
+  text-box: trim-both cap alphabetic;
+  text-wrap-style: pretty;
+  view-transition-name: hero;
+  animation-timeline: view(block 10% 20%);
+  animation-range: entry 0% cover 50%;
+  timeline-scope: --section;
+  scroll-timeline: --list inline;
+  clip-path: polygon(0 0, 100% 0, 100% 80%, 0 100%);
+  offset-path: path("M 0 0 L 100 100");
+  shape-outside: circle(50% at 50% 50%);
+  scrollbar-gutter: stable both-edges;
+  scrollbar-color: auto;
+  interactivity: inert;
+  reading-flow: grid-rows;
+  overscroll-behavior: contain;
+  accent-color: auto;
+  caret-color: oklch(70% 0.1 200);
+  transition-behavior: allow-discrete;
+  overlay: auto;
+  hyphenate-limit-chars: 6 3 2;
+  color: random(--seed, 0, 1);
+}
+.modern:open, dialog:modal, [popover]:popover-open { display: block; }
+details::details-content { block-size: 0; }
+ul::scroll-marker-group { display: flex; }
+li::scroll-marker { content: ""; }
+.scroller::scroll-button(inline-end) { content: "→"; }
+::view-transition-group(*), ::view-transition-image-pair(hero), ::view-transition-new(root) { animation-duration: 0.3s; }
+@container scroll-state(stuck: top) { .sticky { box-shadow: 0 2px 4px #0003; } }
+@container card style(--compact: true) and (min-width: 20em) { .item { padding: 0; } }
+@media (scripting: none), (update: slow), (inverted-colors: inverted), (prefers-reduced-transparency: reduce) { .x { color: red; } }
+@media (dynamic-range: high) and (video-dynamic-range: high) and (color-gamut: p3) { .hdr { color: color(display-p3 1 0 0); } }
+@scope (.card:hover) to (:scope > .content) { :scope { border: 1px solid; } & img { width: 100%; } }
+@layer framework { @layer layout { .a { margin: 0; } } }
+@layer framework.layout { .b { margin: 0; } }
+@import url("theme.css") layer(theme) supports(display: grid) screen;
+@import "legacy.css" layer;
+@page :left { margin-left: 3cm; @bottom-right { content: counter(page); } }
+@page wide:right { size: A4 landscape; }
+@font-face { font-family: "Fallback"; src: local("Arial"); size-adjust: 105%; ascent-override: 90%; descent-override: 20%; line-gap-override: 0%; }
+@counter-style thumbs { system: cyclic; symbols: "\1F44D"; suffix: " "; }
+@font-feature-values Fancy { @swash { fancy: 1; } @ornaments { fleuron: 1; } @annotation { circled: 1; } @stylistic { alt: 2; } }
+.nest {
+  color: red;
+  &.active { color: blue; }
+  & > .child { margin: 0; }
+  + .sibling { margin: 0; }
+  .parent & { margin: 0; }
+  @media (hover: hover) { &:hover { color: green; } }
+  @supports (display: grid) { display: grid; }
+  @layer base { padding: 0; }
+  @container (width > 10em) { gap: 1px; }
+  @scope (.x) { color: red; }
+  &:is(.a, .b) { color: red; }
+}
+.important { color: red ! important; margin: 0 !IMPORTANT; --x: 1 !important; }

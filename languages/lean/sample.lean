@@ -1,3 +1,4 @@
+-- Lean 4 (4.2x series, with Mathlib-style tactics) — syntax showcase; no Lean toolchain is installed here, so it was not compiled
 /-
   Lean 4: warehouse stock model with types, proofs and tactics.
   /- nested block comment -/
@@ -415,3 +416,59 @@ theorem tactics2 (n : Nat) (xs : List Nat) (h : n > 0) : n ≠ 0 ∧ xs.length �
 #print Nat.add
 #help tactic
 end Rare
+
+/-! ## Recent additions -/
+section Recent
+-- configuration options after tactics use +flag / -flag / (name := value)
+example (a b : Nat) : a + b = b + a := by simp +arith
+example (a b : Nat) (h : a ≤ b) : a < b + 1 := by omega
+example : 10 * 10 = 100 := by decide +kernel
+example (xs : List Nat) : (xs ++ []).length = xs.length := by simp (config := { decide := true })
+example (a b c : Nat) (h : a = b) (h' : b = c) : a = c := by grind
+example (p q : Prop) (hp : p) (hq : q) : p ∧ q := by exact ⟨hp, hq⟩
+
+-- #guard and #guard_msgs
+#guard 1 + 1 == 2
+/-- info: 3 -/
+#guard_msgs in
+#eval 1 + 2
+
+-- instance priorities, named instances, default instances
+instance (priority := low) lowPrio : Inhabited Nat := ⟨0⟩
+instance instNamed : ToString Warehouse.Status := ⟨fun _ => "status"⟩
+@[default_instance] instance : HMul Float Float Float := ⟨Float.mul⟩
+
+-- structural and well-founded recursion annotations
+def ack : Nat → Nat → Nat
+  | 0, n => n + 1
+  | m + 1, 0 => ack m 1
+  | m + 1, n + 1 => ack m (ack (m + 1) n)
+termination_by m n => (m, n)
+
+def countDown (n : Nat) : List Nat :=
+  if h : n = 0 then [0] else n :: countDown (n - 1)
+termination_by n
+decreasing_by omega
+
+-- include / omit and variable scoping
+variable (x : Nat) (h : x > 0)
+include h in
+theorem needs_h : x ≠ 0 := by omega
+omit h in
+theorem no_h : x = x := rfl
+
+-- Subtype, anonymous constructor, structure instance update, dot-notation
+structure Point where
+  x : Nat
+  y : Nat
+  deriving Repr
+
+def shifted (p : Point) : Point := { p with x := p.x + 1 }
+def origin : Point := ⟨0, 0⟩
+def viaWhere : Point where
+  x := 1
+  y := 2
+def namedArgs := Nat.add (n := 1) (m := 2)
+def pipeline := [1, 2, 3] |>.map (· + 1) |>.filter (· > 2) |>.length
+def anonymousHyp (n : Nat) (h : n > 0) : n > 0 := ‹n > 0›
+end Recent

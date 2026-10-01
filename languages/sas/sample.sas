@@ -1,3 +1,4 @@
+/* SAS 9.4 M9 and SAS Viya (Stable 2025) — syntax showcase */
 /* ── Comments ── */
 /* SAS showcase: warehouse inventory reporting.
    TODO: read from the warehouse database. FIXME: missing-value handling. */
@@ -295,4 +296,247 @@ run;
 ods html close;
 ods pdf close;
 ods listing;
+
+/* ── Functions, formats and dates in the DATA step ── */
+data functions;
+    set inv.orders;
+    length text $100;
+    d1 = intnx('month', today(), 1, 'b');
+    d2 = intck('day', '01JAN2026'd, today());
+    d3 = datepart(datetime());
+    d4 = input('2026-09-24', yymmdd10.);
+    d5 = put(d4, date9.);
+    d6 = year(d4) * 100 + month(d4);
+    d7 = weekday(d4) + qtr(d4) + day(d4);
+    d8 = mdy(1, 1, 2026) + yrdif('01JAN2020'd, today(), 'act/act');
+    t1 = upcase(status) || lowcase(status) || propcase(status);
+    t2 = substr(status, 1, 3) || trim(status) || left(status) || compress(status, ' ') || strip(status);
+    t3 = tranwrd(status, 'a', 'b') || translate(status, 'x', 'y') || catx('-', 'a', 'b') || catt('a', 'b') || cat('a', 'b');
+    t4 = scan(text, 2, ' ') || reverse(text) || repeat('x', 2) || compbl(text) || put(total, 8.2) || vvalue(total);
+    t5 = length(text) + lengthn(text) + lengthc(text) + countc(text, 'a') + count(text, 'ab') + find(text, 'a') + anyalpha(text) + notdigit(text);
+    n1 = sum(of a1-a3) + mean(a1, a2) + median(a1, a2) + std(a1, a2) + max(a1, a2) + min(a1, a2) + nmiss(a1, a2) + n(a1, a2);
+    n2 = abs(-1) + ceil(1.2) + floor(1.8) + int(1.5) + round(1.5) + mod(5, 2) + sqrt(4) + exp(1) + log(2) + log10(10) + sin(1) + cos(1);
+    n3 = rand('uniform') + ranuni(0) + rannor(0) + normal(0) + ranbin(0, 10, 0.5) + rand('normal', 0, 1);
+    n4 = lag(total) + lag2(total) + dif(total) + coalesce(a, b, 0) + ifn(a > 1, 1, 0);
+    c1 = ifc(a > 1, 'yes', 'no') + coalescec(x, y) + choosec(1, 'a', 'b') + whichn(1, 1, 2);
+    p1 = prxparse('/(\d+)-(\d+)/') + prxmatch(p, text) + prxchange('s/a/b/', -1, text);
+    call prxsubstr(p, text, pos, len);
+    call prxposn(p, 1, pos, len);
+    call sortn(of a1-a3);
+    call sort(of x1-x3);
+    call scan(text, 1, pos, len);
+    call streaminit(123);
+    call execute('proc print data=work.x; run;');
+    call symput('x', 'y');
+    call set(dsid);
+    rc = dosubl('data _null_; run;');
+    dsid = open('work.orders');
+    nobs = attrn(dsid, 'nlobs');
+    rc = close(dsid);
+    rc = filename('fref', '/tmp/x.txt');
+    rc = fexist('fref');
+    x = resolve('&reorder_point');
+    y = symget('reorder_point');
+    z = sysget('HOME');
+    w = getoption('linesize');
+    v = input('1,234.5', comma10.);
+    u = inputn('2026', 'best.') + inputc('abc', '$char3.');
+    format d1 d3 date9. d4 yymmdd10. total dollar12.2 pct percent8.1 id z5. name $upcase. big comma16. e e12.4 hex hex4.;
+run;
+
+/* ── Arrays, hash objects, iterators, and DO loops ── */
+data hash_demo;
+    if 0 then set inv.products;
+    length key $10;
+    if _n_ = 1 then do;
+        declare hash h(dataset: 'inv.products', ordered: 'a', multidata: 'y', hashexp: 8);
+        declare hiter hi('h');
+        h.defineKey('sku');
+        h.defineData('sku', 'price', 'name');
+        h.defineDone();
+        call missing(sku, price, name);
+    end;
+    set inv.orders end=last;
+    rc = h.find();
+    rc = h.add();
+    rc = h.replace();
+    rc = h.remove();
+    rc = h.check();
+    rc = h.num_items;
+    rc = h.output(dataset: 'work.out');
+    rc = hi.first();
+    do while (rc = 0);
+        rc = hi.next();
+    end;
+    array monthly{12} m1-m12;
+    array grid{3, 4} _temporary_ (12*0);
+    array chars{*} $ c1-c5;
+    do i = 1 to dim(monthly);
+        monthly{i} = i ** 2;
+    end;
+    do over monthly;
+        monthly = monthly + 1;
+    end;
+    do i = 1 to 3; do j = 1 to 4; grid{i, j} = i * j; end; end;
+    do x = 1 to 10 by 2 until (x > 7);
+        if mod(x, 2) = 0 then continue;
+        leave;
+    end;
+run;
+
+/* ── PROC FCMP, PROC DS2, PROC CAS, and PROC LUA ── */
+proc fcmp outlib=work.funcs.math;
+    function double(x);
+        return (x * 2);
+    endsub;
+    subroutine swap(a, b);
+        outargs a, b;
+        t = a; a = b; b = t;
+    endsub;
+run;
+options cmplib=work.funcs;
+
+proc ds2;
+    data work.ds2_out / overwrite=yes;
+        declare double total having format dollar12.2 label 'Total';
+        declare varchar(20) name;
+        declare package hash h();
+        method init();
+            total = 0;
+        end;
+        method run();
+            set inv.orders;
+            total = total + amount;
+            output;
+        end;
+        method term();
+            put 'done';
+        end;
+        method double_it(double x) returns double;
+            return x * 2;
+        end;
+    enddata;
+run;
+quit;
+
+cas mysession sessopts=(caslib="casuser" timeout=1800);
+libname mycas cas caslib="casuser";
+proc cas;
+    session mysession;
+    table.loadTable / path="orders.sashdat" caslib="casuser" casOut={name="orders", replace=true};
+    simple.summary / table={name="orders"}, inputs={"total"};
+    action table.fetch / table={name="orders"}, to=5;
+    source myCode;
+        data casuser.out; set casuser.orders; run;
+    endsource;
+    dataStep.runCode / code=myCode;
+quit;
+cas mysession terminate;
+
+proc lua restart;
+submit;
+    local t = {1, 2, 3}
+    for i, v in ipairs(t) do sas.print(i, v) end
+    sas.submit([[proc print data=sashelp.class; run;]])
+endsubmit;
+run;
+
+proc python;
+submit;
+import pandas as pd
+df = SAS.sd2df('sashelp.class')
+print(df.head())
+endsubmit;
+run;
+
+proc http url="https://example.com/api" method="GET" out=resp;
+    headers "Accept"="application/json";
+run;
+libname jdata json fileref=resp;
+proc json out=outjson pretty; export orders / nosastags; run;
+
+/* ── More statistical and utility PROCs ── */
+proc glm data=orders; class status; model total = status number / solution; lsmeans status / pdiff; run; quit;
+proc mixed data=orders; class status; model total = number / solution; random intercept / subject=status; run;
+proc phreg data=orders; model time*censor(0) = total; run;
+proc surveyselect data=orders out=sample method=srs sampsize=10 seed=42; run;
+proc stdize data=orders out=scaled method=std; var total; run;
+proc corr data=orders pearson spearman; var total number; run;
+proc ttest data=orders; class paid; var total; run;
+proc npar1way data=orders wilcoxon; class paid; var total; run;
+proc rank data=orders out=ranked groups=4; var total; ranks quartile; run;
+proc standard data=orders mean=0 std=1 out=z; var total; run;
+proc append base=big data=small force; run;
+proc cport library=work file=transport; run;
+proc cimport library=work infile=transport; run;
+proc printto log="run.log" print="run.lst" new; run;
+proc printto; run;
+proc setinit; run;
+proc options option=memsize; run;
+proc template; define style styles.mine; parent=styles.journal; class body / backgroundcolor=white; end; run;
+
+/* ── ODS, graphics and report writing ── */
+ods excel file="out.xlsx" options(sheet_name="Orders" embedded_titles="yes");
+ods powerpoint file="deck.pptx";
+ods rtf file="out.rtf" bodytitle;
+ods output summary=work.summary_out Means=work.means_out;
+ods select all;
+ods exclude none;
+ods trace on;
+ods trace off;
+ods noproctitle;
+ods escapechar='^';
+title1 j=c bold height=14pt color=blue "Centered ^{style[color=red]red text}";
+proc sgpanel data=sashelp.class; panelby sex; scatter x=height y=weight / group=sex; run;
+proc sgscatter data=sashelp.class; matrix height weight age; run;
+proc gchart data=sashelp.class; vbar age / discrete; run; quit;
+proc template; define statgraph mygraph; begingraph; layout overlay; seriesplot x=x y=y; endlayout; endgraph; end; run;
+proc sgrender data=sashelp.class template=mygraph; run;
+
+/* ── Additional macro language ── */
+%macro nested(a, b=%str(,));
+    %macro inner; %put inner; %mend inner;
+    %inner
+    %put &=a &=b;
+    %let result = %sysfunc(catx(&b, &a, x));
+    %put &result;
+    %let name = a;
+    %let &name.2 = indirect;
+    %put &&&name.2 &&name.2;
+    %put %sysfunc(sum(1, 2)) %sysevalf(10/3) %eval(2**3) %length(abc) %upcase(x) %lowcase(X) %trim(a ) %left( a);
+    %put %substr(abcdef, 2, 3) %scan(a-b-c, 2, -) %index(abc, b) %cmpres(a  b) %quote(a,b) %nrquote(a%b) %superq(a);
+    %put %sysmexecdepth %sysmexecname(1) %sysprod(sas/stat) %sysfunc(getoption(linesize)) %sysmacexist(nested);
+    %put &sysdate &sysdate9 &systime &sysday &sysver &sysvlong &sysscp &sysuserid &syserr &sysrc &syslast &sysindex &sysjobid;
+    %put &sqlobs &sqlrc &sqlxobs &sqlmsg;
+    %put &syscc &syserrortext &sysmsg &sysmacroname &syssite &sysparm &sysprocessname &sysprocessid &sysstartid &sysenv;
+%mend nested;
+%nested(x)
+%macro compare(a, b);
+    %if &a = &b %then %put equal;
+    %else %if &a > &b %then %put greater;
+    %else %put less;
+    %if %sysevalf(&a < &b) and %length(&a) %then %put numeric less;
+    %if %upcase(&a) ne %upcase(&b) or not %sysfunc(exist(x)) %then %put different;
+    %if &a in (1 2 3) %then %put in list;
+    %if &a eq 1 %then %do; %put one; %end;
+    %do i = %sysfunc(min(1, 2)) %to %eval(2 + 1) %by 1;
+        %put &i;
+    %end;
+%mend;
+%sysmacdelete compare / nowarn;
+%symdel nested / nowarn;
+%put %sysfunc(prxmatch(/a/, abc));
+%put %sysfunc(putn(5, z3.)) %sysfunc(putc(abc, $upcase.)) %sysfunc(inputn(5, 3.));
+%put %sysfunc(sleep(0)) %sysfunc(date(), worddate.) %sysfunc(datetime(), datetime20.) %sysfunc(time(), time8.);
+%let dsid = %sysfunc(open(work.orders));
+%let nobs = %sysfunc(attrn(&dsid, nlobs));
+%let rc = %sysfunc(close(&dsid));
+%let list = a b c;
+%let count = %sysfunc(countw(&list, %str( )));
+%let first = %scan(&list, 1, %str( ));
+%let amp = %nrstr(&&);
+%let pct = %nrstr(%%);
+%put &=list &=count &first;
+%put NOTE: done. WARNING: or ERROR: appear in log colouring.
+
 endsas;

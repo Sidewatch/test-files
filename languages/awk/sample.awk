@@ -1,4 +1,5 @@
 #!/usr/bin/awk -f
+# gawk 5.3 (POSIX awk plus GNU extensions) — syntax showcase
 # Warehouse stock report: reads "sku qty price category" lines, prints totals.
 # Usage: awk -f sample.awk -v threshold=25 stock.txt
 # TODO: support quoted fields.
@@ -257,3 +258,85 @@ function readers(   line, cmd) {
 NF { fields += NF }
 !NF { blanks++ }
 END { if (!(blanks)) print "no blanks"; else print blanks "blank lines" }
+
+# ── gawk 5.3 additions ────────────────────────────────────────────────
+# Run with --csv for RFC 4180 CSV field splitting (gawk 5.3).
+BEGIN {
+    # Strongly typed regexp constants (gawk 5.3)
+    sku_re = @/^[A-Z]-[0-9]{3}$/
+    if (typeof(sku_re) == "regexp") print "regexp constant"
+    # New built-in functions in 5.3
+    quotient = intdiv(17, 5, result)           # result["quotient"], result["remainder"]
+    flag = mkbool(1)
+    # typeof and isarray
+    kinds = typeof(flag) " " typeof(quotient) " " typeof(result) " " typeof(undefined_name)
+    # Dynamic loading, namespaces, indirect calls
+    PROCINFO["sorted_in"] = "@val_num_desc"
+    nm = "warehouse::helper"
+    r = @nm(21)
+    # Bit and numeric strings
+    big = strtonum("0xFFFF") + strtonum("0777") + 0x10
+    # Arrays of arrays
+    matrix[1][1] = "a"
+    matrix[1][2] = "b"
+    matrix[2][1] = "c"
+    for (row in matrix)
+        for (col in matrix[row])
+            print row, col, matrix[row][col]
+    delete matrix[1]
+    if (isarray(matrix[2])) print "subarray"
+    # Locale and number formatting
+    printf "%'d %'.2f\n", 1234567, 1234.5
+    # Time functions
+    now = systime()
+    stamp = strftime("%Y-%m-%dT%H:%M:%S%z", now, 1)
+    print mktime("2025 06 15 12 00 00") - now
+    # Output control
+    print "ok" > "/dev/stderr"
+    print "message" | "cat 1>&2"
+    printf "%s\n", "formatted" > "/dev/stdout"
+    close("/dev/stdout")
+    # Sorting with a user function
+    n = asort(matrix[2], dest, "compare_values")
+    # Special files and variables
+    print ARGIND, ERRNO, RT, FIELDWIDTHS, FPAT, BINMODE
+    print PROCINFO["pid"], PROCINFO["version"], PROCINFO["strftime"]
+}
+
+function compare_values(i1, v1, i2, v2) {
+    return v1 < v2 ? -1 : (v1 != v2)
+}
+
+# Bare patterns with the implicit { print } action, range and regexp forms
+NR > 1
+/error/
+$1 == "x", $1 == "y"
+!/^#/ && NF
+END { print NR }
+
+# Field and record assignment, NF modification, string coercion
+{ $3 = ""; $0 = tolower($0); NF = 3; $5 = "extended" }
+{ sub(/^[ \t]+/, ""); sub(/[ \t]+$/, ""); $1 = $1 }
+{ x = $1 + 0; s = $1 ""; b = ($1 == $1 + 0) }
+
+# Continuation lines, semicolons, and statement-terminating newlines
+function long_call(a,
+                   b,
+                   c)
+{
+    return a \
+         + b \
+         + c
+}
+BEGIN { a = 1; b = 2; c = long_call(a,
+                                    b,
+                                    3) }
+BEGIN { if (a) { print "a" } else if (b) { print "b" } else print "neither"; }
+BEGIN { while (i++ < 3) print i; do print i--; while (i > 0); for (;;) break }
+BEGIN { print length("string"), length(), length }
+BEGIN { print 1==1 ? "yes" : "no"; print (1, 2) in arr; print -1 " " -1 }
+BEGIN { print substr("hello", 0), substr("hello", -1, 3), index("abc", "") }
+BEGIN { print toupper("x") > "/dev/null" }
+BEGIN { getline line < "-"; print line }
+BEGIN { exit 3 }
+END { exit }

@@ -1,3 +1,4 @@
+// Protocol Buffers: Edition 2024 / proto3 / proto2 (protobuf 33) — syntax showcase
 // ── Comments ──
 // Protocol Buffers showcase: a warehouse inventory API.
 // TODO: add field masks. FIXME: deprecate v1 endpoints.
@@ -208,4 +209,97 @@ message Aggregate {
     nested { flag: true }
     # text-format comment
   };
+}
+
+// ── proto3 and Edition 2024 forms ──
+// A file has exactly one of `syntax = "proto2"`, `syntax = "proto3"` or `edition = "2024"`.
+// The proto2 file above cannot also be proto3 or an edition file, so the forms below are
+// shown together for highlighting only; each block is valid in a file of its own.
+
+// --- proto3 file ---
+// syntax = "proto3";
+message Proto3Message {
+  string name = 1;
+  optional int32 maybe = 2;             // explicit presence in proto3
+  repeated string tags = 3;             // packed by default for scalars
+  map<string, Proto3Message> children = 4;
+  oneof choice {
+    string text = 5;
+    bytes data = 6;
+  }
+  reserved 7, 8 to 10, 20 to max;
+  reserved "old_name", "other";
+  google.protobuf.Timestamp when = 11;
+  NestedEnum kind = 12;
+  enum NestedEnum {
+    NESTED_ENUM_UNSPECIFIED = 0;
+    NESTED_ENUM_ONE = 1;
+  }
+}
+
+service Proto3Service {
+  rpc Unary(Proto3Message) returns (Proto3Message);
+  rpc ServerStream(Proto3Message) returns (stream Proto3Message);
+  rpc ClientStream(stream Proto3Message) returns (Proto3Message);
+  rpc Bidi(stream Proto3Message) returns (stream Proto3Message) {
+    option (google.api.http) = {
+      post: "/v1/bidi"
+      body: "*"
+      additional_bindings { get: "/v1/bidi/{name}" }
+    };
+  }
+}
+
+// --- Edition 2024 file ---
+// edition = "2024";
+// import option "google/protobuf/cpp_features.proto";   // option imports (2024)
+// option features.field_presence = EXPLICIT;
+// option features.(pb.cpp).string_type = VIEW;
+export message PublicMessage {                           // symbol visibility (2024)
+  string name = 1 [features.field_presence = IMPLICIT];
+  repeated int32 values = 2 [features.repeated_field_encoding = EXPANDED];
+  string view = 3 [features.(pb.cpp).string_type = VIEW];
+  reserved reserved_name, other_name;                    // unquoted reserved names (2024)
+  reserved 4 to max;
+  message Inner {
+    option features.message_encoding = DELIMITED;
+    int32 id = 1;
+  }
+  Inner inner = 5;
+}
+
+local message InternalMessage { int32 x = 1; }           // `local` visibility
+export enum PublicEnum {
+  option features.enum_type = CLOSED;
+  PUBLIC_ENUM_UNSPECIFIED = 0;
+  PUBLIC_ENUM_ONE = 1;
+}
+local enum InternalEnum { INTERNAL_ENUM_UNSPECIFIED = 0; }
+
+// ── Literal forms ──
+message Literals {
+  optional int32 dec = 1 [default = 42];
+  optional int32 hex = 2 [default = 0xFF];
+  optional int32 oct = 3 [default = 0777];
+  optional double flt = 4 [default = 1.5e10];
+  optional double flt2 = 5 [default = .5];
+  optional double flt3 = 6 [default = 5.];
+  optional double flt4 = 7 [default = 1E-3];
+  optional double inf = 8 [default = inf];
+  optional double ninf = 9 [default = -inf];
+  optional double nan = 10 [default = nan];
+  optional string s1 = 11 [default = "double \"quoted\" \x41 \101 \u00e9 \U0001F4E6 \n \\"];
+  optional string s2 = 12 [default = 'single \'quoted\''];
+  optional string s3 = 13 [default = "adjacent " "strings " 'concatenated'];
+  optional bool t = 14 [default = true];
+  optional bool f = 15 [default = false];
+}
+
+// ── Option name forms ──
+message OptionNames {
+  option (my_file_option) = "x";
+  option (.example.inventory.v1.audited) = true;
+  option (complex_option).name = "partial path";
+  option (complex_option).nested.flag = true;
+  optional string a = 1 [(unit).field = "x", deprecated = true];
 }

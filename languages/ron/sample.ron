@@ -1,3 +1,4 @@
+// RON 0.12 (Rusty Object Notation) — syntax showcase
 // ── Comments ──
 // RON (Rusty Object Notation) showcase: a warehouse service configuration.
 // TODO: split per environment. FIXME: ports are not validated.
@@ -141,4 +142,46 @@ line two",
     PascalCaseField: 3,
     field_with_digits_123: 4,
     _leading_underscore: 5,
+
+    // More literal forms
+    float_forms: [1e3, 1E-3, 1.5e+10, .5, 5., 0.0, -0.0, 1_000.5, inf, -inf, NaN],
+    int_forms: [0, -0, +0, 0xff, 0XFF, 0o17, 0O17, 0b11, 0B11, 1_0, 0x_f],
+    char_forms: ['a', ' ', '\\', '\'', '"', '\t', '\r', '\0', '\x7f', '\u{1f4e6}', 'λ', '📦'],
+    string_forms: ["", " ", "\"", "\\", "\t\n\r", "\0", "\x41", "\u{41}", "\u0041", "🌍 λ é"],
+    raw_forms: [r"", r"\n", r#""#, r#"a"b"#, r##"a"#b"##, r###"a"##b"###],
+    byte_forms: [b"", b"a", b"\x00\xff\n", br"raw\n", br#"raw"quote"#],
+    string_with_continuation: "first \
+        second \
+        third",
+    string_multiline: "a
+b
+c",
+
+    // Structure forms
+    unit_forms: [(), Unit, ()],
+    option_forms: [None, Some(1), Some(None), Some(Some(())), Some((1, 2)), Some([1])],
+    tuple_forms: [(), (1,), (1, 2), (1, (2, 3)), ((), ())],
+    list_forms: [[], [1], [1,], [1, 2], [[], [[]]]],
+    map_forms: [{}, {1: 2}, {1: 2,}, {"a": {"b": {"c": 1}}}, {Some(1): None, None: Some(2)}, {(1, 2): [3]}, {'k': 'v'}, {1.5: 2.5}],
+    struct_forms: [
+        Named(),
+        Named(a: 1),
+        Named(a: 1,),
+        Named(a: 1, b: Named(c: 2)),
+        (a: 1),
+        (a: 1, b: (c: (d: 2))),
+        (),
+    ],
+    tuple_struct_forms: [Tuple(), Tuple(1), Tuple(1, 2), Tuple(1, Tuple(2)), Wrapper(Some(1)), Wrapper([1, 2])],
+    enum_forms: [A, B(1), C(1, 2), D(x: 1), E(x: 1, y: 2), F(G(H(I)))],
+    identifier_forms: [a, A, a1, A1, _a, _, a_b, A_B, aA, r#type, r#struct, r#fn, r#true, r#1],
+    keyword_like: [true, false, None, Some(true), (true, false)],
+    nested_everything: Root(
+        list: [Item(id: 1, tags: ["x"], meta: {"k": (1, 2)}), Item(id: 2, tags: [], meta: {})],
+        flag: Some(true),
+        pair: (Some(1), None),
+    ),
+    comments_inline: [1, /* block */ 2, // line
+        3],
+    spacing:Compact(a:1,b:[1,2],c:{1:2}),
 )

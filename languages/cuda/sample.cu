@@ -1,3 +1,4 @@
+// CUDA C++ 13.0 (C++20 device code, sm_75 through sm_120) — syntax showcase
 // ── Comments ──
 // Line comment. TODO: tune the block size. FIXME: handle n not divisible by 4.
 /* Block comment
@@ -58,7 +59,8 @@ __constant__ float c_weights[16];
 __device__ int d_counter = 0;
 __managed__ float m_total;
 __device__ __managed__ int dm_flag;
-texture<float, 1, cudaReadModeElementType> tex_stock;
+// The texture<> reference API was removed in CUDA 12; texture objects (cudaTextureObject_t) replace it.
+cudaTextureObject_t tex_stock;
 
 // ── Structs and templates ──
 struct __align__(16) Item {
@@ -306,8 +308,11 @@ void host_extras() {
     cudaGraphInstantiate(&exec, graph, nullptr, nullptr, 0);
     cudaGraphLaunch(exec, s);
     cudaFuncSetAttribute(async_copy, cudaFuncAttributeMaxDynamicSharedMemorySize, 49152);
-    cudaMemPrefetchAsync(managed_buffer, 4096, 0, s);
-    cudaMemAdvise(managed_buffer, 4096, cudaMemAdviseSetReadMostly, 0);
+    cudaMemLocation loc{};
+    loc.type = cudaMemLocationTypeDevice;
+    loc.id = 0;
+    cudaMemPrefetchAsync(managed_buffer, 4096, loc, 0, s);
+    cudaMemAdvise(managed_buffer, 4096, cudaMemAdviseSetReadMostly, loc);
     cublasHandle_t handle; cublasCreate(&handle);
     const float alpha = 1.0f, beta = 0.0f;
     cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_T, 4, 4, 4, &alpha, nullptr, 4, nullptr, 4, &beta, nullptr, 4);
@@ -320,4 +325,142 @@ void host_extras() {
     cudaMemset(nullptr, 0, 0); cudaMemsetAsync(nullptr, 0, 0, s);
     cudaMallocAsync(nullptr, 0, s); cudaFreeAsync(nullptr, s);
     cudaDeviceReset();
+}
+
+// ── CUDA 12 / 13 additions ──
+#include <cuda/std/span>
+#include <cuda/std/array>
+#include <cuda/std/cstdint>
+#include <cuda/pipeline>
+#include <cuda/atomic>
+#include <thrust/transform.h>
+#include <thrust/sort.h>
+#include <thrust/functional.h>
+#include <thrust/execution_policy.h>
+
+// Kernel parameters passed by const reference through constant memory
+struct Params { float scale; int count; };
+__global__ void grid_const_param(const __grid_constant__ Params p, float* out) {
+    out[threadIdx.x] = p.scale * static_cast<float>(p.count);
+}
+
+// Thread block clusters (sm_90+)
+namespace cgc = cooperative_groups;
+__global__ void __cluster_dims__(2, 1, 1) cluster_kernel(float* data) {
+    cgc::cluster_group cluster = cgc::this_cluster();
+    __shared__ float local[128];
+    local[threadIdx.x] = static_cast<float>(cluster.block_rank());
+    cluster.sync();
+    float* remote = cluster.map_shared_rank(local, (cluster.block_rank() + 1) % cluster.num_blocks());
+    data[threadIdx.x] = remote[threadIdx.x];
+    cluster.sync();
+}
+
+// Warp-level reductions and misc intrinsics (sm_80+)
+__global__ void warp_intrinsics(unsigned* out, const unsigned* in) {
+    unsigned v = in[threadIdx.x];
+    unsigned active = __activemask();
+    unsigned sum = __reduce_add_sync(active, v);
+    unsigned mn = __reduce_min_sync(active, v);
+    unsigned any_match = __match_any_sync(active, v);
+    unsigned packed = __byte_perm(v, v, 0x3210) + __funnelshift_l(v, v, 3) + __brev(v) + __popc(v);
+    int dot = __dp4a(static_cast<int>(v), static_cast<int>(v), 0);
+    __nanosleep(100);
+    atomicAdd_block(&out[1], 1u);
+    atomicOr(&out[2], v); atomicAnd(&out[3], v); atomicXor(&out[4], v); atomicExch(&out[5], v);
+    atomicMin(&out[6], v); atomicInc(&out[7], 16u); atomicDec(&out[8], 16u);
+    out[0] = sum + mn + any_match + packed + dot;
+}
+
+// C++20 in device code: concepts, constexpr, templates, structured bindings
+template <typename T>
+concept Numeric = requires(T a, T b) { a + b; a * b; };
+
+template <Numeric T>
+__host__ __device__ constexpr T fused(T a, T b, T c) { return a * b + c; }
+
+__device__ constexpr int kDeviceConst = 42;
+__host__ __device__ constexpr float half_of(float x) noexcept { return x * 0.5f; }
+
+template <typename T, int N>
+struct alignas(16) Vec {
+    T v[N];
+    __host__ __device__ T& operator[](int i) { return v[i]; }
+    __host__ __device__ const T& operator[](int i) const { return v[i]; }
+    __host__ __device__ auto operator<=>(const Vec&) const = default;
+};
+
+__global__ void structured(float* out, Vec<float, 4> vec) {
+    auto [a, b] = cuda::std::pair<float, float>{vec[0], vec[1]};
+    if constexpr (sizeof(float) == 4) out[threadIdx.x] = a + b;
+    else out[threadIdx.x] = 0.0f;
+}
+
+// Low-precision types (FP8 / BF16 / FP16, sm_89+)
+__global__ void fp8_ops(__nv_fp8_e4m3* in, __nv_fp8_e5m2* in2, __nv_bfloat162* pairs, float* out) {
+    __nv_fp8_e4m3 q = __nv_fp8_e4m3(1.5f);
+    out[0] = static_cast<float>(q) + static_cast<float>(in[threadIdx.x]) + static_cast<float>(in2[0]);
+    __nv_bfloat162 two = __floats2bfloat162_rn(1.0f, 2.0f);
+    pairs[threadIdx.x] = __hadd2(two, pairs[threadIdx.x]);
+}
+
+// Extended lambdas (nvcc --extended-lambda) and Thrust
+void thrust_lambdas() {
+    thrust::device_vector<float> d(1024, 1.0f);
+    thrust::transform(thrust::device, d.begin(), d.end(), d.begin(),
+                      [] __device__ (float x) { return x * 2.0f; });
+    thrust::sort(thrust::device, d.begin(), d.end(), thrust::greater<float>());
+    auto doubler = [=] __host__ __device__ (int i) mutable { return i * 2; };
+    (void)doubler;
+}
+
+template <typename F>
+__global__ void apply_kernel(F f, int n) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < n) f(i);
+}
+
+// Launch with attributes (cudaLaunchKernelEx) and stream-ordered allocation
+void launch_ex(cudaStream_t stream) {
+    cudaLaunchConfig_t cfg = {};
+    cfg.gridDim = dim3(8, 1, 1);
+    cfg.blockDim = dim3(128, 1, 1);
+    cfg.dynamicSmemBytes = 0;
+    cfg.stream = stream;
+    cudaLaunchAttribute attrs[1];
+    attrs[0].id = cudaLaunchAttributeClusterDimension;
+    attrs[0].val.clusterDim.x = 2;
+    attrs[0].val.clusterDim.y = 1;
+    attrs[0].val.clusterDim.z = 1;
+    cfg.attrs = attrs;
+    cfg.numAttrs = 1;
+    float* buf = nullptr;
+    cudaMallocAsync(reinterpret_cast<void**>(&buf), 1024 * sizeof(float), stream);
+    cudaLaunchKernelEx(&cfg, cluster_kernel, buf);
+    cudaFreeAsync(buf, stream);
+    cudaMemPool_t pool;
+    cudaDeviceGetDefaultMemPool(&pool, 0);
+    uint64_t threshold = UINT64_MAX;
+    cudaMemPoolSetAttribute(pool, cudaMemPoolAttrReleaseThreshold, &threshold);
+}
+
+// libcu++ atomics and span
+__global__ void libcudacxx(cuda::std::span<int> items, cuda::atomic<int, cuda::thread_scope_device>* counter) {
+    if (threadIdx.x < items.size()) {
+        items[threadIdx.x] += 1;
+        counter->fetch_add(1, cuda::std::memory_order_relaxed);
+    }
+}
+
+// Unrolling / pragma forms and inline PTX
+__global__ void pragmas(float* a) {
+    #pragma unroll
+    for (int i = 0; i < 4; ++i) a[i] += 1.0f;
+    #pragma unroll 2
+    for (int i = 0; i < 4; ++i) a[i] += 1.0f;
+    #pragma nounroll
+    for (int i = 0; i < 4; ++i) a[i] += 1.0f;
+    unsigned r;
+    asm volatile("{ .reg .u32 t; mov.u32 t, %%tid.x; add.u32 %0, t, 1; }" : "=r"(r) :: "memory");
+    a[0] = static_cast<float>(r);
 }

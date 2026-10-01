@@ -1,3 +1,4 @@
+/* DOT language — syntax showcase (Graphviz 16) */
 /* ── Comments ── */
 // Line comment. TODO: cluster by team. FIXME: tune ranksep.
 # Preprocessor-style line comment (treated as a comment by dot)

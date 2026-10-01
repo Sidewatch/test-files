@@ -1,3 +1,4 @@
+% SWI-Prolog 9.4 (ISO core plus SWI extensions) — syntax showcase
 %% ── Comments ──
 % Prolog showcase: a warehouse inventory knowledge base.
 % TODO: move the facts into a separate file
@@ -146,3 +147,140 @@ check :- X = 2^^3^^4, Y = # 5, write(X-Y).
 
 % ?- reorder(ac1002, N).   % N = 17
 % ?- forall(low_stock(S), (write(S), nl)).
+
+%% ── SWI-Prolog 7+ extensions: strings, dicts, functional notation ──
+:- set_prolog_flag(double_quotes, string).
+:- use_module(library(dicts)).
+:- use_module(library(clpfd)).
+:- use_module(library(yall)).
+:- use_module(library(assoc)).
+:- use_module(library(solution_sequences)).
+:- use_module(library(strings)).
+:- use_module(library(dcg/high_order)).
+:- use_module(library(error)).
+:- use_module(library(debug)).
+:- use_module(library(option)).
+:- use_module(library(pairs)).
+:- use_module(library(persistency)).
+:- use_module(library(thread)).
+:- use_module(library(http/json)).
+
+strings_demo(S) :-
+    S = "a string",
+    string_concat("abc", "def", C), string_length(C, _),
+    sub_string(C, 0, 3, _, Sub), string_upper(Sub, _),
+    split_string("a,b,c", ",", " ", Parts), atomic_list_concat(Parts, '-', _),
+    string_codes(S, _), text_concat(abc, "def", _), term_string(_, "foo(bar)"),
+    format(atom(_), "~w-~w", [a, b]), with_output_to(string(_), write(x)).
+
+dicts_demo(D) :-
+    D = point{x: 1, y: 2},
+    X = D.x,
+    D2 = D.put(z, 3),
+    D3 = D2.put(_{w: 4}),
+    get_dict(x, D, X), dict_pairs(D, Tag, Pairs), dict_create(_, Tag, Pairs),
+    Y = D.get(y, 0), _ = D3.w, _ = Y,
+    _{a: 1, b: "two", c: [1, 2, 3]} :< _{a: 1, b: "two", c: [1, 2, 3], d: 4}.
+
+M.double() := R :- R is M.value * 2.
+M.value() := M.get(value).
+
+%% ── CLP(FD) and constraint operators ──
+puzzle([S, E, N, D, M, O, R, Y]) :-
+    Vars = [S, E, N, D, M, O, R, Y],
+    Vars ins 0..9, all_different(Vars),
+    S * 1000 + E * 100 + N * 10 + D + M * 1000 + O * 100 + R * 10 + E #=
+    M * 10000 + O * 1000 + N * 100 + E * 10 + Y,
+    M #\= 0, S #\= 0,
+    X #> 3, X #< 10, X #>= 4, X #=< 9, X #\= 5, X in 1..5 \/ 7..9, Z #<==> (X #> 5), Z #==> A, A #\/ B, #\ C,
+    sum(Vars, #=, _), label(Vars), labeling([ff, bisect], Vars), tuples_in([[X, Y]], [[1, 2]]),
+    B in inf..sup, C in 0..sup, X #= abs(Y) + max(A, B) - min(A, C) * (X mod 3) // 2.
+
+%% ── Tabling, determinism and declarations ──
+:- table fib/2.
+:- table path(_, _), conn(_, min), shortest(_, _, lattice(shorter/3)).
+:- table (a/0, b/0) as subsumptive.
+:- det(only_one/1).
+:- multifile user:portray/1.
+:- meta_predicate with_goal(0, ?), apply_to(2, ?, ?).
+:- module_transparent helper/0.
+:- thread_local seen/1.
+:- volatile cache/2.
+:- create_prolog_flag(my_flag, true, [type(boolean)]).
+:- license(mit).
+:- encoding(utf8).
+:- predicate_options(show/2, 2, [indent(integer)]).
+:- public hook/1.
+:- noprofile(hook/1).
+
+fib(0, 0).
+fib(1, 1).
+fib(N, F) :- N > 1, N1 is N - 1, N2 is N - 2, fib(N1, F1), fib(N2, F2), F is F1 + F2.
+only_one(X) :- X = 1.
+with_goal(G, _) :- call(G).
+apply_to(P, X, Y) :- call(P, X, Y).
+shorter(A, B, C) :- C is min(A, B).
+
+%% ── Exceptions, cleanup, global variables ──
+cleanup_demo :-
+    setup_call_cleanup(open('f.txt', read, S), read_term(S, _, []), close(S)),
+    catch_with_backtrace(foo, E, print_message(error, E)),
+    call_cleanup(true, true),
+    b_setval(v, 1), b_getval(v, _), nb_setval(k, 2), nb_getval(k, _),
+    must_be(positive_integer, 3), is_of_type(atom, a), domain_error(x, y).
+foo.
+
+%% ── Special syntax: escapes, character codes, curly terms, operators as atoms ──
+syntax_zoo :-
+    A = 'quoted atom with \'escapes\' \x41\ é \U0001F4E6 \101\ \e \0\ \a \b \f \v',
+    B = "string with ~w and \"quotes\"",
+    C = `back quoted codes`,
+    D = 0'c, E = 0' , F = 0''', G = 0'\\, H = 0'\x41\,
+    I = 'multi\
+line',
+    J = [1, 2|T], K = '$VAR'(1), L = {a, b, c}, M = '{}'(x), N = [](x),
+    O = (a :- b, c ; d -> e), P = (:- dynamic foo/1), Q = \+ a, R = - (1), S = -(-(1)), U = 1 - -1,
+    V = a:b:c, W = f(;), X = (a , b), Y = [a|[b|[c|[]]]], Z = "",
+    1 =:= 1.0, 1 =\= 2, a @< b, f(x) == f(x), X \== Y, X \= Y, X = Y, X \=@= Y, 1 is 2 - 1,
+    atom_to_term('foo(X, Y)', _, _), read_term_from_atom('bar(Z)', _, []),
+    char_code(Ch, 0'a), atom_chars(Ch, _),
+    between(1, inf, _), succ(_, 3), plus(1, 2, _), nb_current(k, _),
+    format(user_error, "err~n", []), print_message(informational, format("x", [])),
+    Tail = T, Dummy = [A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, U, V, W, X, Y, Z, Tail, Dummy].
+
+%% ── Higher-order: yall lambdas in every form ──
+lambda_forms :-
+    maplist([X]>>(X > 0), [1, 2]),
+    maplist(\X^(X > 0), [1, 2]),
+    maplist([X, Y]>>atom_length(X, Y), [a, bb], _),
+    foldl({Z}/[X, A0, A]>>(A is A0 + X * Z), [1, 2], 0, _),
+    aggregate_all(count, member(_, [a]), _), aggregate_all(max(X), member(X, [1, 2]), _),
+    aggregate_all(bag(X), member(X, [1]), _), aggregate(count, X^member(X, [1]), _),
+    findall(X-Y, (member(X, [1]), member(Y, [2])), _), findnsols(2, X, member(X, [1, 2, 3]), _),
+    limit(2, member(_, [1, 2, 3])), offset(1, member(_, [1, 2])), order_by([asc(X)], member(X, [2, 1])), distinct(X, member(X, [1, 1])),
+    forall(member(X, [1]), X > 0), \+ fail.
+
+%% ── More DCG forms ──
+digits([D|T]) --> digit(D), digits(T).
+digits([D]) --> digit(D).
+digit(D) --> [D], { code_type(D, digit) }.
+ws --> [C], { code_type(C, space) }, !, ws.
+ws --> [].
+expr(X) --> term(X0), expr_rest(X0, X).
+expr_rest(Acc, X) --> "+", !, term(Y), { Acc1 is Acc + Y }, expr_rest(Acc1, X).
+expr_rest(X, X) --> [].
+term(N) --> number(N).
+call_dcg --> call(foo_dcg, x), \+ [y], phrase(ws), string_without(`,`, _), sequence(digit, ",", _), "literal", `codes`, [].
+foo_dcg(_) --> [].
+phrase_demo :- phrase(expr(V), `1+2`, Rest), phrase(ws, Rest), V == 3.
+
+%% ── Modules, qualified goals, conditional compilation ──
+qualified :- lists:append([1], [2], _), user:foo, Mod:Goal = lists:reverse([1], _), call(Mod:Goal), @(foo, user).
+:- initialization((write(hi), nl)).
+:- if(current_prolog_flag(bounded, false)).
+big(X) :- X is 2 ** 100.
+:- elif(true).
+big(0).
+:- else.
+big(1).
+:- endif.

@@ -1,3 +1,4 @@
+<%-- Jakarta Server Pages 4.0 (Jakarta EE 11), Expression Language 6.0 — syntax showcase; page, tag-file and XML-syntax forms are shown together and cannot all be valid in one real file --%>
 <%-- ── JSP comments ── --%>
 <%-- Hidden JSP comment: never sent to the browser. TODO: paginate --%>
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"

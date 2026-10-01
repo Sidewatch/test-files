@@ -1,4 +1,5 @@
 ---
+# Quarto 1.8 — syntax showcase
 title: "Warehouse revenue report"
 subtitle: "Quarto syntax showcase"
 author:
@@ -33,6 +34,23 @@ params:
   warehouse: "north"
   threshold: 25
 editor: visual
+filters:
+  - lightbox
+shortcodes:
+  - custom-shortcode.lua
+crossref:
+  fig-title: Figure
+  chapters: false
+callout-appearance: simple
+comments:
+  hypothesis: true
+title-block-banner: true
+fig-cap-location: bottom
+engine: knitr
+jupyter: python3
+resources:
+  - data/*.csv
+brand: _brand.yml
 ---
 
 <!-- An HTML comment: not rendered. TODO: add the regional breakdown. -->
@@ -263,6 +281,211 @@ Visible only in HTML.
 ::: {.content-hidden when-format="pdf"}
 Hidden in PDF.
 :::
+
+## Code cell features {#sec-cells}
+
+```{python}
+#| label: lst-annotated
+#| lst-label: lst-annotated
+#| lst-cap: "An annotated listing"
+#| code-line-numbers: "1,3-4"
+#| filename: "analysis.py"
+import pandas as pd                    # <1>
+df = pd.read_csv("orders.csv")         # <2>
+summary = df.groupby("sku").sum()      # <3>
+```
+
+1. Import the library.
+2. Load the data.
+3. Aggregate by SKU.
+
+See @lst-annotated for the listing.
+
+```{python}
+#| layout-ncol: 2
+#| fig-subcap:
+#|   - "First plot"
+#|   - "Second plot"
+#| column: page
+#| fig-align: center
+#| out-width: 80%
+#| warning: false
+#| tbl-cap: "Summary"
+#| tbl-colwidths: [30, 70]
+#| cap-location: margin
+#| error: true
+#| include: false
+#| output-location: slide
+#| code-summary: "Show the code"
+#| echo: fenced
+1 + 1
+```
+
+````{.markdown}
+```{python}
+#| echo: true
+print("a chunk shown without being executed")
+```
+````
+
+```{mermaid}
+%%| fig-width: 6
+flowchart LR
+  A[Order] --> B{Paid?}
+  B -->|yes| C[Pack]
+  B -->|no| D[Hold]
+```
+
+```{dot}
+//| fig-height: 2
+digraph G { a -> b; b -> c; }
+```
+
+```{.python .cell-code}
+print("class-annotated code block, not executed")
+```
+
+```python {.numberLines startFrom="10" filename="x.py"}
+print("pandoc attributes on a fence")
+```
+
+`inline code with attributes`{.python}
+
+```{=typst}
+#pagebreak()
+```
+
+```{=openxml}
+<w:p/>
+```
+
+## Slides (revealjs) {#sec-slides}
+
+## A slide title {background-color="#1b1f23" transition="fade" .smaller .scrollable}
+
+Content before the pause.
+
+. . .
+
+Content after the pause.
+
+::: {.fragment .fade-up fragment-index=2}
+A fragment.
+:::
+
+::: {.incremental}
+- Appears one by one
+- Then the next
+:::
+
+::: {.nonincremental}
+- All at once
+:::
+
+::: {.r-stack}
+![](a.png){.fragment}
+
+![](b.png){.fragment}
+:::
+
+::: {.r-fit-text}
+Big text
+:::
+
+::: aside
+An aside on the slide.
+:::
+
+::: notes
+Speaker notes: only visible in speaker view.
+:::
+
+## Another slide {auto-animate=true background-image="bg.png" background-opacity=0.5}
+
+{{< placeholder 600 400 >}}
+
+## Shortcodes in more forms
+
+{{< kbd Shift-Ctrl-P >}} and {{< kbd mac=Shift-Command-P win=Shift-Control-P linux=Shift-Ctrl-P >}}
+
+{{< embed notebook.ipynb#fig-plot >}}
+
+{{< lipsum 2 >}}
+
+{{< contents sec-lists >}}
+
+{{< brand logo medium >}}
+
+{{< video https://youtu.be/example title="Demo" start="30" aspect-ratio="21x9" >}}
+
+{{< include _chunk.qmd >}}
+
+{{< meta params.warehouse >}}
+
+{{< version >}}
+
+{{< pagebreak >}}
+
+{{</* escaped shortcode */>}}
+
+## Crossref forms
+
+See @sec-intro, @fig-chart, @tbl-stock, @eq-total, @lst-annotated, @thm-main and [@fig-chart; @tbl-stock].
+Capitalised: @Fig-chart. Suppressed brackets: [-@smith2020]. Prefix: [see @smith2020, pp. 33-35; also @jones2021, chap. 1].
+
+::: {#thm-main}
+## Main theorem
+Every order has a total.
+:::
+
+::: {.proof}
+Trivial.
+:::
+
+::: {#fig-grid layout="[[1,1],[1]]"}
+![Left](l.png){#fig-left}
+
+![Right](r.png){#fig-right}
+
+![Wide](w.png){#fig-wide}
+
+Grid caption.
+:::
+
+## Callouts: every kind
+
+::: {.callout-note appearance="simple" icon=false}
+Note.
+:::
+
+::: {.callout-tip collapse="true"}
+## Collapsed tip
+Tip body.
+:::
+
+::: {.callout-important}
+Important.
+:::
+
+::: {.callout-caution title="Careful"}
+Caution.
+:::
+
+::: {.callout-warning}
+Warning.
+:::
+
+::: {.column-margin}
+A margin note.
+:::
+
+::: {.column-screen-inset}
+Wide content.
+:::
+
+[Marked text]{.mark} and [underlined]{.underline} and [a custom span]{style="color: red;"}.
+
+Emoji: :tada: and a hidden comment: <!-- comment -->
 
 ## Appendix {.appendix .unnumbered}
 

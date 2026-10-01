@@ -1,3 +1,4 @@
+// Bicep 0.3x (current stable, extensions and .bicepparam syntax) — syntax showcase
 // Warehouse platform: storage, app service, key vault and a deployment script.
 /* A block comment
    spanning lines. TODO: split into modules. */
@@ -464,3 +465,139 @@ output typedOutput resourceInfo = {
 output loopOutput array = [for sub in subnets: sub.name]
 output filteredOutput array = filter(subnets, s => s.name == 'web')
 // TODO: split modules into a registry.
+
+// ── Extensions, assertions and newer decorators ─────────────────────
+// Extension declarations (replace the removed `provider` keyword)
+extension az
+extension kubernetes with {
+  namespace: 'default'
+  kubeConfig: adminPassword
+} as k8s
+extension 'br:mcr.microsoft.com/bicep/extensions/microsoftgraph/v1.0:0.1.8-preview' as graph
+
+// Assertions evaluated at compile time
+assert hasInstances = instanceCount > 0
+assert validEnvironment = contains(['dev', 'staging', 'prod'], environment)
+
+// More decorators
+@onlyIfNotExists()
+resource seededStorage 'Microsoft.Storage/storageAccounts@2023-01-01' = {
+  name: 'seed${uniqueString(resourceGroup().id)}'
+  location: location
+  sku: { name: 'Standard_LRS' }
+  kind: 'StorageV2'
+}
+
+@sealed()
+type strictObject = {
+  id: string
+  @minLength(1)
+  label: string
+}
+
+@validate(x => x >= 0, 'Value must not be negative')
+param nonNegative int = 0
+
+@validate(v => startsWith(v, 'acme'), 'Must start with acme')
+param prefixed string = 'acme-001'
+
+@metadata({ category: 'network' })
+@description('Imported-and-reexported type')
+@export()
+type endpoint = {
+  host: string
+  port: int
+  scheme: 'http' | 'https'
+}
+
+@export()
+var exportedVariable = 'shared value'
+
+@export()
+func triple(n int) int => n * 3
+
+// Lambda-typed and generic-looking helpers
+func applyTwice(value int, fn (int) => int) int => fn(fn(value))
+func joinNames(names string[], separator string) string => join(names, separator)
+func maybeUpper(input string?) string => input == null ? '' : toUpper(input)
+
+// Typed outputs and resource-derived types
+output endpointOut endpoint = {
+  host: 'example.com'
+  port: 443
+  scheme: 'https'
+}
+output storageProps resourceOutput<'Microsoft.Storage/storageAccounts@2023-01-01'>.properties = storage.properties
+param storageInput resourceInput<'Microsoft.Storage/storageAccounts@2023-01-01'>.properties = {}
+
+// Imports of every form
+import { endpoint as importedEndpoint, triple as importedTriple } from './types.bicep'
+import * as everything from './everything.bicep'
+import 'kubernetes@1.0.0' with { namespace: 'default', kubeConfig: 'config' } as kubeImport
+
+// Safe-dereference, spread and nullable operators
+var maybeName = config.?name ?? 'unnamed'
+var maybeItem = subnets[?5].?name
+var combined = { ...tags, ...{ extra: 'x' }, overridden: 'last' }
+var spreadList = [...names, ...['more'], 'tail']
+var nonNullAssert = nullableValue!
+var nested2 = { a: { b: { c: 'deep' } } }
+var deepSafe = nested2.?a.?b.?c
+var typeCheck = typeof(nested2)
+
+// Loops with filters, indexes and nested comprehensions
+var evenNumbers = [for n in range(0, 10): if (n % 2 == 0) n]
+var pairs = [for (item, idx) in names: { index: idx, name: item }]
+var grid = [for row in range(0, 3): [for col in range(0, 3): row * 3 + col]]
+var lookups = toObject(names, n => n, n => length(n))
+var objectLoop = { for n in names: n: toUpper(n) }
+
+// Resource and module features
+resource withLock 'Microsoft.Authorization/locks@2020-05-01' = {
+  scope: storage
+  name: 'lock'
+  properties: {
+    level: 'CanNotDelete'
+    notes: 'Prevent deletion'
+  }
+}
+
+resource nestedChild 'Microsoft.Network/virtualNetworks@2023-05-01' existing = {
+  name: 'shared-vnet'
+
+  resource childSubnet 'subnets' existing = {
+    name: 'default'
+  }
+}
+
+module withExtensionConfig './modules/graph.bicep' = {
+  name: 'graphDeploy'
+  params: {
+    displayName: 'Warehouse App'
+  }
+}
+
+module conditionalModule './modules/optional.bicep' = if (isProd) {
+  name: 'optional'
+  params: {
+    flag: true
+  }
+}
+
+output childSubnetId string = nestedChild::childSubnet.id
+output nestedAccess string = withLock.properties.level
+
+// Linter directives
+#disable-next-line no-unused-params use-secure-value-for-secure-inputs
+param unusedParam string = ''
+
+// ── .bicepparam file syntax (shown for highlighting) ────────────────
+// using 'main.bicep'
+// using none
+// extends './base.bicepparam'
+// param environment = 'prod'
+// param adminPassword = readEnvironmentVariable('ADMIN_PASSWORD', 'example-not-a-real-key')
+// param instanceCount = int(readEnvironmentVariable('INSTANCES', '3'))
+// param secret = externalInput('sys.cli', 'az account show')
+// var common = { owner: 'team' }
+// param tags = common

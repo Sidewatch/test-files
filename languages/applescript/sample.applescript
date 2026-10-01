@@ -1,4 +1,5 @@
 #!/usr/bin/osascript
+-- AppleScript 2.8 (macOS 26) — syntax showcase
 -- Warehouse inventory helper: reads a stock list, reports low items and
 -- talks to Finder, Mail and System Events.
 # A hash comment is also a line comment.
@@ -8,6 +9,8 @@
 
 use AppleScript version "2.8"
 use framework "Foundation"
+use framework "AppKit"
+-- use application "System Events" -- imports that app's terminology into the whole script
 use scripting additions
 
 -- ── Properties and globals ─────────────────────────────────────────
@@ -419,3 +422,169 @@ tell lib to run
 run script "return 1 + 1"
 run script file "Macintosh HD:Users:Shared:other.scpt" with parameters {"a", "b"}
 store script Counter in file "Macintosh HD:Users:Shared:counter.scpt" replacing yes
+
+-- ── The run handler, locals and pipe identifiers ───────────────────
+script RunDemo -- an explicit run handler is only legal inside a script object here
+	on run argv
+		local scratch, marker
+		set scratch to 1
+		set |reserved word variable| to "pipes allow spaces and keywords"
+		set |end| to 2
+		return |end| + scratch
+	end run
+end script
+
+-- ── Filtering references: whose, where, its, whose-by-index ────────
+tell application "Finder"
+	set bigFiles to every file of desktop whose size > 1000000 and name extension is "csv"
+	set firstBig to first file of desktop whose size > 1000000
+	set odd to (every item of desktop where its name begins with "a")
+	set notes to every file of desktop whose name contains "note" or name ends with ".txt"
+	set emptyOnes to every folder of desktop whose (count of items) = 0
+	set kinds to name of every item of desktop whose kind is not "Folder"
+	set lastThree to items -3 thru -1 of (get name of every item of desktop)
+	set middleOne to middle item of (get name of every item of desktop)
+	set anyOne to some item of (get name of every item of desktop)
+	set byId to item id 5 of desktop
+	set byName to folder named "Stock Reports" of desktop
+end tell
+
+-- ── considering / ignoring: every attribute ────────────────────────
+considering numeric strings
+	set naturalOrder to ("item 10" > "item 9")
+end considering
+considering diacriticals and punctuation
+	set accentSensitive to ("é" is "e")
+end considering
+ignoring application responses
+	tell application "Finder" to activate
+end ignoring
+considering hyphens, punctuation and white space but ignoring case
+	set mixed to ("A-b" is "a-b")
+end considering
+
+-- ── Result, get, and implicit it ───────────────────────────────────
+get (1 + 2)
+set threeResult to result
+tell application "Finder" to get name of startup disk
+set diskName to result
+
+-- ── Property access via possessive, my, its, of ────────────────────
+script Config
+	property depth : 1
+	on bump()
+		set my depth to my depth + 1
+		set its depth to depth + 1
+		set depth of me to 5
+		return Config's depth
+	end bump
+end script
+set cfgDepth to Config's depth
+set cfgDepth2 to depth of Config
+
+-- ── Script objects: parent chains, run handler, nested handlers ────
+script Outer
+	property label : "outer"
+	on run
+		return label
+	end run
+	script Inner
+		property parent : AppleScript
+		on describe()
+			return label & "/inner"
+		end describe
+	end script
+end script
+set innerText to Outer's Inner's describe()
+
+-- ── Handlers: positional, labelled, with default-looking patterns ──
+on addNumbers(a, b)
+	return a + b
+end addNumbers
+on listLength about theList
+	return count theList
+end listLength
+on repeatThing for thing given amount:n
+	return n
+end repeatThing
+on firstWordOf(theText)
+	return word 1 of theText
+end firstWordOf
+on pourInto into theItems
+	return theItems
+end pourInto
+on advance from s by step
+	return s + step
+end advance
+on ending(beforeEnd)
+	return beforeEnd
+end ending
+on makeWith given name:theName, age:theAge, active:isActive
+	return {name:theName, age:theAge, active:isActive}
+end makeWith
+set made to makeWith given name:"Ann", age:30, active:true
+set ln to listLength about {1, 2, 3}
+
+-- ── Coercions and class names ──────────────────────────────────────
+set asNumber to "42" as integer
+set asReal to "3.5" as real
+set asBool to "true" as boolean
+set asList to "abc" as list
+set asRecord to {1, 2} as record
+set asDate to "1 January 2025" as date
+set asAlias to (path to desktop) as alias
+set asPOSIX to POSIX path of (path to desktop)
+set asHFS to (POSIX file "/tmp") as text
+set asUnicode to "é" as Unicode text
+set asData to "abc" as data
+set classNames to {class of 1, class of 1.5, class of "s", class of {}, class of {a:1}, class of true, class of (current date), class of missing value, class of me, class of (path to desktop)}
+set hasAClass to (class of 1 is integer) and (class of "s" is text) and (class of 1.5 is real)
+
+-- ── Chevron (raw) terms and event codes ────────────────────────────
+tell application "Finder"
+	«event aevtodoc» (POSIX file "/tmp")
+	set rawProp to «property pnam» of startup disk
+end tell
+set rawClass to «class long»
+
+-- ── AppleScriptObjC ────────────────────────────────────────────────
+set aString to current application's NSString's stringWithString:"objc"
+set aList2 to current application's NSArray's arrayWithArray:{"a", "b"}
+set aMutable to current application's NSMutableDictionary's new()
+aMutable's setObject:"v" forKey:"k"
+set aValue to (aMutable's objectForKey:"k") as text
+set aBlockSafe to current application's NSProcessInfo's processInfo()'s processName() as text
+set theRegex to current application's NSRegularExpression's regularExpressionWithPattern:"[0-9]+" options:0 |error|:(missing value)
+set rangeValue to current application's NSMakeRange(0, 3)
+
+-- ── Dialog and system helpers not yet shown ────────────────────────
+display dialog "Name?" default answer "" with hidden answer
+set sel to choose application with prompt "Pick"
+set theURL to choose URL
+set newFile to choose file name with prompt "Save as" default name "report.txt"
+set theColour to choose color default color {65535, 0, 0}
+set theLoc to localized string "Hello" in bundle (path to me)
+set appPath to path to application "Finder"
+set resPath to path to resource "icon.icns"
+set tempPath to path to temporary items from user domain
+set theInfo to info for (path to me)
+set versionText to version
+set osVersion to system attribute "sys2"
+set myName to name of me
+set isRunning to application "Finder" is running
+set thePath to POSIX path of (path to me)
+set tickCount to (do shell script "date +%s") as integer
+set theLine to read file (POSIX file "/etc/hosts") before linefeed
+set eof to get eof of (POSIX file "/etc/hosts")
+open for access file "Macintosh HD:tmp:out.txt" with write permission
+write "data" to file "Macintosh HD:tmp:out.txt" starting at eof
+close access file "Macintosh HD:tmp:out.txt"
+launch application "Finder"
+delay 0.5
+random number from 1 to 10 with seed 3
+round 2.5 rounding up
+round 2.5 rounding down
+round 2.5 rounding toward zero
+round 2.5 rounding to nearest
+get ASCII number "a"
+offset of "b" in "abc"

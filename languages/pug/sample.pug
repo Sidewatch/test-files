@@ -1,3 +1,4 @@
+//- Pug 3.0 — syntax showcase
 //- ── Comments ──
 //- Pug showcase: warehouse stock page. This comment is NOT rendered.
 //- TODO: paginate the table. FIXME: escape the footer HTML.
@@ -170,6 +171,173 @@ block content
     script(src="/extra.js")
   block prepend styles
     link(rel="stylesheet" href="/extra.css")
+
+  //- ── Attributes: every spelling ──
+  a(href="/" + path) Concatenated
+  a(href=`/stock/${items[0].sku}`) Template literal
+  a(href="/a",
+    title="multi-line attributes",
+    class="x"
+  ) Multi-line attribute list
+  div(data-x!="<b>unescaped</b>")
+  div(data-y="<b>escaped</b>")
+  div(class="a b", id="ident")
+  input(type="radio", name="r", value="1", checked)
+  input(type="radio" name="r" value="2" checked=false)
+  option(selected=true) Yes
+  option(selected=false) No
+  div(aria-label='single' data-empty="" data-null=null data-undef=undefined data-num=42)
+  div(@click="handler" :class="{ a: b }" v-bind:id="x" v-on:click.prevent="go" #default="{ item }") Framework attributes
+  div(data-a=1 data-b=2 data-c=3)
+  div(class=["a", { b: true, c: false }] id=`id-${n}`)
+  .shorthand-class
+  #shorthand-id
+  .a.b.c#d(e="f") Mixed shorthand
+  a.btn.btn-primary(href="/x") Link with classes
+  p(class="one two").three Combined class forms
+
+  //- ── Tag forms ──
+  br
+  hr/
+  img(src="a.png")/
+  custom-element(some-prop="x") Custom element names
+  svg:path(d="M0 0L10 10")
+  p Text on the same line as the tag
+  p.
+    Block text with dot
+      preserving relative indentation.
+  p
+    | Piped text
+    |  with a leading space preserved
+    |
+    | after an empty pipe line
+  <div class="literal-html">Raw HTML line, passed through</div>
+  <p>
+    Multi-line literal HTML
+  </p>
+  span: a(href="#") Block expansion with colon
+  li: a: span Deeper block expansion
+  p
+    | Text with an inline tag
+    = " "
+    strong Bold
+    |  and the rest.
+  p Interpolation: #{items[0].sku}, escaped \#{no}, raw !{"<b>b</b>"}, tags #[b bold] #[a(href="/") x] #[+badge('paid')]
+  p= items[0].sku.toUpperCase()
+  p!= "<b>unescaped buffered</b>"
+  = items.length
+  != "<hr>"
+
+  //- ── Unbuffered code in every form ──
+  - var a = 1, b = 2
+  - const list = [1, 2, 3]
+  - let fn = (x) => x * 2
+  - function helper(x) { return x + 1 }
+  -
+    var multi = {
+      line: true
+    }
+  - for (var i = 0; i < 3; i++)
+    li= i
+  - items.forEach(function (item) {
+    p= item.sku
+  - })
+  - if (a > b) { b = a }
+
+  //- ── Extra control flow ──
+  case warehouse.name
+    when "North": p North
+    when "South"
+      p South
+    default: p Other
+  if warehouse.open
+    p Open
+  else if warehouse.closed
+    p Closed
+  else
+    p Unknown
+  unless items.length
+    p None
+  each v, idx in [10, 20, 30]
+    li #{idx}: #{v}
+  each v in []
+    li never
+  else
+    li empty
+  while k > 0
+    - k--
+    li= k
+
+  //- ── Mixins: advanced forms ──
+  mixin list(items)
+    ul
+      each i in items
+        li= i
+  mixin nested-block
+    .wrap
+      block
+  mixin with-attrs
+    div&attributes(attributes)
+      block
+  mixin defaults(a = 1, b = "two", {c, d} = {}, ...rest)
+    p= a + b
+  +list(['a', 'b'])
+  +nested-block
+    p Inside
+  +with-attrs(class="from-call" id="x")
+    | content
+  +defaults(1, "x", {c: 3, d: 4}, 'extra1', 'extra2')
+  +with-attrs.class-literal#id-literal(data-x="1") Text after call
+  +list(items.map(function (i) { return i.sku }))
+
+  //- ── Includes and blocks ──
+  include partials/header.pug
+  include:markdown-it:highlight partials/readme.md
+  include /abs/path/file.js
+  include ../shared/footer
+  block scripts
+    script(src="/a.js")
+  block append scripts
+    script(src="/b.js")
+  block prepend styles
+    link(rel="stylesheet" href="/c.css")
+  append head
+    meta(name="x" content="y")
+  prepend head
+    meta(name="z" content="w")
+
+  //- ── Script, style and raw text elements ──
+  script(type="text/template").
+    <div>{{ name }}</div>
+  script(type="application/json")!= JSON.stringify(items)
+  script.
+    var plain = "javascript";
+    if (a < b && c > d) { go(); }
+  style(media="print").
+    body { color: black; }
+  pre
+    code.
+      line 1
+        indented line 2
+  textarea(rows=3)= "prefilled"
+  title Page #{title}
+  - var html = "<p>raw</p>"
+  div!= html
+  div= html
+
+  //- ── Whitespace and comments ──
+  //
+    Block comment containing
+    multiple lines.
+  // single rendered comment
+  //- unrendered comment
+  //-
+    unrendered block
+  p text
+  //- IE conditional comment in raw html:
+  <!--[if lt IE 9]>
+  <p>Old browser</p>
+  <![endif]-->
 
 footer
   | &copy; #{new Date().getFullYear()} Example Ltd

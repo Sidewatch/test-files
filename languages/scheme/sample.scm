@@ -1,5 +1,6 @@
 #!/usr/bin/env guile
 !#
+;;; Scheme R7RS-small (2013) with R6RS, SRFI and Guile extensions — syntax showcase
 ;;; ── Comments ──
 ;;; Scheme (R7RS + common extensions) showcase: warehouse inventory.
 ;; TODO: persist the stock. FIXME: reorder amounts ignore pack sizes.
@@ -255,3 +256,167 @@ string"
 (display (string-append "ticks: " (number->string (tick)))) (newline)   ; 15
 (display `(,pi ,reorder-point))
 (newline)
+
+;;; ── R6RS library and syntax-case ──
+(library (warehouse r6rs)
+  (export total-price (rename (internal-name public-name)) point-x make-point)
+  (import (rnrs base (6)) (rnrs lists (6)) (rnrs records syntactic (6)) (rnrs syntax-case (6))
+          (rnrs io simple (6)) (rnrs control (6)) (rnrs exceptions (6)) (rnrs hashtables (6))
+          (only (srfi :1) iota) (prefix (srfi :13) s:) (for (rnrs base) run expand)
+          (for (rnrs syntax-case) expand) (except (rnrs) assert))
+
+  (define-record-type (point make-point point?)
+    (fields (immutable x point-x) (mutable y point-y set-point-y!))
+    (protocol (lambda (new) (lambda (x y) (new x y)))))
+  (define-record-type (point3d make-point3d point3d?)
+    (parent point)
+    (fields (immutable z point3d-z))
+    (nongenerative warehouse-point3d)
+    (sealed #t)
+    (opaque #f))
+
+  (define-syntax my-if
+    (lambda (stx)
+      (syntax-case stx (then else)
+        ((_ c then t else e) #'(if c t e))
+        ((k . rest) (with-syntax ((msg (datum->syntax #'k "bad"))) #'(error 'my-if msg))))))
+
+  (define-syntax define-getter
+    (lambda (x)
+      (syntax-case x ()
+        ((_ name field)
+         (identifier? #'name)
+         (with-syntax ((getter (datum->syntax #'name (string->symbol (string-append "get-" (symbol->string (syntax->datum #'name)))))))
+           #'(define (getter obj) (field obj)))))))
+
+  (define-syntax ten (identifier-syntax 10))
+  (define-syntax alias (identifier-syntax (_ (hash-ref table 'k)) ((set! _ v) (hash-set! table 'k v))))
+  (define-syntax loop-until
+    (syntax-rules ()
+      ((_ test body ...) (let lp () (unless test body ... (lp))))))
+
+  (define (total-price items)
+    (fold-left + 0 (map (lambda (i) (* (car i) (cdr i))) items)))
+  (define internal-name 1)
+  (define-enumeration color (red green blue) color-set)
+  (define table (make-eqv-hashtable))
+  (hashtable-set! table 'k 1)
+  (hashtable-ref table 'k #f)
+  (assert (> 1 0))
+  (guard (e (#t (condition-message e)))
+    (raise (make-error))
+    (raise-continuable 'oops)
+    (assertion-violation 'who "message" 1 2))
+  (call-with-values (lambda () (values 1 2)) list)
+  (let-values (((a b) (values 1 2)) ((c . rest) (values 3 4 5))) (list a b c rest))
+  (case-lambda ((a) a) ((a b) (+ a b)) ((a . rest) rest))
+  (do ((i 0 (+ i 1))) ((= i 3)) (display i))
+  (bitwise-and 5 3) (bitwise-ior 1 2) (bitwise-xor 5 1) (bitwise-not 5) (bitwise-arithmetic-shift 1 3)
+  (string-for-each (lambda (c) c) "abc") (vector-sort < #(3 1 2)) (list-sort < '(3 1 2))
+  (exact->inexact 1/3) (exact (floor 2.5)) (div 7 2) (mod 7 2) (div-and-mod 7 2) (div0 7 2) (mod0 7 2)
+  (make-bytevector 2 0) (bytevector-u8-ref (make-bytevector 2 7) 0) (bytevector-s32-native-ref (make-bytevector 4 0) 0)
+  (utf8->string (string->utf8 "x")) (char-upcase #\a) (string-upcase "a") (string-titlecase "ab")
+  (list-tail '(1 2 3) 1) (list-head '(1 2 3) 1) (last-pair '(1 2 3)) (iota 3) (reverse! (list 1 2))
+  (let loop ((i 0)) (when (< i 3) (loop (+ i 1))))
+  (display "r6rs") (newline))
+
+;;; ── SRFI forms ──
+(import (srfi 1) (srfi 2) (srfi 8) (srfi 9) (srfi 23) (srfi 26) (srfi 27) (srfi 28) (srfi 31) (srfi 39) (srfi 41) (srfi 42)
+        (srfi 43) (srfi 45) (srfi 48) (srfi 51) (srfi 69) (srfi 87) (srfi 95) (srfi 115) (srfi 125) (srfi 128) (srfi 133)
+        (srfi 143) (srfi 158) (srfi 166) (srfi 189))
+
+(define-record-type pare (kons x y) pare? (x kar set-kar!) (y kdr))      ; SRFI 9
+(and-let* ((x (assq 'a alist)) ((pair? x)) (y (cdr x))) y)                 ; SRFI 2
+(receive (a b . rest) (values 1 2 3) (list a b rest))                      ; SRFI 8
+(map (cut + 1 <>) '(1 2 3))                                                ; SRFI 26
+(map (cute list <> 'x) '(1 2))
+((cut list <> <> 3 <...>) 1 2 4 5)
+(format "~a and ~s" "x" "y")                                               ; SRFI 28
+(letrec ((f (rec (g n) (if (< n 1) 1 (* n (g (- n 1))))))) (f 5))          ; SRFI 31
+(define-stream (nat n) (stream-cons n (nat (+ n 1))))                     ; SRFI 41
+(stream-take 5 (nat 0))
+(stream-let loop ((s (nat 0))) (stream-car s))
+(list-ec (: i 5) (* i i))                                                  ; SRFI 42
+(vector-ec (: i 3) (: j 2) (+ i j))
+(sum-ec (: i 5) (if (even? i)) i)
+(first-ec #f (: i 10) (if (> i 3)) i)
+(sort! (list 3 1 2) <)                                                     ; SRFI 95
+(hash-table-update!/default (make-hash-table) 'k (lambda (x) (+ x 1)) 0)   ; SRFI 69
+(hash-table-walk (make-hash-table) (lambda (k v) k))
+(regexp-search '(: (+ digit)) "abc123")                                    ; SRFI 115
+(generator->list (make-iota-generator 3))                                  ; SRFI 158
+(show #t "Total: " (numeric 12.5 10 2) nl)                                 ; SRFI 166
+
+;;; ── Guile-specific forms ──
+(define-module (warehouse inventory)
+  #:use-module (ice-9 match)
+  #:use-module (ice-9 format)
+  #:use-module ((srfi srfi-1) #:select (fold filter) #:prefix l:)
+  #:use-module (oop goops)
+  #:export (stock reorder)
+  #:re-export (match)
+  #:replace (display)
+  #:autoload (ice-9 regex) (string-match)
+  #:declarative? #t)
+
+(use-modules (ice-9 receive) (ice-9 hash-table) (ice-9 threads) (rnrs bytevectors) (system foreign))
+(define-public exported-fn (lambda () 1))
+(define* (keyword-fn a #:optional (b 2) #:key (c 3) (d 4) #:allow-other-keys #:rest rest) (list a b c d rest))
+(define*-public (kw2 #:key x) x)
+(lambda* (a #:optional b) a)
+(let-keywords '(#:a 1) #f ((a 0)) a)
+(match '(1 2 3)
+  ((a b c) (+ a b c))
+  ((a . rest) rest)
+  (#(x y) (list x y))
+  (($ point x y) x)
+  ((and n (? number?)) n)
+  ((or 'a 'b) 'ab)
+  ((not 'x) 'not-x)
+  (`(a ,b) b)
+  (((? even? e) ...) e)
+  ((a ... b) b)
+  ((= car x) x)
+  (_ 'other))
+(match-let (((a b) '(1 2))) (+ a b))
+(match-lambda ((a b) (+ a b)))
+(define-class <shape> () (name #:init-keyword #:name #:accessor shape-name #:init-value "none"))
+(define-class <circle> (<shape>) (radius #:init-keyword #:radius #:getter get-radius #:setter set-radius! #:slot-ref ref #:slot-set! set))
+(define-method (area (c <circle>)) (* 3.14 (get-radius c) (get-radius c)))
+(define-generic area)
+(define-method (describe (x <integer>) (y <string>)) (string-append y (number->string x)))
+(make <circle> #:name "c" #:radius 2)
+(let/ec return (return 1))
+(call-with-prompt 'tag (lambda () (abort-to-prompt 'tag 1)) (lambda (k v) v))
+(with-fluids ((*x* 1)) *x*)
+(define-once only-once 1)
+(eval-when (expand load eval compile) (define helper 1))
+(syntax-parameterize () 1)
+(define-syntax-parameter it (lambda (stx) #f))
+(make-future (lambda () 1))
+(parallel (+ 1 2) (+ 3 4))
+(par-map (lambda (x) (* x x)) '(1 2 3))
+(call-with-new-thread (lambda () 1))
+(string-match "a+" "caat")
+(format #f "~a ~s ~@{~a~}~%" 1 'x 2 3)
+(@ (ice-9 format) format)
+(@@ (ice-9 format) private-fn)
+#:keyword
+keyword:
+#{symbol with spaces}#
+#{}#
+#'syntax-quoted
+#`(quasi #,unsyntax #,@splicing)
+#!eof
+#!curly-infix
+{1 + 2}
+{a and b}
+#nil
+#vu8(1 2 3)
+#s(prefab 1 2)
+#0=(a . #0#)
+(define-values (x . y) (values 1 2))
+(hash-ref (make-hash-table) 'a)
+(vlist-cons 1 vlist-null)
+(sleep 0)
+(use-srfis '(1 9 69))

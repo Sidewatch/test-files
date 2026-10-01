@@ -1,4 +1,5 @@
 #!/usr/bin/env rdmd
+// D 2.111 — syntax showcase
 // ── Comments ──
 // Line comment. TODO: shard the bins. FIXME: handle overflow.
 /* Block comment
@@ -67,8 +68,6 @@ enum double kNegExp = 1.5E-10;
 enum float kFloat = 2.5f;
 enum real kReal = 1.0L;
 enum double kHexFloat = 0x1.8p1;
-enum cdouble kComplex = 1.0 + 2.0i;
-enum ifloat kImag = 3.0fi;
 enum double kNaN = double.nan;
 enum double kInf = double.infinity;
 enum char kChar = 'a';
@@ -329,7 +328,6 @@ static foreach (T; AliasSeq!(int, long, double)) { T zero(T)() { return 0; } }
 pragma(inline, true) int inlined(int x) { return x; }
 pragma(lib, "m");
 pragma(mangle, "c_name") extern(C) int renamed();
-pragma(startaddress, inlined);
 
 @nogc @safe pure nothrow:
 int attributed_below(int x) { return x; }
@@ -353,7 +351,6 @@ class Outer {
     synchronized void locked() {}
     override string toString() const { return "Outer"; }
     alias x this;
-    this(this) {}
     ~this() {}
     static this() {}
     static ~this() {}
@@ -418,7 +415,6 @@ void exotic() {
     byte b = -128; ubyte ub = 255; short sh = -1; ushort ush = 1;
     int n = int.max; uint un = uint.max; long lg = long.min; ulong ul = ulong.max;
     float fl = float.nan; double d = double.infinity; real rl = real.epsilon;
-    cent ce; ucent uce;
     void* vp = null;
     typeof(null) nul = null;
     bool bl = true;
@@ -465,3 +461,29 @@ deprecated("old") void dep() {}
 deprecated void dep2() {}
 nothrow:
 void ntBelow() {}
+
+// ── Traits, is-expressions, import expressions ──
+struct Reflected { int a; string b; }
+enum members = __traits(allMembers, Reflected);
+enum hasA = __traits(hasMember, Reflected, "a");
+enum isPod = __traits(isPOD, Reflected);
+alias AType = typeof(Reflected.a);
+static assert(is(AType == int));
+static assert(is(int : long));
+static assert(is(Reflected == struct));
+static assert(is(typeof(1) T == int));
+static assert(is(int[] U : U2[], U2));
+static assert(!is(string == int));
+immutable embedded = import("data.txt");
+immutable ct = mixin("1 + 2");
+
+// ── Attributes added in recent releases ──
+@mustuse struct Result { int code; }
+@live int liveFunction(int* p) { return *p; }
+@safe @nogc nothrow pure int pureOne() { return 1; }
+void refLocal() {
+    int x = 1;
+    ref int r = x;
+    r = 2;
+    assert(0);
+}

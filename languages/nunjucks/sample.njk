@@ -1,4 +1,4 @@
-{# Nunjucks showcase: an orders page rendered by Eleventy or Express. #}
+{# Nunjucks 3.2 — syntax showcase: an orders page rendered by Eleventy or Express. #}
 {#
   A multi-line comment
   spanning lines.
@@ -144,3 +144,31 @@
 {{ "{{ not evaluated }}" }} {{ '{% not a tag %}' }} \{{ escaped braces }}
 <script type="text/template">{% raw %}<% erb style %> {{ mustache }}{% endraw %}</script>
 <a href="{{ url('home', { id: 5 }) }}" {{ 'class="x"' | safe }}>link</a>
+
+{# ── Method calls, nesting and remaining expression spellings ── #}
+{{ "text".toUpperCase() }} {{ items.map(fn) }} {{ [1, 2, 3].length }} {{ user.getName("x") }} {{ obj.method(1, a=2) }}
+{{ (a if b else c) if d else e }} {{ a if b else (c if d else e) }} {{ not (a and b) }} {{ ((1 + 2) * 3) ** 2 }}
+{{ items[i + 1] }} {{ items[items.length - 1] }} {{ matrix[0][1] }} {{ dict["a b"] }} {{ dict[key] }} {{ "str"[0] }}
+{{ 0.5 }} {{ .5 }} {{ 0x1F }} {{ 1e-3 }} {{ "unicode: \u00e9 \x41" }} {{ 'a' ~ 1 ~ true }}
+{{ x | default(y | default("z")) }} {{ (x | upper) ~ "!" }} {{ x | join(", ") | upper }} {{ items | map("upper") | list }}
+{% set greeting %}Hello, {{ name }}{% endset %}
+{% set (a, b) = [1, 2] %}
+{% if x %}{% if y %}nested{% endif %}{% endif %}
+{% for a in b %}{% for c in d %}{{ loop.index }}{% endfor %}{% endfor %}
+{% macro recursive(n) %}{% if n > 0 %}{{ recursive(n - 1) }}{% endif %}{% endmacro %}
+{% macro kw(a, b=1, c="s", d=[1], e={}) %}{{ a }}{% endmacro %}{{ kw(1, c="x") }}
+{% call kw(1) %}body{% endcall %}
+{% block a %}{% block b %}inner{% endblock %}{% endblock %}
+{% include ["a.njk", "b.njk"] %}
+{% include name ~ ".njk" %}
+{% extends "base.njk" %}{# must be first in real templates; repeated here for highlighting #}
+{%
+  set multiline = {
+    "a": 1,
+    "b": [1, 2]
+  }
+%}
+{{
+  multiline.a
+}}
+{{ "end" }}

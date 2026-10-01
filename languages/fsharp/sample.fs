@@ -1,3 +1,4 @@
+// F# 10 (.NET 10) — syntax showcase
 // ── Comments ──
 // F#: an inventory domain model with every syntactic category.
 (* Block comment (* nested block comment *) still inside *)
@@ -506,6 +507,75 @@ let nullCoalesce = match null with null -> 0 | _ -> 1
 // ── Format specifiers ──
 let formats = sprintf "%b %c %s %d %i %u %x %X %o %e %E %f %F %g %G %M %O %A %P %% %*d %-5d %+d %05d %.3f %10s %-10s" true 'c' "s" 1 2 3u 255 255 8 1.0 1.0 2.0 2.0 3.0 3.0 1m (obj()) [1] 0 5 1 1 1 1.0 "a" "b"
 let interpFormats = $"{1:N2} {2.5:F1} {DateTime.Now:yyyy-MM-dd} {42,5} {42,-5} {{literal}} {true} %d{3} %s{"x"}"
+
+// ── F# 8–10 additions: nullness, _.Member shorthand, static abstract, TailCall, and! ──
+#nullable enable
+let nullableString : string | null = null
+let lengthOrZero (s: string | null) =
+    match s with
+    | null -> 0
+    | s -> s.Length
+let withNullCheck (s: string | null) = nonNull s
+let dotShorthand = orders |> List.map _.Number
+let dotShorthandChain = orders |> List.map _.Status.ToString()
+let dotShorthandFilter = orders |> List.filter (_.Total >> (>) 10m)
+
+type IAddable<'T when 'T :> IAddable<'T>> =
+    static abstract member Zero : 'T
+    static abstract member (+) : 'T * 'T -> 'T
+
+type Meters(v: float) =
+    member _.Value = v
+    interface IAddable<Meters> with
+        static member Zero = Meters(0.0)
+        static member (+) (a, b) = Meters(a.Value + b.Value)
+
+let sumAll<'T when 'T :> IAddable<'T>> (xs: 'T list) = List.fold (+) 'T.Zero xs
+
+[<TailCall>]
+let rec countdown n acc = if n = 0 then acc else countdown (n - 1) (acc + n)
+
+let parallelBinds = task {
+    let! a = System.Threading.Tasks.Task.FromResult 1
+    and! b = System.Threading.Tasks.Task.FromResult 2
+    return a + b
+}
+
+// ── Extra declarations: extern, fixed, const, namespaces, ML-compat operators (deprecated) ──
+open System.Runtime.InteropServices
+[<DllImport("libc", EntryPoint = "getpid")>]
+extern int getpid()
+
+type Provided = SomeProvider<const "config.json", Size = 10>
+let fixedExample (arr: byte[]) =
+    use ptr = fixed &arr.[0]
+    NativeInterop.NativePtr.read ptr
+let mlOperators = (7 % 3, 1 <<< 2, 8 >>> 1) // deprecated ML forms: mod, land, lor, lxor, lsl, lsr, asr
+let legacyRefCells =
+    let r = ref 0
+    r := !r + 1 // deprecated: use r.Value
+    r.Value
+type Pair = { Left: int; Right: int } with
+    member this.Sum = this.Left + this.Right
+    static member Zero = { Left = 0; Right = 0 }
+type Choice' = | A | B with
+    override this.ToString() = match this with A -> "a" | B -> "b"
+exception ValidationFailed of string with
+    override this.Message = "validation failed"
+type Lazy' = Lazy<int>
+let forwardPipeTypes : int list -> int = List.sum
+let functionType : (int -> int) -> int list -> int list = List.map
+let tupleType : int * string * bool = 1, "a", true
+let arrayType : int[] * int[,] * int[,,] = [| 1 |], Array2D.zeroCreate 1 1, Array3D.zeroCreate 1 1 1
+let genericInstance = System.Collections.Generic.List<int>()
+let hashDirectiveEnd =
+#if DEBUG
+    "debug"
+#elif RELEASE
+    "release"
+#else
+    "other"
+#endif
 
 [<EntryPoint>]
 let main argv =

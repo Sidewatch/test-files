@@ -1,3 +1,4 @@
+<!-- MediaWiki 1.44 wikitext — syntax showcase -->
 __TOC__
 __NOEDITSECTION__
 {{DISPLAYTITLE:Inventory service}}
@@ -220,6 +221,44 @@ type=search
 *# mixed numbered
 #: indented under numbered
 *: indented under bullet
+
+
+
+=== Newer parser functions and magic words ===
+{{DEFAULTSORT:Inventory service}} {{PAGELANGUAGE}} {{CONTENTLANGUAGE}} {{int:mainpage}} {{formatnum:1234.5|R}}
+{{#iferror: {{#expr: 1 / 0 }} | error | ok }} {{#bcp47: de-ch}} {{#dir: ar}} {{#formatdate: 2025-01-31 | dmy }}
+{{#lst:Page|section}} {{#lstx:Page|section}} {{#lsth:Page|Heading}} {{pagesincategory:Services|pages}} {{ARTICLEPATH}}
+{{padright:7|3|0}} {{#timel: Y-m-d | now }} {{#rel2abs: ./x | /a/b }} {{TALKPAGENAME}} {{SUBPAGENAME}} {{ROOTPAGENAME}} {{BASEPAGENAME}}
+{{PAGENAMEE}} {{FULLPAGENAME}} {{NAMESPACENUMBER}} {{CURRENTTIMESTAMP}} {{REVISIONUSER}} {{PROTECTIONLEVEL:edit}} {{PAGEID}}
+__EXPECTUNUSEDCATEGORY__ __NOCONTENTCONVERT__ __NOTITLECONVERT__ __DISAMBIG__
+{{#invoke:String|len|s=text}}
+{{#switch: {{{1|}}}
+ | one | uno = 1
+ | two = 2
+ | #default = many
+}}
+{{Infobox
+ | label1 = {{{a|}}}
+ | data1 = {{#if: {{{a|}}} | [[{{{a}}}]] }}
+}}
+
+=== More extension tags ===
+<templatestyles src="Module:Inventory/styles.css" />
+<syntaxhighlight lang="js" inline>const x = 1;</syntaxhighlight>
+<syntaxhighlight lang="json" copy>{ "a": 1 }</syntaxhighlight>
+<math display="block">\frac{a}{b} \int_0^1 f(x)\,dx</math>
+<math chem>\ce{H2O}</math>
+<ref follow="count">Continued note.</ref>
+<references responsive />
+<gallery mode="packed" heights="120">
+File:Pallet.png|A pallet
+</gallery>
+<maplink latitude="51.5" longitude="-0.12" zoom="10">{ "type": "Feature", "geometry": { "type": "Point", "coordinates": [-0.12, 51.5] } }</maplink>
+<noinclude>{{Documentation}}</noinclude>
+<includeonly>[[Category:Templates by use]]</includeonly>
+<onlyinclude>{{{1|}}}</onlyinclude>
+<nowiki/><p>An explicit paragraph.</p>
+<!-- A comment between sections. -->
 
 [[Category:Services]]
 [[Category:Inventory|Sort key]]

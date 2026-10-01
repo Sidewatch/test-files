@@ -1,5 +1,5 @@
 // ── Comments ───────────────────────────────────────────────
-// Verilog-2001: a warehouse stock counter, FIFO and testbench.
+// Verilog IEEE 1364-2005 — syntax showcase: a warehouse stock counter, FIFO and testbench.
 // TODO: add parity checking. FIXME: reset polarity.
 /* Block comment
    spanning lines */
@@ -467,3 +467,67 @@ module tb_counter;
 endmodule
 
 `default_nettype wire
+
+// ── Additions: 1364-2005 forms ─────────────────────────────
+`begin_keywords "1364-2005"
+macromodule extras #(
+    parameter integer DEPTH = 4,
+    parameter real    SCALE = 1.5,
+    parameter signed [7:0] OFFSET = -8'sd3
+) (
+    input  wire signed [7:0] din,
+    input  wire              clk,
+    output reg  signed [7:0] dout,
+    output uwire             ready
+);
+    localparam integer ADDR_BITS = $clog2(DEPTH);
+    reg signed [7:0] table_2d [0:3][0:3];
+    reg [7:0] words [0:DEPTH-1];
+    integer idx;
+    uwire single_driver = 1'b1;
+
+    function signed [7:0] saturate;
+        input signed [15:0] wide;
+        begin
+            saturate = (wide > 127) ? 8'sd127 : (wide < -128) ? -8'sd128 : wide[7:0];
+        end
+    endfunction
+
+    function automatic [7:0] ansi_fn (input [7:0] a, input [7:0] b);
+        ansi_fn = a + b;
+    endfunction
+
+    task ansi_task (input [7:0] v, output [7:0] r);
+        r = v + 1;
+    endtask
+
+    assign ready = single_driver;
+
+    always @(posedge clk) begin : pipeline
+        table_2d[0][1] <= din;
+        dout <= saturate(din * 2) + ansi_fn(din, OFFSET);
+    end
+
+    generate
+        genvar k;
+        for (k = 0; k < DEPTH; k = k + 1) begin : stage
+            localparam integer W = k + 1;
+            always @(posedge clk) words[k] <= din + W;
+        end
+    endgenerate
+
+    // array of instances and named/ordered connections
+    counter #(8) cnt [1:0] (.clk(clk), .rst(1'b0), .en(1'b1), .count(), .wrapped());
+    counter #(.WIDTH(4), .RESET_VALUE(4'd3)) one (clk, 1'b0, 1'b1, , );
+
+    initial begin
+        idx = 0;
+        words[0] = {8{1'b1}};
+        $display("%0d %0d", $signed(din), $unsigned(din));
+        $display("%s", `"quoted macro`");
+    end
+endmodule
+`end_keywords
+
+library rtllib "rtl/*.v", "extra/*.v";
+include "other_config.cfg";

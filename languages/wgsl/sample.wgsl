@@ -1,3 +1,4 @@
+// WGSL (W3C Candidate Recommendation, 2025) — syntax showcase
 // ── Comments ───────────────────────────────────────────────
 // WGSL: warehouse heat-map rendering and a stock compute kernel.
 // TODO: add shadow maps. FIXME: premultiplied alpha.
@@ -7,6 +8,10 @@
 
 // ── Directives ─────────────────────────────────────────────
 enable f16;
+enable subgroups;
+enable primitive_index;
+enable clip_distances;
+enable dual_source_blending;
 requires readonly_and_readwrite_storage_textures;
 diagnostic(off, derivative_uniformity);
 
@@ -262,9 +267,6 @@ fn ptr_params(a: ptr<private, u32>, b: ptr<workgroup, f32>, c: ptr<storage, arra
 @must_use
 fn pure_value(x: f32) -> f32 { return x * 2.0; }
 
-@const
-fn compile_time(x: f32) -> f32 { return x; }
-
 @diagnostic(warning, derivative_uniformity)
 fn with_diagnostic() {}
 
@@ -384,4 +386,47 @@ fn math_builtins(x: f32, v: vec3<f32>, i: i32, u: u32) {
     let n = all(vec2<bool>(true)) && any(vec2<bool>(false)) && select(true, false, x > 0.0);
     let o = arrayLength(&data) + u;
     let p = bitcast<i32>(u) + bitcast<i32>(f32(i));
+}
+
+// ── Additions: literals, extensions and remaining forms ────
+const L_INT = 0x1Fi + 07 * 1i;
+const L_UINT = 0xFFu + 10u;
+const L_FLOAT = 1.0e5 + .5 + 5. + 1f + 0x1p-2 + 0x.8p1 + 1e2f;
+const L_HALF = 1h + 2.5h + 0x1p3h;
+const L_ABSTRACT = 1 + 0x10 + 1.5 + 2e3;
+
+struct ClipOut {
+    @builtin(position) pos: vec4<f32>,
+    @builtin(clip_distances) clip: array<f32, 2>,
+}
+
+@fragment
+fn fs_prim(@builtin(primitive_index) prim: u32, @builtin(position) p: vec4<f32>) -> @location(0) vec4<f32> {
+    return vec4<f32>(f32(prim), p.xyz);
+}
+
+fn loops_forms() {
+    var i = 0;
+    for (;;) { break; }
+    for (var k = 0; k < 4; k += 1) { }
+    for (; i < 2; ) { i++; }
+    loop { i += 1; if i > 3 { break; } }
+    if i > 0 { i = 1; } else if i < 0 { i = -1; } else { i = 0; }
+    switch i {
+        case 1, 2, default { i = 3; }
+    }
+    let t = (i > 0) && !(i < 0);
+    _ = t;
+    {
+        let inner = 1;
+        _ = inner;
+    }
+    return;
+}
+
+fn ref_forms(p: ptr<function, array<i32, 4>>) -> i32 {
+    (*p)[0] = 1;
+    let q = &(*p)[1];
+    *q = 2;
+    return (*p)[0] + *q;
 }

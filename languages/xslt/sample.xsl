@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- ── Comments ───────────────────────────────────────────────
+<!-- XSLT 3.0 (W3C Recommendation; XSLT 4.0 is still a draft) — syntax showcase
+     ── Comments ───────────────────────────────────────────────
      XSLT 3.0 (with the whole 1.0 core): warehouse orders XML to an HTML report, paid first.
      TODO: group by warehouse. FIXME: locale-aware numbers. -->
 <!DOCTYPE xsl:stylesheet [
@@ -325,7 +326,6 @@
     <xsl:sequence select="$all/total ! xs:decimal(.)"/>
     <xsl:text expand-text="no">{literal braces}</xsl:text>
     <p title="{ex:money(12.5, 'GBP')} {{literal}} {$threshold}">Total { sum($all/total) } and {{escaped}}</p>
-    <xsl:stream href="legacy.xml"><xsl:copy-of select="."/></xsl:stream>
     <xsl:number select="$all[1]" level="any" count="order" from="orders" format="A" lang="en" letter-value="alphabetic" ordinal="yes" grouping-separator="," grouping-size="3"/>
     <xsl:message select="'3.0 template done'" error-code="ex:MSG" terminate="no"/>
     <xsl:fallback><xsl:message terminate="yes">Processor does not support XSLT 3.0</xsl:message></xsl:fallback>
@@ -342,4 +342,29 @@
   <xsl:expose component="template" names="initial" visibility="public"/>
   <xsl:key name="by-sku" match="item" use="@sku" composite="yes" collation="http://www.w3.org/2005/xpath-functions/collation/codepoint"/>
   <xsl:strip-space elements="*"/>
+
+  <!-- ══ Additions ═════════════════════════════════════════ -->
+  <xsl:template match="item" mode="more" expand-text="yes">
+    <xsl:variable name="label" as="xs:string" select="string(@sku)"/>
+    <xsl:for-each select="tokenize($label, '-')">
+      <part pos="{position()}">{.}</part>
+    </xsl:for-each>
+    <xsl:value-of select="$label" disable-output-escaping="no"/>
+    <xsl:sequence select="if (@qty) then xs:integer(@qty) else 0"/>
+    <xsl:choose>
+      <xsl:when test="@qty castable as xs:integer">numeric</xsl:when>
+      <xsl:otherwise>text</xsl:otherwise>
+    </xsl:choose>
+    <xsl:apply-templates select="*" mode="#current"/>
+    <xsl:apply-templates select="*" mode="#all"/>
+    <xsl:call-template name="initial"><xsl:with-param name="x" select="1, 2"/></xsl:call-template>
+  </xsl:template>
+
+  <xsl:template match="*" mode="shallow" priority="-1">
+    <xsl:copy><xsl:apply-templates select="@*, node()" mode="shallow"/></xsl:copy>
+  </xsl:template>
+  <xsl:template match="." mode="on-self"/>
+  <xsl:template match="element(item, xs:untyped)" mode="typed"/>
+  <xsl:template match="document-node(element(orders))" mode="doc"/>
+  <xsl:template match="text()[normalize-space() = '']" mode="strip"/>
 </xsl:stylesheet>

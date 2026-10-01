@@ -1,3 +1,4 @@
+' Visual Basic 17.13 (VB 16.9 language level, .NET 9) — syntax showcase
 ' ── Comments ───────────────────────────────────────────────
 ' Line comment. TODO: persist the stock. FIXME: rounding.
 REM Old-style remark comment
@@ -570,3 +571,144 @@ Label1:
     Public Event Done As Action(Of Integer)
 
 End Module
+
+' ── Additions: remaining keywords and forms ────────────────
+Option Strict Off
+Option Explicit Off
+Option Infer Off
+Option Compare Text
+
+Imports System.Threading.Tasks
+Imports Alias2 = System.Collections.Generic.List(Of String)
+
+Namespace Global.Warehouse.Extra
+
+    Public Structure ReadOnlyPoint
+        Public ReadOnly X As Integer
+        Public Sub New(x As Integer)
+            Me.X = x
+        End Sub
+    End Structure
+
+    Public Interface IShape
+        Property Sides As Integer
+        Function Area() As Double
+        Sub Draw(ByVal canvas As Object, Optional ByVal color As Integer = 0)
+        Event Resized(ByVal width As Integer, ByVal height As Integer)
+    End Interface
+
+    Public Class Cell
+        Implements IShape
+
+        Public Property Sides As Integer Implements IShape.Sides
+        Public Event Resized(ByVal width As Integer, ByVal height As Integer) Implements IShape.Resized
+
+        Public Function Area() As Double Implements IShape.Area
+            Return 0.0
+        End Function
+
+        Public Sub Draw(ByVal canvas As Object, Optional ByVal color As Integer = 0) Implements IShape.Draw
+            Exit Sub
+        End Sub
+
+        Public Shared Operator Mod(a As Cell, b As Cell) As Cell
+            Return a
+        End Operator
+        Public Shared Operator \(a As Cell, b As Cell) As Cell
+            Return a
+        End Operator
+        Public Shared Operator ^(a As Cell, b As Integer) As Cell
+            Return a
+        End Operator
+        Public Shared Operator <<(a As Cell, b As Integer) As Cell
+            Return a
+        End Operator
+        Public Shared Operator >>(a As Cell, b As Integer) As Cell
+            Return a
+        End Operator
+        Public Shared Operator And(a As Cell, b As Cell) As Cell
+            Return a
+        End Operator
+        Public Shared Operator Or(a As Cell, b As Cell) As Cell
+            Return a
+        End Operator
+        Public Shared Operator Xor(a As Cell, b As Cell) As Cell
+            Return a
+        End Operator
+        Public Shared Operator <(a As Cell, b As Cell) As Boolean
+            Return False
+        End Operator
+        Public Shared Operator >(a As Cell, b As Cell) As Boolean
+            Return False
+        End Operator
+        Public Shared Operator <=(a As Cell, b As Cell) As Boolean
+            Return False
+        End Operator
+        Public Shared Operator >=(a As Cell, b As Cell) As Boolean
+            Return False
+        End Operator
+    End Class
+
+End Namespace
+
+Module ControlFlowExtras
+    Sub Demo(ByVal n As Integer, ByRef total As Integer)
+        Dim i As Integer = 0
+        While i < 3
+            i += 1
+            If i = 2 Then Continue While
+        End While
+        Do While i < 10
+            i += 1
+            If i = 8 Then Exit Do
+        Loop
+        Do
+            i -= 1
+        Loop Until i <= 0
+        For i = 1 To 3
+            For j As Integer = 3 To 1 Step -1
+                If j = 2 Then Exit For
+            Next j
+        Next i
+        Select Case n
+            Case 0
+                Exit Select
+            Case Is < 0, Is > 100
+                Console.WriteLine("range")
+            Case "a" To "z"
+        End Select
+        If n = 1 Then : Console.WriteLine("one") : End If
+        Dim b As Boolean = CBool(n) AndAlso CByte(1) = 1 AndAlso CLng(1) = 1 AndAlso CSng(1) = 1 AndAlso CDbl(1) = 1
+        Dim w As Integer = n << 2 >> 1 Xor 3 Or 4 And 5
+        Dim lit = 1_000.5R + &H7FFFFFFFUS + 0.5@ + 1.5# + 3% + 4& + 5! + 6UL
+        Dim s = "tab" & vbTab & vbCrLf & ControlChars.Quote & vbNewLine
+        Dim ch = ChrW(&H263A) & "x"c
+        Dim d = #2026-03-01# + #12:30:00 PM# + #2026-03-01 09:30:00#
+        Return
+    End Sub
+
+    Async Function AsyncWork() As Task(Of String)
+        Dim t = Task.Run(Function() "done")
+        Return Await t.ConfigureAwait(False)
+    End Function
+
+    Property Counter As Integer
+        Get
+            Return 0
+        End Get
+        Set(ByVal value As Integer)
+            Exit Property
+        End Set
+    End Property
+
+    Sub Handlers()
+        Dim handler As EventHandler = AddressOf Handler1
+        Dim del As New Action(AddressOf Handler2)
+    End Sub
+    Sub Handler1(sender As Object, e As EventArgs)
+    End Sub
+    Sub Handler2()
+    End Sub
+End Module
+
+' Not shown: While ... Wend, GoSub and Let/Set assignment (removed from VB.NET).

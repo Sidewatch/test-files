@@ -1,4 +1,5 @@
 #!/usr/bin/env fish
+# fish 4.0 — syntax showcase (fish is not installed locally)
 # ── Comments ──
 # Line comment. TODO: rotate logs hourly. FIXME: handle spaces in names.
 # vim: set ft=fish ts=4 sw=4 et:
@@ -38,7 +39,7 @@ set -l home ~
 set -l tilde_user ~root/bin
 set -l glob *.log
 set -l recursive_glob **.log
-set -l interp "$bins[1] ${plain}x $bins[2..3] $bins[-1]"
+set -l interp "$bins[1] {$plain}x $bins[2..3] $bins[-1]"
 set -l count (count $bins)
 set -l cmd_sub (echo (date +%Y-%m-%d))
 set -l quoted_sub "result: "(echo hi)
@@ -59,7 +60,7 @@ function fish_prompt --on-event fish_prompt
     echo -n (set_color cyan)(prompt_pwd)(set_color normal) '> '
 end
 
-function on_exit --on-process-exit %self
+function on_exit --on-process-exit %self  # %self: deprecated spelling
     echo "bye"
 end
 
@@ -193,7 +194,6 @@ complete -c warehouse -n '__fish_use_subcommand' -a 'count audit' -x
 functions -e old_fn
 funcsave greet
 emit warehouse_event arg1
-trap
 fish_add_path /opt/warehouse/bin
 status --is-login
 jobs
@@ -202,6 +202,24 @@ disown
 builtin echo "builtin"
 command echo "command"
 exit 0
+
+# ── fish 4.0 additions ──
+abbr -a --position anywhere -- L '| less'
+abbr -a --set-cursor gco 'git checkout %'
+abbr -a --function _last_history_item !!
+abbr --erase gs
+set --no-event quiet_var 1
+status buildinfo
+status get-file functions/fish_prompt.fish
+bind --user \cg 'commandline -f cancel'
+bind -M insert \cf forward-char
+set -l indirect_name bins
+echo $$indirect_name[1]
+# fish 3.x/4.x: `time` and `not` are keywords; `and`/`or` start a command
+not true
+true
+and echo chained
+or echo never
 
 # ── Further constructs ──
 # Function options
@@ -251,11 +269,11 @@ set -l indexed $bins[(math 1 + 1)]
 echo $bins[1]'-'$bins[2]
 echo "$bins[1]" "$bins"
 echo {$bins}-suffix
-echo prefix-{a,b,c}-suffix {1..3}
+echo prefix-{a,b,c}-suffix {1,2,3}
 echo \$escaped \"escaped\" \'escaped\' \\ \  \(parens\) \{braces\} \[brackets\] \* \? \# \~ \% \& \; \< \>
 echo '*' "*" \*
 echo ~/path ~root /tmp/**/*.log ?
-echo %self %last
+echo $fish_pid %self  # %self is deprecated since 3.x, use $fish_pid
 echo (string repeat -n 3 =)
 echo -n "no newline"; echo -e "escapes\there"; echo -s "squeezed"; echo --
 echo foo; echo bar & echo baz

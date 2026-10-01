@@ -1,3 +1,4 @@
+# GraphQL September 2025 specification — syntax showcase
 # ── Comments ──
 # Schema and operations for the orders API. TODO: split into modules.
 
@@ -322,3 +323,28 @@ query # comment after keyword
   field # after field
   # standalone
 }
+
+# ── September 2025 additions and remaining type-system forms ──
+"Exactly one field must be provided."
+directive @oneOf on INPUT_OBJECT
+
+input FindBy @oneOf {
+  id: ID
+  email: String
+  sku: String
+}
+
+extend type Order implements & Searchable & Auditable @tag(name: "extended")
+interface Searchable { id: ID! }
+interface Auditable { auditTrail: [String!]! }
+
+type Leading implements & Searchable & Auditable {
+  id: ID!
+  auditTrail: [String!]!
+}
+
+extend type Leading implements Node @deprecated(reason: "example")
+
+extend input FindBy { phone: String }
+extend enum Role @example { OWNER }
+extend directive @example(c: Int) on FIELD

@@ -1,3 +1,4 @@
+-- PureScript 0.15 — syntax showcase
 -- ── Comments ──
 -- PureScript showcase: a typed warehouse inventory model.
 -- TODO: replace the String sku with a newtype. FIXME: unsafe partial in `headOr`.
@@ -316,6 +317,185 @@ annotated = (42 :: Int)
 
 section :: Array Int
 section = map (_ * 2) (1 .. 5)
+
+-- ── Kind signatures, roles, and standalone declarations ──
+data Pair :: Type -> Type -> Type
+data Pair a b = Pair a b
+
+newtype Wrapper :: Type -> Type
+newtype Wrapper a = Wrapper a
+
+type Fn2 :: Type -> Type -> Type
+type Fn2 a b = a -> b
+
+class Monoid2 :: Type -> Constraint
+class Monoid2 a where
+  mempty2 :: a
+
+type role Ref nominal
+data Ref a
+
+foreign import data Fx :: (Type -> Type) -> Type
+
+data Rec (r :: Row Type) = Rec
+data HKT (f :: Type -> Type) a = HKT (f a)
+data Phantom (n :: Symbol) = Phantom
+data Void'
+
+-- ── Unicode syntax ──
+unicodeId :: ∀ a. a → a
+unicodeId x = x
+
+unicodeConstraint :: ∀ a. Show a ⇒ a → String
+unicodeConstraint = show
+
+-- ── Instance chains, deriving, overlapping resolution ──
+class TypeName a where
+  typeName :: Proxy a -> String
+
+instance typeNameInt :: TypeName Int where
+  typeName _ = "Int"
+else instance typeNameString :: TypeName String where
+  typeName _ = "String"
+else instance typeNameOther :: TypeName a where
+  typeName _ = "other"
+
+derive instance functorTree :: Functor Tree
+derive instance eqTree :: Eq a => Eq (Tree a)
+derive newtype instance showSku :: Show Sku
+derive instance ordPair :: (Ord a, Ord b) => Ord (Pair a b)
+
+instance showTree :: Show a => Show (Tree a) where
+  show Leaf = "Leaf"
+  show (Node l v r) = "(Node " <> show l <> " " <> show v <> " " <> show r <> ")"
+
+instance semigroupTree :: Semigroup (Tree a) where
+  append l _ = l
+
+instance foldableTree :: Foldable Tree where
+  foldr _ z Leaf = z
+  foldr f z (Node l v r) = foldr f (f v (foldr f z r)) l
+  foldl _ z Leaf = z
+  foldl f z (Node l v r) = foldl f (f (foldl f z l) v) r
+  foldMap _ Leaf = mempty
+  foldMap f (Node l v r) = foldMap f l <> f v <> foldMap f r
+
+instance emptyClass :: Container Maybe
+
+-- ── Operators: definitions, type operators, sections ──
+infixl 6 add as +++
+infixr 5 type Tuple as ⨯
+infix 4 type Eq as ~
+infixl 1 bindFlipped as =<<<
+infixr 9 compose as ∘
+
+opSections :: Array Int
+opSections = [ (_ + 1) 1, (1 + _) 2, (_ `mod` 2) 3, (negate <<< _) 4, (_ <> _) [] [] # length ]
+  where
+  length = Array.length
+
+-- ── Patterns: every kind ──
+patterns :: Maybe Int -> Array Int -> String -> Number -> Char -> { a :: Int } -> String
+patterns (Just n) [ x, y ] "lit" 1.5 'c' { a: 1 } = show (n + x + y)
+patterns whole@(Just (-1)) [] _ _ _ _ = "neg"
+patterns Nothing [ _ ] "" 0.0 '\n' { a } = show a
+patterns _ _ _ _ _ _ = "other"
+
+multiScrutinee :: Int -> Int -> String
+multiScrutinee a b = case a, b of
+  0, 0 -> "both zero"
+  0, _ -> "first zero"
+  _, 0 -> "second zero"
+  x, y | x == y -> "equal"
+       | Just z <- Array.head [ x ], z > 0 -> "positive head"
+       | otherwise -> "different"
+
+negativeLits :: Int -> Int
+negativeLits (-1) = 0
+negativeLits n = n
+
+-- ── Visible type application, wildcards, holes ──
+visible :: String
+visible = show @Int 1
+
+typeAppMany :: Proxy "x"
+typeAppMany = identity @(Proxy "x") Proxy
+
+anyType :: _ -> Int
+anyType x = 1
+
+-- ── Row polymorphism and record syntax forms ──
+type Person = { name :: String, age :: Int }
+type Named r = { name :: String | r }
+type Rows = ( x :: Int, "quoted label" :: String )
+
+mkPerson :: String -> Int -> Person
+mkPerson name age = { name, age }
+
+modify :: Person -> Person
+modify p = p { age = p.age + 1, name = "x" }
+
+quotedLabel :: { "quoted label" :: Int } -> Int
+quotedLabel r = r."quoted label"
+
+sectionAccess :: Array Person -> Array String
+sectionAccess = map _.name
+
+sectionUpdate :: Array Person -> Array Person
+sectionUpdate = map _ { age = 0 }
+
+emptyRecord :: {}
+emptyRecord = {}
+
+emptyRow :: Record ()
+emptyRow = {}
+
+-- ── Qualified do, ado, let in do ──
+qualifiedDo :: Maybe Int
+qualifiedDo = Ix.do
+  a <- Just 1
+  Just (a + 1)
+
+letInDo :: Effect Unit
+letInDo = do
+  let
+    a = 1
+    b = 2
+    f x = x + a
+  let c = f b
+  _ <- pure c
+  void $ pure a
+  if a > b then log "gt" else log "le"
+  case a of
+    1 -> log "one"
+    _ -> log "other"
+
+-- ── Numeric and string literal forms ──
+numericForms :: Array Number
+numericForms = [ 0.5, 1.0, 1e3, 1.5e-3, 123_456.789_0, 0x1F # toNumber, 0b101 # toNumber ]
+
+charForms :: Array Char
+charForms = [ 'a', '\t', '\\', '\'', '\"', '\x0041', '\x1F4E6' ]
+
+stringGap :: String
+stringGap = "line one \
+            \line two"
+
+-- ── Where, guards, and local operators ──
+localOps :: Int -> Int
+localOps x = x <+> 1
+  where
+  infixl 6 add as <+>
+
+guardsInLet :: Int -> String
+guardsInLet n =
+  let
+    go k
+      | k > 0 = "pos"
+      | k < 0 = "neg"
+      | otherwise = "zero"
+  in
+    go n
 
 -- ── Main ──
 main :: Effect Unit

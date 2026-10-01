@@ -1,5 +1,6 @@
+// Solidity 0.8.30 — syntax showcase (EVM version prague by default)
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.30;
 pragma abicoder v2;
 pragma experimental SMTChecker;
 
@@ -318,7 +319,7 @@ contract Ledger is ILedger, Auditable, Ownable {
     }
 
     function cleanup() external onlyOwner {
-        selfdestruct(treasury);
+        selfdestruct(treasury); // deprecated since 0.8.18 (EIP-6780) but still valid
     }
 }
 
@@ -381,4 +382,237 @@ contract Extras {
     }
 
     event Transfer(address indexed from, address indexed to, uint256 value);
+}
+
+// ── Custom errors in require (0.8.26+), and revert forms ──
+error Insufficient(uint256 needed, uint256 have);
+contract Reverts {
+    function checks(uint256 have) external pure {
+        require(have > 0, Insufficient(1, have));
+        require(have > 1, "plain reason string");
+        require(have > 2);
+        if (have > 100) revert Insufficient({needed: 1, have: have});
+        if (have > 200) revert("reason");
+        if (have > 300) revert();
+        assert(have != 400);
+    }
+}
+
+// ── Storage layout specifier (0.8.29+) ──
+contract Positioned layout at 0x1000 {
+    uint256 public first;
+    mapping(address => uint256) public balances;
+}
+
+// ── User-defined value types and operators on them ──
+type Price is uint128;
+using {addPrice as +, subPrice as -, mulPrice as *, divPrice as /, modPrice as %, negPrice as -, notPrice as ~, andPrice as &, orPrice as |, xorPrice as ^, eqPrice as ==, nePrice as !=, ltPrice as <, lePrice as <=, gtPrice as >, gePrice as >=} for Price global;
+
+function addPrice(Price a, Price b) pure returns (Price) { return Price.wrap(Price.unwrap(a) + Price.unwrap(b)); }
+function subPrice(Price a, Price b) pure returns (Price) { return Price.wrap(Price.unwrap(a) - Price.unwrap(b)); }
+function mulPrice(Price a, Price b) pure returns (Price) { return Price.wrap(Price.unwrap(a) * Price.unwrap(b)); }
+function divPrice(Price a, Price b) pure returns (Price) { return Price.wrap(Price.unwrap(a) / Price.unwrap(b)); }
+function modPrice(Price a, Price b) pure returns (Price) { return Price.wrap(Price.unwrap(a) % Price.unwrap(b)); }
+function negPrice(Price a) pure returns (Price) { return Price.wrap(0 - Price.unwrap(a)); }
+function notPrice(Price a) pure returns (Price) { return Price.wrap(~Price.unwrap(a)); }
+function andPrice(Price a, Price b) pure returns (Price) { return Price.wrap(Price.unwrap(a) & Price.unwrap(b)); }
+function orPrice(Price a, Price b) pure returns (Price) { return Price.wrap(Price.unwrap(a) | Price.unwrap(b)); }
+function xorPrice(Price a, Price b) pure returns (Price) { return Price.wrap(Price.unwrap(a) ^ Price.unwrap(b)); }
+function eqPrice(Price a, Price b) pure returns (bool) { return Price.unwrap(a) == Price.unwrap(b); }
+function nePrice(Price a, Price b) pure returns (bool) { return Price.unwrap(a) != Price.unwrap(b); }
+function ltPrice(Price a, Price b) pure returns (bool) { return Price.unwrap(a) < Price.unwrap(b); }
+function lePrice(Price a, Price b) pure returns (bool) { return Price.unwrap(a) <= Price.unwrap(b); }
+function gtPrice(Price a, Price b) pure returns (bool) { return Price.unwrap(a) > Price.unwrap(b); }
+function gePrice(Price a, Price b) pure returns (bool) { return Price.unwrap(a) >= Price.unwrap(b); }
+
+// ── Libraries attached to types, and using ... for * ──
+library Bits {
+    function isSet(uint256 self, uint8 index) internal pure returns (bool) {
+        return (self >> index) & 1 == 1;
+    }
+    function sum(uint256[] storage values) internal view returns (uint256 total) {
+        for (uint256 i = 0; i < values.length; i++) total += values[i];
+    }
+}
+
+// ── Inheritance: multiple bases, overrides, constructors, super ──
+contract BaseA {
+    uint256 public a;
+    constructor(uint256 _a) { a = _a; }
+    function who() public pure virtual returns (string memory) { return "A"; }
+    modifier guarded() virtual { _; }
+}
+contract BaseB {
+    function who() public pure virtual returns (string memory) { return "B"; }
+}
+contract Derived is BaseA, BaseB {
+    using Bits for uint256;
+    using Bits for *;
+    uint256[] private values;
+
+    constructor(uint256 x) BaseA(x) {}
+
+    function who() public pure override(BaseA, BaseB) returns (string memory) {
+        return string.concat("D:", super.who());
+    }
+    modifier guarded() override { require(a > 0); _; }
+    function total() external view guarded returns (uint256) { return Bits.sum(values); }
+    function bit(uint256 v) external pure returns (bool) { return v.isSet(3); }
+}
+
+// ── Calls: named arguments, value/gas options, interface selectors, try new ──
+contract Calls {
+    event Done(uint256 id);
+    function target(uint256 id, address who, bool flag) public payable returns (uint256) {
+        emit Done(id);
+        return flag && who != address(0) ? id : 0;
+    }
+    function named() external payable returns (uint256) {
+        uint256 r = this.target{value: msg.value}({flag: true, id: 7, who: msg.sender});
+        r += target(1, address(this), false);
+        bytes4 sel = this.target.selector;
+        bytes4 isel = ILedger.restock.selector;
+        bytes32 topic = Done.selector;
+        bytes4 err = Insufficient.selector;
+        bytes memory c = abi.encodeWithSelector(sel, 1, address(0), true);
+        bytes memory d = abi.encodeWithSignature("target(uint256,address,bool)", 1, address(0), true);
+        bytes memory e = abi.encodeCall(this.target, (1, address(0), true));
+        (uint256 id, address who) = abi.decode(c, (uint256, address));
+        isel; topic; err; d; e; id; who;
+        return r;
+    }
+    function creator() external returns (address) {
+        try new Ledger(payable(msg.sender)) returns (Ledger created) {
+            return address(created);
+        } catch {
+            return address(0);
+        }
+    }
+    function create2Addr() external view returns (address) {
+        bytes memory code = type(Ledger).creationCode;
+        bytes memory runtime = type(Derived).runtimeCode;
+        string memory nm = type(Ledger).name;
+        nm; runtime;
+        return address(uint160(uint256(keccak256(abi.encodePacked(bytes1(0xff), address(this), bytes32(0), keccak256(code))))));
+    }
+}
+
+// ── Data locations, slices, members, globals ──
+contract Data {
+    struct Point { int128 x; int128 y; }
+    enum Level { Low, Mid, High }
+    Level public constant DEFAULT_LEVEL = Level.Mid;
+    Point[] public points;
+    mapping(address user => mapping(uint256 id => Point)) public byUser;
+    bytes32 constant SALT = keccak256(abi.encodePacked("salt"));
+
+    function slice(bytes calldata payload) external pure returns (bytes memory head, bytes4 sig) {
+        head = payload[0:4];
+        sig = bytes4(payload[:4]);
+        bytes calldata tail = payload[4:];
+        tail;
+    }
+    function members() external view returns (uint256) {
+        uint256 b = address(this).balance + address(this).code.length;
+        bytes32 h = address(this).codehash;
+        uint256 lo = uint256(type(Level).min) + uint256(type(Level).max);
+        int256 mn = type(int128).min;
+        h; mn;
+        return b + lo + block.number + block.timestamp + block.gaslimit + block.basefee + block.blobbasefee + block.prevrandao + uint256(uint160(block.coinbase)) + block.chainid;
+    }
+    function transaction() external payable returns (address, address, uint256, bytes4, bytes memory, uint256, bytes32) {
+        return (msg.sender, tx.origin, msg.value, msg.sig, msg.data, gasleft(), blobhash(0));
+    }
+    function copyAround(Point memory p) internal returns (Point storage s) {
+        points.push(p);
+        s = points[points.length - 1];
+        Point memory m = Point({x: 1, y: 2});
+        Point memory n = Point(3, 4);
+        s.x = m.x + n.y;
+        delete points[0];
+        points.pop();
+    }
+    function bitwise(uint8 a) external pure returns (uint8) {
+        return ~a ^ (a << 1) | (a >> 1) & 0x0f;
+    }
+    function shifts(int256 a) external pure returns (int256) {
+        return (a >> 2) << 1;
+    }
+    function literals() external pure returns (uint256 r, bytes memory b, string memory s) {
+        r = 0xff_ff == 0 ? 1e3 : 2 ** 8;
+        r += 1 gwei + 2 ether + 3 wei + 4 seconds + 5 minutes + 6 hours + 7 days + 8 weeks;
+        b = hex"cafe_babe";
+        s = "multiple "
+            "adjacent "
+            "strings";
+        s = unicode"emoji 🎉";
+    }
+}
+
+// ── Inline assembly (Yul): functions, loops, switch, memory and transient ops ──
+contract Yul {
+    /// @solidity memory-safe-assembly
+    function ops(uint256 x) external returns (uint256 r) {
+        assembly {
+            function double(v) -> w { w := mul(v, 2) }
+            function pair(v) -> lo, hi { lo := and(v, 0xff) hi := shr(8, v) }
+            let a, b := pair(x)
+            let c := 0
+            for { let i := 0 } lt(i, 3) { i := add(i, 1) } {
+                if eq(i, 1) { continue }
+                if gt(i, 2) { break }
+                c := add(c, double(i))
+            }
+            switch c
+            case 0 { r := a }
+            case 1 { r := b }
+            default { r := add(a, b) }
+            tstore(0, r)
+            let t := tload(0)
+            let p := mload(0x40)
+            mcopy(p, add(p, 0x20), 0x20)
+            mstore(p, true)
+            r := add(r, t)
+            r := add(r, sload(0))
+            sstore(1, false)
+            {
+                let scoped := 1
+                r := add(r, scoped)
+            }
+        }
+    }
+    function slots() external view returns (uint256 slot, uint256 offset) {
+        assembly {
+            slot := _data.slot
+            offset := _data.offset
+        }
+    }
+    bytes32 private _data;
+}
+
+// ── Receive, fallback and payable variants ──
+contract Wallet {
+    event Received(address from, uint256 amount);
+    receive() external payable { emit Received(msg.sender, msg.value); }
+    fallback() external payable {}
+    function withdraw(address payable to, uint256 amount) external {
+        (bool ok, ) = to.call{value: amount}("");
+        require(ok, "send failed");
+    }
+    function pay(address payable to) external payable {
+        to.transfer(msg.value);
+        require(to.send(0), "send");
+    }
+}
+
+// ── Interface inheritance with nested types, errors and events ──
+interface IERC165 {
+    function supportsInterface(bytes4 interfaceId) external view returns (bool);
+}
+interface ISupplier is IERC165 {
+    enum Rating { Poor, Fair, Good }
+    struct Quote { uint256 price; Rating rating; }
+    error NoQuote(bytes32 sku);
+    event Quoted(bytes32 indexed sku, Quote quote);
+    function quote(bytes32 sku) external view returns (Quote memory);
 }

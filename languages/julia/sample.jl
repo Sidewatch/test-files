@@ -1,4 +1,5 @@
 #!/usr/bin/env julia
+# Julia 1.12 — syntax showcase (julia is not installed here; written against the 1.12 manual)
 # ── Comments ──
 # Line comment
 #=
@@ -544,3 +545,44 @@ Core.eval(Main, :(1 + 1))
 include("other.jl"); include_string(Main, "1 + 1")
 __precompile__(); using Pkg; Pkg.activate("."); Pkg.add("Example")
 atexit(() -> println("bye")); exit(0)
+
+# ── Julia 1.7 – 1.12 additions ──
+nt = (x = 1, y = 2)
+(; x, y) = nt                       # destructuring by name (1.7)
+shorthand = (; x, y)                # named-tuple shorthand
+kw_call(; x, y) = x + y
+kw_call(; x, y)                     # keyword shorthand at the call site
+typed_local::Int = 5                # typed assignment
+global typed_global::Float64 = 1.0  # typed global (1.8)
+const typed_const::Int = 3          # typed const (1.8)
+var"name with spaces" = 1           # non-standard identifiers
+var"end" = 2
+mem = Memory{Int}(undef, 3)         # Memory type (1.11)
+mem[1] = 7
+const scoped = Base.ScopedValues.ScopedValue(1)
+Base.ScopedValues.@with scoped => 2 begin
+    scoped[]
+end
+@atomic :monotonic atom_counter = 0           # atomic access, ordering as the first argument
+Base.@invokelatest sin(1.0)
+cond_val = @something nothing 3
+fix_two = Base.Fix2(+, 2)
+partitioned = Iterators.partition(1:10, 3)
+unicode_ids = (αβγ = 1, x₁ = 2, y′ = 3, 𝒵 = 4, ᵢ = 5)
+dotted_import = Base.Iterators.Take
+first_last = (vec[begin], vec[end], vec[begin+1:end-1])
+where_chain(::Type{Vector{T}}) where {T} where {S} = T
+macro_in_string = "result: $(@sprintf("%.2f", 3.14159))"
+ternary_chain = a < 0 ? "neg" : a == 0 ? "zero" : "pos"
+multi_assign = (first, second, rest...) = 1:5
+splat_args(args...; kwargs...) = (args, kwargs)
+splat_args(vec...; named...)
+unpacked = [vec...; vec...]
+hcat_vcat = [vec vec; vec vec]
+mixed_cat = [1 2; 3 4;;; 5 6; 7 8]            # 3-d literal with ;;;
+array_of_arrays = [[1, 2], [3, 4]]
+trailing_semicolon = [1, 2, 3];
+function (@main)(args)
+    println("Hello from @main with ", length(args), " arguments")
+    return 0
+end

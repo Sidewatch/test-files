@@ -1,9 +1,13 @@
 #!/usr/bin/env pwsh
+# PowerShell 7.5 — syntax showcase
 #requires -Version 7.2
 #requires -Modules @{ ModuleName = 'Microsoft.PowerShell.Utility'; ModuleVersion = '7.0.0' }
 
 using namespace System.Collections.Generic
 using namespace System.IO
+using namespace System.Management.Automation
+using module Microsoft.PowerShell.Utility
+using assembly System.Net.Http
 
 <#
 .SYNOPSIS
@@ -207,9 +211,6 @@ function Get-Stock([string]$Sku, [int[]]$Levels) {
 
 function script:Private-Helper { 'private' }
 function global:Public-Helper { 'public' }
-workflow Sync-Warehouse {
-    parallel { Write-Output 'a'; Write-Output 'b' }
-}
 Set-Alias -Name fs -Value Format-Size
 New-Item -Path function:\Inline -Value { 'inline' } | Out-Null
 
@@ -311,4 +312,154 @@ farewell = Goodbye
 '@ }
 
 Write-Host "$($script:Counter) file(s) removed" -ForegroundColor Green
+# ── PowerShell 7.x additions ──
+# Pipeline chain operators, background operator, null-conditional access
+Test-Path $HOME && Write-Output 'home exists'
+Test-Path /nope || Write-Output 'no such path'
+Get-Date &
+$maybe = $null
+$value = $maybe?.Length
+$item = $array?[0]
+$name = ${maybe}?.Name
+$maybe ??= 'filled'
+
+# Ternary and null-coalescing assignment
+$size = $array.Count -gt 2 ? 'many' : 'few'
+
+# ForEach-Object -Parallel with $using:
+1..3 | ForEach-Object -Parallel { "item $_ of $using:KeepDays" } -ThrottleLimit 3
+$job = Start-ThreadJob -ScriptBlock { Get-Date }
+Receive-Job $job -Wait -AutoRemoveJob
+
+# Function with every block, including clean (7.3), dynamicparam and nested attributes
+function Get-Everything {
+    [CmdletBinding(DefaultParameterSetName = 'Name', PositionalBinding = $false)]
+    [Alias('gev')]
+    param(
+        [Parameter(ParameterSetName = 'Name', Mandatory = $true, ValueFromPipelineByPropertyName = $true, HelpMessage = 'A name')]
+        [Alias('N', 'Title')]
+        [ValidateScript({ Test-Path $_ -IsValid })]
+        [ValidateLength(1, 64)]
+        [ValidateCount(1, 5)]
+        [ValidateNotNull()]
+        [AllowEmptyString()]
+        [AllowNull()]
+        [ArgumentCompleter({ param($cmd, $param, $word) 'alpha', 'beta' | Where-Object { $_ -like "$word*" } })]
+        [string[]]$Name,
+
+        [Parameter(ParameterSetName = 'Id')]
+        [ValidateRange('Positive')]
+        [int]$Id,
+
+        [switch]$Force,
+        [Parameter(DontShow)][object]$Hidden = $null
+    )
+    dynamicparam {
+        $dict = [RuntimeDefinedParameterDictionary]::new()
+        return $dict
+    }
+    begin { $count = 0 }
+    process { $count++; $PSItem }
+    end { "done $count" }
+    clean { Write-Verbose 'cleanup' }
+}
+
+# Classes: inheritance, interfaces, static members, constructors chaining, hidden
+class Animal : System.IComparable {
+    [string]$Name
+    static [int]$Count
+    hidden [string]$Secret = 'x'
+    Animal() : this('unnamed') { }
+    Animal([string]$name) { $this.Name = $name; [Animal]::Count++ }
+    [int] CompareTo([object]$other) { return $this.Name.CompareTo($other.Name) }
+    [void] Speak() { Write-Host "$($this.Name) makes a sound" }
+    static [Animal] Create([string]$n) { return [Animal]::new($n) }
+}
+class Dog : Animal {
+    Dog([string]$name) : base($name) { }
+    [void] Speak() { ([Animal]$this).Speak(); Write-Host 'Woof' }
+}
+[Dog]::new('Rex').Speak()
+
+# Enums with flags and explicit types
+enum Color : byte { Red = 1; Green = 2; Blue = 4 }
+[Flags()] enum Perm { None = 0; Read = 1; Write = 2; Execute = 4; All = 7 }
+[Perm]'Read, Write'
+[Color]::Red -as [int]
+
+# Strings: format, subexpressions, escapes, verbatim and ANSI
+$ansi = "$($PSStyle.Foreground.Red)red$($PSStyle.Reset) `e[1mbold`e[0m"
+$esc = "`a`b`f`r`v`'`"`#"
+$verbatim = '--% passes through'
+$sub = "Sum: $(1 + 2) and array: $($array[0]) and method: $($Skus.Where({ $_ })[0])"
+$hereCombo = @"
+$($PSVersionTable.PSVersion) -- @"nested"@ -- $env:HOME
+"@
+$wildcard = 'a*b?[c-d]'
+$regex = [regex]::new('(?<y>\d{4})-(?<m>\d{2})')
+$ms = [regex]::Matches('2025-10', '\d+')
+
+# Splatting, argument-list and call forms
+$params = @{ Name = 'x'; Force = $true }
+Get-Everything @params
+Get-Everything -Name 'a', 'b' -Force:$false
+Get-Everything -Name:'a'
+Get-Everything --% %PATH% | Out-Null
+& 'C:\Program Files\tool.exe' --flag "value with space"
+& { param($p) $p } 42
+& (Get-Command Get-Date) -Format 'yyyy'
+. { $leaked = 1 }
+$cmd = Get-Command -Name Get-Date
+$fn = ${function:Get-Everything}
+${env:PATH}
+${Env:HOME}
+@($null) | Measure-Object
+
+# Type accelerators, casting and generic types
+[int]'42'; [datetime]'2025-01-01'; [guid]::NewGuid(); [version]'7.5.0'; [bigint]::Parse('1'); [uri]'https://example.com'
+[System.Collections.Generic.Dictionary[string, System.Collections.Generic.List[int]]]::new()
+[ordered]@{ a = 1 }; [pscustomobject]@{ A = 1; B = 2 }; [psobject]; [xml]'<a/>'; [regex]; [scriptblock]; [hashtable]; [array]; [bool]; [byte[]]
+[Nullable[int]]$null
+[ValidateSet('a', 'b')][string]$constrained = 'a'
+[int[]]$typedArray = 1, 2, 3
+[ref]$ref
+
+# Comparison and bitwise operators (all spellings)
+1 -eq 1; 1 -ne 2; 1 -lt 2; 1 -le 2; 1 -gt 0; 1 -ge 0
+'a' -ceq 'a'; 'a' -cne 'b'; 'a' -clike 'a*'; 'a' -cnotlike 'b*'; 'a' -cmatch 'a'; 'a' -cnotmatch 'b'
+'a' -inotmatch 'b'; 'a' -ilike 'A'; 'a' -inotlike 'B'
+1 -iin 1, 2; 1 -cin 1, 2; 1 -cnotin 2; 1, 2 -ccontains 1; 1, 2 -cnotcontains 3; 1, 2 -icontains 1; 1, 2 -inotcontains 3
+'abc' -creplace 'B', 'x'; 'abc' -ireplace 'B', 'x'; 'a b' -csplit ' '; 'a b' -isplit ' '
+-split 'a b c'; -join ('a', 'b')
+-not $true; !$true; -bnot 1
+1 -xor 0; 1 -shl 2; 8 -shr 1; 5 -band 1; 5 -bor 2; 5 -bxor 1
+$obj -is [object]; $obj -isnot [string]; $obj -as [int]
+
+# Labels, flow, and statement forms
+:retry while ($true) { while ($true) { break retry } }
+foreach ($i in 1..3) { if ($i -eq 2) { continue }; $i }
+for (;;) { break }
+for ($i = 0, $j = 10; $i -lt $j; $i++, $j--) { }
+switch -Wildcard ('abc') { 'a*' { 'starts with a' } '*c' { 'ends with c' } }
+switch -Exact -CaseSensitive ('A') { 'A' { 'upper' } default { 'other' } }
+switch -File ./values.txt { 'x' { 'found' } }
+switch ($PSVersionTable.PSEdition) { 'Core' { 'core' } 'Desktop' { 'desktop' } }
+if (($x = 5) -gt 3) { 'assigned in condition' }
+try { throw 'text' } catch { $_.Exception.Message } finally { }
+try { 1 / 0 } catch [DivideByZeroException] { 'div' } catch [System.ArgumentException], [System.IO.IOException] { 'arg' }
+throw [System.NotImplementedException]::new()
+return
+
+# Misc commands and aliases
+ls; dir; gci; cat; echo hi; ps; kill 0; cls; % { $_ }; ? { $_ }; gm; select -First 1
+$PSDefaultParameterValues = @{ 'Get-ChildItem:Force' = $true }
+$PSStyle.OutputRendering = 'Ansi'
+[Environment]::SetEnvironmentVariable('X', '1', 'Process')
+Register-ArgumentCompleter -CommandName Get-Everything -ParameterName Name -ScriptBlock { 'a' }
+Register-EngineEvent -SourceIdentifier PowerShell.Exiting -Action { Write-Host 'bye' } | Out-Null
+$ExecutionContext.SessionState.PSVariable.Set('dyn', 1)
+Set-PSReadLineOption -PredictionSource HistoryAndPlugin
+Write-Progress -Activity 'Working' -Status '50%' -PercentComplete 50
+Write-Information 'info' -InformationAction Continue
+Write-Host "`e[32mgreen`e[0m"
 exit 0

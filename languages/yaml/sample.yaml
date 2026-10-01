@@ -1,3 +1,4 @@
+# YAML 1.2.2 — syntax showcase (YAML 1.1 booleans/sexagesimals below are plain strings in 1.2)
 %YAML 1.2
 %TAG !e! tag:example.com,2026:
 ---
@@ -348,6 +349,7 @@ structures:
   tags: [large]
 ...
 %TAG !e! tag:example.com,2026:
+%RESERVED-DIRECTIVE parameter-one parameter-two
 --- !e!report
 # Third document with a tag
 title: "Stock report"

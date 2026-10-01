@@ -1,6 +1,7 @@
 xquery version "3.1" encoding "UTF-8";
 
-(: ── Comments ───────────────────────────────────────────────
+(: XQuery 3.1 (W3C Recommendation; XQuery 4.0 is still a draft) — syntax showcase
+   ── Comments ───────────────────────────────────────────────
    XQuery 3.1: the warehouse stock report.
    (: comments nest in XQuery :)
    TODO: paginate. FIXME: locale-aware sort.
@@ -34,12 +35,10 @@ import module namespace util = "https://example.com/util" at "util.xqm", "util2.
 
 (: ── More prolog declarations ───────────────────────────── :)
 declare revalidation strict;
-declare default collation "http://example.com/collation";
-declare context value as xs:string := "context";
 declare variable $ex:typed as map(xs:string, item()*) := map {};
 declare variable $ex:fn as function(xs:integer) as xs:integer := function($i) { $i };
-declare variable $ex:q := Q{https://example.com/orders}order;
-declare variable $ex:seq as (xs:integer | xs:string)* := (1, "a");
+declare variable $ex:q := xs:QName("Q{https://example.com/orders}order");
+declare variable $ex:seq as item()* := (1, "a");
 declare function ex:typed-params($a as xs:string?, $b as xs:integer*, $c as element(ex:order)+, $d as attribute(status)?, $e as document-node(element(ex:orders))?, $f as schema-element(s:order)?, $g as schema-attribute(s:code)?, $h as text()?, $i as comment()?, $j as processing-instruction(php)?, $k as namespace-node()?, $l as node()*, $m as function(*)?, $n as map(*)?, $o as array(*)?, $p as item()+, $q as xs:anyAtomicType*, $r as empty-sequence()) as item()* {
   ()
 };
@@ -52,7 +51,7 @@ declare option db:chop "false";
 declare variable $ex:reorder-point as xs:integer := 25;
 declare variable $ex:ratio := 0.75;
 declare variable $ex:currency external := "GBP";
-declare variable $ex:big := 1_000_000;
+declare variable $ex:big := 1000000;
 declare variable $ex:sci := 1.5e-3;
 declare variable $ex:hex := xs:hexBinary("DEADBEEF");
 declare variable $ex:date := xs:date("2026-03-01");
@@ -97,7 +96,7 @@ let $map := map { "sku": "WGT-100", "qty": 12, "tags": ["a", "b"], "nested": map
 let $arr := [1, 2, [3, 4], "five"]
 let $arr2 := array { 1 to 5 }
 let $fn := function($x as xs:integer) as xs:integer { $x * 2 }
-let $inline := fn($x) { $x + 1 }
+let $inline := function($x) { $x + 1 }
 let $named := ex:money#1
 let $partial := fn:concat("a", ?)
 let $lookup := $map?sku
@@ -212,19 +211,18 @@ return
 (
   (# ex:pragma some content #) { 1 + 1 },
   (# db:hint #) (# ex:second #) { $orders },
-  Q{https://example.com/orders}order,
-  Q{}local-name-in-no-namespace,
+  $orders/Q{https://example.com/orders}order,
+  $orders/Q{}local-name-in-no-namespace,
   fn:true() and fn:false(),
   math:pi() * math:sqrt(2),
   map:get($map, "sku"), map:keys($map), map:put($map, "k", 1), map:merge(($map, $map)), map:for-each($map, function($k, $v) { $k }),
   array:size($arr), array:get($arr, 1), array:append($arr, 1), array:flatten($arr), array:join(($arr, $arr)),
-  for member $m in [1, 2, 3] return $m,
+  for $m in [1, 2, 3]?* return $m,
   for $k at $i in map:keys($map) return $i,
   let $x as xs:integer := 5, $y as xs:string := "s" return concat($x, $y),
   $arr?*, $arr?(1 to 2), $map?("a", "b"),
   "text" contains text "word" using stemming using language "en" using wildcards ftand "other" ftor "third" ftnot "fourth",
   $orders[. contains text { "paid", "open" } any word],
-  1 otherwise 2,
   (1, 2, 3) => count(),
   string-join(("a", "b"), ", "),
   "a" ! upper-case(.),
@@ -237,3 +235,7 @@ return
   "&lt;&gt;&amp;&quot;&apos;&#65;&#x41;", 'it''s', "say ""hi""",
   ()
 )
+
+(: Not shown: `module namespace` library declarations (a file is either a main module, like this
+   one, or a library module) and XQuery 4.0 draft syntax (`for member`, `otherwise`, `fn(...)`,
+   choice item types, numeric literal underscores, `declare context value`). :)

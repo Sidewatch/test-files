@@ -1,4 +1,4 @@
-// Odin showcase: structs, unions, enums, procedures, generics, defer and context.
+// Odin dev-2025 (file tags, bit_field, #subtype, #by_ptr, or_else/or_return) — syntax showcase: structs, unions, enums, procedures, generics, defer and context.
 /* A block comment
    /* with a nested block */
    still inside */
@@ -7,6 +7,10 @@
 // FIXME: sorting allocates
 
 #+build !js
+#+feature dynamic-literals
+#+vet unused, shadowing, using-stmt
+#+lazy
+#+no-instrumentation
 #+private file
 package sample
 
@@ -374,3 +378,105 @@ more :: proc() {
     _ = #caller_expression
     _ = #directive
 }
+
+// ── Odin: directives, subtyping, SOA, matrices, enumerated arrays ──
+@(deprecated = "use new_api instead")
+old_api :: proc() {}
+@(warning = "this proc is experimental")
+experimental_api :: proc() {}
+@(require_results, no_sanitize_address)
+checked :: proc() -> int { return 0 }
+@(objc_class = "NSObject")
+Obj_Class :: struct {}
+@(entry_point_only)
+entry_only :: proc() {}
+
+Animal :: struct { name: string }
+Dog :: struct {
+    using animal: Animal `fmt:"-"`,
+    #subtype base: Animal,
+    tricks: [dynamic]string,
+}
+Tagged :: struct #min_field_align(4) { a: u8 }
+Capped :: struct #max_field_align(2) { a: u32 }
+Soa_Pts :: #soa[dynamic]Vec2
+Rm :: #row_major matrix[2, 3]f32
+Cm :: #column_major matrix[3, 3]f64
+Simple_Union :: union #shared_nil { ^int, ^f32 }
+No_Nil_Union :: union #no_nil { int, bool }
+Sparse_Names := #partial [Zone]string{.Cold = "cold"}
+Enum_Backing :: enum u8 { A, B, C }
+Dyn_Literal := map[string]int{"a" = 1, "b" = 2}
+Bit_Field_Wide :: bit_field u32 {
+    flags:  u8   | 8,
+    count:  u16  | 12,
+    signed: i8   | 4,
+    on:     bool | 1,
+}
+
+by_ptr_demo :: proc(#by_ptr item: Item) -> int { return item.qty }
+c_varargs :: proc "c" (fmt: cstring, #c_vararg args: ..any) -> i32 ---
+no_alias :: proc(#no_alias a, b: ^int) {}
+any_int :: proc(#any_int n: int) {}
+caller :: proc(loc := #caller_location) -> string { return loc.procedure }
+tuple_ret :: proc() -> (x, y: int, ok: bool) { return 1, 2, true }
+poly_array :: proc(xs: [$N]$T) -> T where N > 0 { return xs[0] }
+poly_slice :: proc(xs: []$E, f: proc(E) -> bool) -> int { c := 0; for x in xs { if f(x) { c += 1 } }; return c }
+poly_typeid :: proc($T: typeid, n: int) -> []T { return make([]T, n) }
+poly_value :: proc($N: int) -> [N]int { return {} }
+specialize :: proc(x: $T/[]$E) -> E { return x[0] }
+generic_call :: proc() { _ = poly_typeid(int, 3); _ = poly_value(4); _ = specialize([]int{1}) }
+
+control_extras :: proc() {
+    #unroll for i in 0..<4 { _ = i }
+    #unroll(2) for i in 0..<4 { _ = i }
+    x := 1
+    y := x if x > 0 else -x
+    z := x > 0 ? x : -x
+    w := x or_else 5
+    _, _, _, _ = y, z, w, x
+    if v, ok := tuple_ret_ok(); !ok { return }
+    for v in ([?]int{1, 2, 3}) do _ = v
+    for v, i in ([?]int{1, 2}) do _, _ = v, i
+    if x > 0 do x += 1
+    else do x -= 1
+    #partial switch Zone.Cold { case .Cold: }
+    dw := proc() { for {} }
+    _ = dw
+    defer if x > 0 do x = 0
+    bits := transmute(bit_set[Zone; u8])u8(1)
+    _ = bits
+    ptr := new(int)
+    defer free(ptr)
+    ptr^ = 5
+    raw := rawptr(ptr)
+    _ = raw
+    sl := ([^]int)(raw)[:4]
+    _ = sl
+    mp: [^]int = nil
+    _ = mp
+    cs := cstring("c")
+    gs := string(cs)
+    _ = gs
+    r1 := 'x'
+    r2 := rune(120)
+    _, _ = r1, r2
+    c1 := cast(u8)r1
+    _ = c1
+    lim := max(int)
+    _ = lim
+    a1 := [3]int{1, 2, 3} + [3]int{4, 5, 6}
+    _ = a1
+    m1 := matrix[2, 2]int{1, 2, 3, 4}
+    m2 := transpose(m1)
+    _ = m1 * m2
+    v2 := Vec2{1, 2} + Vec2{3, 4}
+    _ = v2
+    swizzle := Vec3{1, 2, 3}.zyx
+    _ = swizzle
+    cmp := complex128(1 + 2i)
+    _ = cmp
+}
+tuple_ret_ok :: proc() -> (int, bool) { return 0, true }
+
+#assert(size_of(int) == size_of(uintptr))

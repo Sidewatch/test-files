@@ -1,4 +1,6 @@
 # ── Comments ──
+# SPARQL 1.1 — syntax showcase (latest W3C Recommendation; 1.2 / RDF-star `<< >>` is still a draft and left out).
+# Several queries and updates share this file to show every form; a real request holds one query or one update sequence.
 # SPARQL 1.1: warehouses, stock, and the suppliers who ship it.
 # TODO: federate with the supplier endpoint
 # FIXME: ranking ties are unstable
@@ -126,6 +128,103 @@ ASK { ?item ex:sku "ABC-1" ; ex:quantity ?q . FILTER (?q > 0) }
 DESCRIBE <item/ABC-1> ?warehouse
 WHERE { ?warehouse ex:holds <item/ABC-1> }
 
+# ── SELECT forms: *, REDUCED, expressions in GROUP BY, built-in function tour ──
+SELECT * WHERE { ?s ?p ?o } LIMIT 5
+
+SELECT REDUCED ?s WHERE { ?s a ?type } OFFSET 2 LIMIT 3
+
+SELECT ?kind (COUNT(*) AS ?n) (COUNT(?x) AS ?m)
+WHERE { ?x a ?type . BIND (STRAFTER(STR(?type), "#") AS ?kind) }
+GROUP BY ?kind (STR(?type) AS ?typeName) UCASE(?kind)
+ORDER BY (?n * 2) STR(?kind)
+
+# Syntax tour of the built-in calls; the mix of aggregates and plain columns is not meant to execute.
+SELECT ?s
+       (STRBEFORE(?label, "-") AS ?head) (STRAFTER(?label, "-") AS ?tail)
+       (REPLACE(?label, "[0-9]+", "#", "i") AS ?masked) (UCASE(?label) AS ?up)
+       (STRLANG("hello", "en") AS ?tagged) (STRDT("5", xsd:integer) AS ?typed)
+       (URI("https://example.com/x") AS ?u) (IRI(?label) AS ?i) (UUID() AS ?uuid)
+       (isURI(?s) AS ?a1) (ISIRI(?s) AS ?a2) (ISBLANK(?s) AS ?a3) (isLITERAL(?label) AS ?a4)
+       (MONTH(?when) AS ?mo) (DAY(?when) AS ?d) (HOURS(?when) AS ?h) (MINUTES(?when) AS ?mi)
+       (SECONDS(?when) AS ?sec) (TIMEZONE(?when) AS ?tzd) (TZ(?when) AS ?tz)
+       (SHA1(?label) AS ?h1) (SHA256(?label) AS ?h256) (SHA384(?label) AS ?h384) (SHA512(?label) AS ?h512)
+       (ABS(?n) AS ?abs) (RAND() AS ?rnd) (NOW() AS ?now) (LANG(?label) AS ?lang)
+       (LANGMATCHES("en-GB", "en") AS ?lm) (DATATYPE(?n) AS ?dt) (BOUND(?n) AS ?bd)
+       (IF(?n > 0, "pos", IF(?n < 0, "neg", "zero")) AS ?sign)
+       (COALESCE(?a, ?b, "none") AS ?first) (ex:custom(?n, 2) AS ?ext)
+       (<https://example.com/fn/double>(?n) AS ?dbl)
+       (REGEX(?label, "^a") AS ?re) (sameTerm(?s, ?s) AS ?same) (STRLEN(?label) AS ?len)
+       (SUBSTR(?label, 2) AS ?tail2) (LCASE(?label) AS ?low) (CONTAINS(?label, "a") AS ?has)
+       (CONCAT(?label, "!") AS ?bang) (ENCODE_FOR_URI(?label) AS ?enc) (BNODE("b1") AS ?bn)
+       (-?n AS ?negated) (+?n AS ?plus) (?n - 1 AS ?minus) (?n / 2 AS ?half) (!BOUND(?x) AS ?unset)
+       (?n = 1 || ?n != 2 && ?n >= 3 || ?n <= 4 AS ?cmp)
+       (?n IN (1, 2) AS ?inList) (?n NOT IN (3) AS ?notIn)
+       (EXISTS { ?s a ?t } AS ?ex) (NOT EXISTS { ?s a ?t } AS ?nex)
+       (MIN(?n) AS ?lo) (SUM(DISTINCT ?n) AS ?sumd) (AVG(?n) AS ?avg)
+       (GROUP_CONCAT(?label) AS ?all) (SAMPLE(?label) AS ?one)
+WHERE {
+  ?s ex:label ?label ; ex:n ?n ; ex:when ?when .
+  OPTIONAL { ?s ex:a ?a } OPTIONAL { ?s ex:b ?b }
+  FILTER (ex:isValid(?s) && <https://example.com/fn/ok>(?s))
+  FILTER (?when >= "2026-01-01T00:00:00Z"^^xsd:dateTime)
+  FILTER (?n > 1000 || true)
+}
+
+# ── Graph patterns: nesting, variable services, blank-node labels, collections ──
+SELECT ?s ?o
+WHERE {
+  { ?s ex:p ?o }
+  UNION
+  { { ?s ex:q ?o } MINUS { ?s ex:hidden true } }
+  SERVICE ?endpoint { ?s ex:remote ?o }
+  _:b1 ex:linksTo ?s .
+  ?s ex:tags ( "a" "b" "c" ) .
+  ?s ex:empty () .
+  ?s ex:sub [ a ex:Thing ; ex:id 1 ] .
+  ?s a ex:A , ex:B ;
+     ex:p1 ?o ;
+     ex:p2 ?o , ?o2 .
+  ?s ex:path/ex:longer/ex:chain ?end .
+  ?s (ex:a/ex:b)+ | ^ex:c ?other .
+  ?s (^ex:parent)* ?ancestor .
+  ?s !a ?nonType .
+  ?s !(^ex:p|ex:q) ?x .
+  <relative/iri> ex:p <> .
+  GRAPH :g1 { ?s ex:p ?o }
+  FILTER (!isBlank(?s))
+}
+ORDER BY ASC(?s) DESC(?o)
+LIMIT 10 OFFSET 5
+
+# ── Prefixes may be redeclared between queries; the empty prefix and prefixed names with dots/dashes ──
+PREFIX dc: <http://purl.org/dc/elements/1.1/>
+PREFIX ex-2: <https://example.com/two#>
+SELECT ?title WHERE { ex-2:book.1 dc:title ?title }
+
+# ── DESCRIBE forms, CONSTRUCT with dataset clauses ──
+DESCRIBE *
+WHERE { ?s ex:recalled true }
+
+DESCRIBE ?s FROM <https://example.com/graphs/stock> FROM NAMED <https://example.com/graphs/suppliers>
+WHERE { ?s ex:sku "ABC-1" }
+
+CONSTRUCT { ?s ex:copy ?o }
+FROM <https://example.com/graphs/stock>
+WHERE { ?s ex:p ?o }
+ORDER BY ?s
+LIMIT 3
+
+ASK WHERE { GRAPH ?g { ?s ?p ?o } }
+
+# ── Subqueries and aggregates with HAVING over several conditions ──
+SELECT ?w (SUM(?q) AS ?total)
+WHERE {
+  { SELECT ?w ?q WHERE { ?i ex:inWarehouse ?w ; ex:quantity ?q } ORDER BY DESC(?q) LIMIT 100 }
+}
+GROUP BY ?w
+HAVING (SUM(?q) > 10) (COUNT(*) < 50)
+ORDER BY DESC(?total)
+
 # ── Update: data ──
 INSERT DATA {
   GRAPH <https://example.com/graphs/stock> {
@@ -163,4 +262,25 @@ DROP GRAPH <https://example.com/graphs/old> ;
 DROP SILENT ALL ;
 COPY DEFAULT TO <https://example.com/graphs/backup> ;
 MOVE <https://example.com/graphs/a> TO <https://example.com/graphs/b> ;
-ADD SILENT <https://example.com/graphs/b> TO DEFAULT
+ADD SILENT <https://example.com/graphs/b> TO DEFAULT ;
+ADD DEFAULT TO <https://example.com/graphs/archive> ;
+COPY SILENT <https://example.com/graphs/a> TO DEFAULT ;
+MOVE SILENT DEFAULT TO <https://example.com/graphs/c> ;
+LOAD <https://example.com/data/more.ttl> ;
+DROP DEFAULT ;
+DROP NAMED ;
+CLEAR SILENT GRAPH <https://example.com/graphs/old> ;
+INSERT DATA { :abc3 a ex:Product ; ex:sku "ABC-3" . GRAPH :archive { :abc4 ex:sku "ABC-4" } } ;
+DELETE DATA { GRAPH :archive { :abc4 ex:sku "ABC-4" } } ;
+WITH :stock
+DELETE { ?item ex:quantity ?old }
+WHERE { ?item ex:quantity ?old . FILTER (?old < 0) } ;
+WITH :stock
+INSERT { ?item ex:reviewed true }
+USING NAMED :suppliers
+WHERE { GRAPH ?g { ?item ex:suppliedBy ?s } } ;
+DELETE { GRAPH :stock { ?item ex:status ?s } }
+INSERT { GRAPH :stock { ?item ex:status "archived" } }
+WHERE { GRAPH :stock { ?item ex:status ?s . FILTER (?s = "old") } } ;
+DELETE WHERE { GRAPH :stock { ?item ex:tmp ?v } } ;
+INSERT { ?item ex:seen true } WHERE { ?item a ex:Product }

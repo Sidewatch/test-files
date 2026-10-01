@@ -1,3 +1,4 @@
+// Zig 0.15 — syntax showcase
 //! Module-level doc comment (//!): the warehouse stock library.
 //! TODO: persist to disk. FIXME: overflow on bulk restock.
 
@@ -109,30 +110,26 @@ const Number = extern union {
 const ParseError = error{ MissingField, BadNumber, Overflow };
 const AllErrors = ParseError || error{OutOfMemory};
 const Handle = *anyopaque;
-const Callback = *const fn (u32) callconv(.C) u32;
+const Callback = *const fn (u32) callconv(.c) u32;
 const Matrix = [3][3]f32;
 
 // ── Generics and comptime ──────────────────────────────────
 fn Stack(comptime T: type) type {
     return struct {
-        items: ArrayList(T),
+        items: ArrayList(T) = .empty,
 
         const Self = @This();
 
-        pub fn init(allocator: Allocator) Self {
-            return .{ .items = ArrayList(T).init(allocator) };
+        pub fn deinit(self: *Self, allocator: Allocator) void {
+            self.items.deinit(allocator);
         }
 
-        pub fn deinit(self: *Self) void {
-            self.items.deinit();
-        }
-
-        pub fn push(self: *Self, value: T) !void {
-            try self.items.append(value);
+        pub fn push(self: *Self, allocator: Allocator, value: T) !void {
+            try self.items.append(allocator, value);
         }
 
         pub fn pop(self: *Self) ?T {
-            return self.items.popOrNull();
+            return self.items.pop();
         }
     };
 }
@@ -166,7 +163,7 @@ fn parse(line: []const u8) ParseError!Item {
     return .{ .sku = sku, .qty = qty, .price = price };
 }
 
-fn add(a: i32, b: i32) callconv(.Inline) i32 {
+inline fn add(a: i32, b: i32) i32 {
     return a + b;
 }
 
@@ -181,7 +178,7 @@ inline fn square(x: u32) u32 {
 }
 
 noinline fn unlikely() void {
-    @setCold(true);
+    @branchHint(.cold);
 }
 
 fn variadic(args: anytype) void {
@@ -314,7 +311,7 @@ fn handle() void {
     }
 }
 
-// ── Async-free concurrency, builtins, assembly ─────────────
+// ── Builtins and assembly ─────────────
 fn builtins() void {
     const a: u8 = @intCast(300 & 0xFF);
     const b = @as(f32, @floatFromInt(a));
@@ -346,7 +343,6 @@ threadlocal var counter: u32 = 0;
 var global_state: u32 linksection(".data") = 0;
 const aligned_global: u32 align(16) = 0;
 pub const Config = struct { verbose: bool = false };
-usingnamespace @import("helpers.zig");
 
 // ── Tests ──────────────────────────────────────────────────
 test "item value" {
@@ -361,7 +357,9 @@ test {
 }
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
     const lines = [_][]const u8{ "A-100,12,4.5", "B-200,40,1.25", "bad" };
     var total: f64 = 0;
     for (lines) |line| {
@@ -373,15 +371,14 @@ pub fn main() !void {
         if (item.qty <= reorder_point) try stdout.print("reorder {s}\n", .{item.sku});
     }
     try stdout.print("value: {d:.2}\n", .{total});
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    try stdout.flush();
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer _ = gpa.deinit();
-    var stack = Stack(u32).init(gpa.allocator());
-    defer stack.deinit();
-    try stack.push(1);
-    suspend {}
-    resume @frame();
-    await async flow(1);
-    nosuspend _ = stack.pop();
+    const allocator = gpa.allocator();
+    var stack: Stack(u32) = .{};
+    defer stack.deinit(allocator);
+    try stack.push(allocator, 1);
+    _ = stack.pop();
 }
 
 // ── More type forms ────────────────────────────────────────
@@ -411,8 +408,6 @@ const Tagged = union(Status) {
 const AutoEnum = enum { a, b, c, _ };
 const ExplicitTag = enum(u2) { x = 1, y = 2, z = 3 };
 const Vec4 = @Vector(4, f32);
-const Frame = anyframe;
-const FrameOf = anyframe->u32;
 const Many = [*]const u8;
 const Sentinel = [:0]const u8;
 const ManySentinel = [*:0]u8;
@@ -422,7 +417,7 @@ const AllowZero = *allowzero u32;
 const AddrSpacePtr = *addrspace(.generic) u32;
 const ErrorSet = error{ A, B } || error{C};
 const MaybeErr = ?anyerror!u32;
-const FnType = fn (a: u32, comptime T: type, noalias p: *u8, ...) callconv(.C) void;
+const FnType = fn (a: u32, comptime T: type, noalias p: *u8, ...) callconv(.c) void;
 const BigInt = u1;
 const OddInt: type = i7;
 const ArbitraryFloat = f80;
@@ -524,11 +519,7 @@ fn literals() void {
     _ = .{ enum_lit, anon_struct, tuple, nested, array_2d, repeat, str_concat, vec, splat, labeled };
 }
 
-pub usingnamespace struct {
-    pub const exported_decl = 1;
-};
-
-pub export fn c_entry() callconv(.C) void {}
+pub export fn c_entry() callconv(.c) void {}
 
 pub extern "kernel32" fn GetTickCount() callconv(.winapi) u32;
 
@@ -538,4 +529,58 @@ test "switch forms" {
 
 test "error handling" {
     try testing.expectError(error.Unexpected, errorsAndOptionals(1, 2));
+}
+
+// ── Additions: 0.15 forms ──────────────────────────────────
+const Decl = struct {
+    x: u32,
+    pub const zero: Decl = .{ .x = 0 };
+    pub fn init(x: u32) Decl {
+        return .{ .x = x };
+    }
+};
+
+fn declLiterals() void {
+    const a: Decl = .zero;
+    const b: Decl = .init(5);
+    const c: ?Decl = .zero;
+    var list: std.ArrayList(u8) = .empty;
+    _ = .{ a, b, c, &list };
+}
+
+fn forElse(items: []const u32) u32 {
+    const found = for (items) |item| {
+        if (item == 7) break item;
+    } else 0;
+    const w = while (nextOpt()) |v| {
+        if (v > 3) break v;
+    } else 0;
+    return found + w;
+}
+
+fn misc(comptime T: type, value: anytype) void {
+    const info = @typeInfo(T);
+    switch (info) {
+        .int => |i| _ = i.bits,
+        .@"struct" => |st| inline for (st.fields) |f| _ = f.name,
+        .pointer, .optional => {},
+        else => @compileError("unsupported " ++ @typeName(T)),
+    }
+    const has = @hasDecl(Decl, "zero") and @hasField(Decl, "x");
+    const f = @field(Decl.zero, "x");
+    const FieldT = @FieldType(Decl, "x");
+    const r = @call(.auto, declLiterals, .{});
+    const v: @Vector(4, u32) = @splat(1);
+    const sum = @reduce(.Add, v);
+    const u = @unionInit(Tagged, "paid", 5);
+    var dst: [4]u8 = undefined;
+    @memcpy(&dst, "abcd");
+    @memset(&dst, 0);
+    _ = .{ value, has, f, FieldT, r, sum, u };
+    if (dst.len == 0) @panic("empty");
+    if (dst.len == 1) @trap();
+}
+
+comptime {
+    @export(&c_entry, .{ .name = "c_entry_alias", .linkage = .strong });
 }

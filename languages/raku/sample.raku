@@ -1,4 +1,5 @@
 #!/usr/bin/env raku
+# Raku 6.d (Rakudo 2025.x) — syntax showcase
 use v6.d;
 # ── Comments ──
 # Raku showcase: warehouse inventory with grammars, roles and junctions.
@@ -329,3 +330,296 @@ say @orders.sort(*.total).reverse».number;
 say "done" if @orders ~~ Positional;
 say Order.^methods.map(*.name).sort;
 say $revenue.WHAT, $revenue.^name, $revenue.?foo, $revenue.Str;
+
+# ── Custom operators, term and circumfix declarations ──
+sub infix:<⊕>($a, $b) is tighter(&infix:<+>) { $a + $b }
+sub infix:<**!>(Int $a, Int $b) is assoc<right> { $a ** $b }
+sub prefix:<√>($x) is equiv(&prefix:<->) { sqrt $x }
+sub postfix:<!>(Int $n) is looser(&postfix:<++>) { [*] 1..$n }
+sub circumfix:<⟦ ⟧>(*@items) { @items.join(",") }
+sub postcircumfix:<⟨ ⟩>(%h, $key) { %h{$key} }
+sub term:<ø> { Nil }
+sub trait_mod:<is>(Routine $r, :$logged!) { $r.wrap: -> |c { say "calling"; callsame } }
+multi sub infix:<~~~>(Str $a, Str $b) { $a.lc eq $b.lc }
+say 1 ⊕ 2, √16, 5!, ⟦1, 2⟧, ø;
+sub documented-fn is logged { 42 }
+
+# ── Capture, Pair, Slip, and adverb syntax ──
+my $capture = \(1, 2, :named<v>);
+sub takes-capture(|c) { c }
+takes-capture(|$capture);
+my $pair1 = :key<value>;
+my $pair2 = :key(42);
+my $pair3 = :!flag;
+my $pair4 = :flag;
+my $pair5 = :5limit;
+my $pair6 = :$scalar;
+my $pair7 = :@array;
+my $pair8 = :%hash;
+my $pair9 = :&code;
+my %built = :a(1), :b<two>, c => 3, 'd' => 4, "e" => 5, f => <x y>;
+my @slipped = 1, |(2, 3), slip(4, 5);
+my %merged = |%hash, extra => 1;
+my $anon-hash = %( a => 1 );
+my $anon-array = @(1, 2, 3);
+my $item = $(1, 2);
+my $interp-hash = "%hash<a>";
+my $interp-call = "@array[0]" ~ "&code(1, 2)" ~ "{ $scalar }" ~ "$scalar.abs()" ~ "@array.sum()" ~ "$scalar[0]";
+
+# ── Whatever, HyperWhatever, ranges and sequences ──
+my @w = (1, 2, 3).map(* + 1);
+my @w2 = (1, 2, 3).map(*.Str);
+my @w3 = (1, 2, 3).grep(* > 1);
+my $hw = **;
+my @hw = (1, 2, 3)[**];
+my @multi-dim = [[1, 2], [3, 4]];
+say @multi-dim[1;0];
+say @multi-dim[*;1];
+my @seq1 = 1, 2, 4 ... 64;
+my @seq2 = 1, 3 ... *;
+my @seq3 = 10, 8 ... 0;
+my @seq4 = 'a' ... 'e';
+my @seq5 = 1 ...^ 5;
+my @seq6 = 1, 1, * + * ... *;
+my @seq7 = 1, 2, 3 … 10;
+my @ranges = 1..5, 1..^5, 1^..5, 1^..^5, ^5, 'a'..'e', 1..*, *..5;
+my @rev = (1..5).reverse;
+my @lazy-infinite = (1..Inf).lazy.map(* * 2);
+
+# ── Meta-operators ──
+my @meta = (
+    [+] 1..5, [\+] 1..5, [[+]] [1, 2], [**] 1..3, [~] 'a'..'c', [,] 1..3, [Z] (1, 2), (3, 4),
+    (1, 2) Z (3, 4), (1, 2) Z+ (3, 4), (1, 2) Z=> (3, 4), (1, 2) X (3, 4), (1, 2) X* (3, 4), (1, 2) Xcmp (3, 4),
+    1 R- 2, 1 R/ 2, 'a' R~ 'b', (1, 2) RZ (3, 4),
+    (1, 2) »+« (3, 4), (1, 2) «+» (3, 4), (1, 2) »+» 1, 1 «+« (2, 3), -« (1, 2), (1, 2)».succ, (1, 2)>>.succ,
+    @array».Str, @array>>.Str, @array.map(*.Str), (1, 2) <<+>> (3, 4),
+    !(1 == 2), 1 !== 2, 1 !eq 2, 1 !after 2, 1 ![==] 1,
+    $scalar [+]= 1, $scalar [max]= 5,
+    1 xx 3, 'a' x 3, ('a', 'b') xx 2,
+    1 <=> 2, 1 before 2, 1 after 2, 'a' coll 'b',
+    2 ** 3, 2 ⚛+= 1,
+);
+
+# ── Regex features ──
+my regex tokens {
+    :ratchet
+    :sigspace
+    [ <alpha> | <digit> | <[_ -]> | <:Lu> | <:L + :N> | <+alpha + [_]> | <-[\s]> | <?[a..f]> ]+
+    <?before \s> <!before x> <?after \d> <!after y> <|w> <.ws> <.alpha> <ident> <sym> <wb>
+    $<capture>=(\d+) $<named>=<alpha> <name=.ident> @<list>=[\d+] %<hash>=[\w+]
+    [ 'literal' | "other" | \x[41] | \c[BULLET] | \t | \n | \h | \v | \s | \S | \w | \W | \d | \D | \N | \H | \V ]
+    ** 2..5 ** 3 ** {2} ** 1..* \d+ % ',' \d+ %% ',' \d ** 3 % '-'
+    [ a || b ] [ a | b ] [ a && b ] [ a & b ]
+    { say "inline code" } <{ $scalar }> <?{ $scalar > 1 }> <!{ $scalar < 0 }> <$scalar> <@array> <&regex-sub>
+    ^ ^^ $ $$ << >> « »
+    :my $x = 5; { $x++ }
+    <~~> <$<capture>> $0 $1 $<capture> \1
+    :i :m :s :g :x :ov :ex :c :p :nth(2) :1st :2nd :3rd :4th :rw
+}
+my $adverbed = "AbC" ~~ m:i/abc/;
+my $multi-m = "a b" ~~ ms/a b/;
+my $mm = "a b" ~~ mm/a b/;
+my $ss = "a-b" ~~ s:g/'-'/_/;
+my $sss = "a-b".subst(/'-'/, '_', :g);
+my $S = S:g/'-'/_/ given "a-b";
+my $sub-block = "abc".subst(/(.)/, { $0.uc }, :g);
+my $transliteration = "abc".trans("a" => "x", "b" => "y");
+my $tr-op = ("abc" ~~ tr/a..c/A..C/);
+my @all = "a1b2".comb(/\d/);
+my @parts = "a,b".split(',');
+my $first-match = "foo bar" ~~ /<alpha>+/;
+say $first-match<alpha>;
+say $/.from, $/.to, $/.orig, $/.prematch, $/.postmatch;
+say "abc" ~~ /^ <[a..c]> ** 3 $/;
+say "x" ~~ /<|w>/;
+
+# ── Classes: traits, attributes, MOP, and more ──
+class Point is repr('CStruct') is export {
+    has num64 $.x is rw;
+    has num64 $.y is rw;
+}
+
+class Counter {
+    has Int $.count is rw = 0;
+    has Int $!hidden;
+    has $.lazy-attr is built(:bind) is lazy;
+    has Str $.name is required("must be given");
+    has @.items handles <push pop elems>;
+    has %.map handles <AT-KEY EXISTS-KEY>;
+    has $.proxy is rw handles 'print';
+    my $.shared = 0;
+    my Int $private-class-var = 0;
+    our $.pkg = 1;
+
+    method new(|) { callsame }
+    submethod TWEAK { $!hidden = 1 }
+    submethod DESTROY { }
+    method increment(--> Counter:D) { $!count++; self }
+    method CALL-ME(|c) { self.increment }
+    method !private-method { 1 }
+    method call-private { self!private-method }
+    method with-dot { $.count + $!count + self.count }
+    method ::?CLASS.static-like { ::?CLASS.new }
+    method Bool { $!count > 0 }
+    method Numeric { $!count }
+    method Int { $!count }
+    method list { [$!count] }
+    method iterator { (1, 2).iterator }
+    method sink { }
+    method ACCEPTS($other) { True }
+    method postcircumfix:<[ ]>($i) { $i }
+    method AT-POS($i) { $i }
+    method ASSIGN-POS($i, $v) { }
+    trusts Other;
+    also is Cool;
+    also does Positional;
+}
+
+augment class Int { method double { self * 2 } }
+class Other { }
+my $anon-class = class { method hi { "hi" } };
+my $anon-role = role { method hello { "hello" } };
+my $mixed = 5 but Counter;
+my $does = "str" does Describable;
+say Counter.^name, Counter.^attributes, Counter.^methods(:local), Counter.^mro, Counter.^roles, Counter.^parents;
+say Counter.HOW.WHAT;
+Counter.^add_method("dyn", my method dyn { 1 });
+Counter.^compose;
+my $meta = Metamodel::ClassHOW.new_type(:name<Dyn>);
+
+# ── Native, NativeCall, and low-level types ──
+use NativeCall;
+sub getpid() returns int32 is native { * }
+sub strlen(Str --> size_t) is native(Str) { * }
+sub with-lib(int32 $a, CArray[uint8] $buf --> int32) is native('c') is symbol('strlen') { * }
+my int $native-int = 5;
+my num $native-num = 1e0;
+my str $native-str = "s";
+my uint8 $byte = 255;
+my int64 $big = 1;
+my CArray[int32] $carray .= new(1, 2, 3);
+my Pointer $ptr;
+my @native-array is Array[int32] = 1, 2;
+my buf8 $buf = buf8.new(1, 2, 3);
+my blob8 $blob = Blob.new(4, 5);
+use nqp;
+nqp::say("nqp op");
+
+# ── Typed, constrained, and coercion parameters ──
+sub typed(Int:D $a, Str:U $b, Int:_ $c, Numeric() $d, Int(Str) $e, Array[Int] $f, Positional[Int] $g, Callable:D $h, ::T $t, T $u) { }
+sub where-clause(Int $n where * > 0, Str $s where { .chars < 5 }, $x where /abc/) { }
+sub destructure(@(Int $a, $b), %(:$c, :$d), [$e, *@rest], (:$f, :$g)) { }
+sub named-and-positional($a, $b = $a * 2, :$c = $b + 1, :d($dd) = 3, :$e!, *@rest, :f(:$ff), *%other --> Int) { 1 }
+sub return-types(--> Nil) { }
+sub more(Int $a --> Bool:D) { True }
+sub rw-param($a is rw, $b is copy, $c is raw, :$d is required) { }
+sub anon-params($, $, *@, *%) { }
+sub sig-literal(Int $ where * > 3, 'literal') { }
+my &curried = &named-and-positional.assuming(1, :e(5));
+my $sig = :(Int $a, Str $b --> Bool);
+say $sig.params;
+say &typed.signature;
+
+# ── Supplies, promises, and threads ──
+my $supply = supply {
+    emit 1;
+    whenever Supply.interval(1) { emit $_; done if $_ > 3 }
+    LAST { say "done" }
+    CLOSE { }
+};
+react {
+    whenever $supply -> $v { say $v }
+    whenever signal(SIGINT) { done }
+    whenever Promise.in(5) { done }
+}
+my $p = Promise.new;
+$p.keep(42);
+$p.break("reason");
+my $v = Promise.start({ 42 }).then({ .result });
+await Promise.allof(start { 1 }, start { 2 });
+my $vow = $p.vow;
+my $s = Supplier.new;
+$s.emit(1);
+$s.done;
+my @threads = (^4).map: -> $n { Thread.start({ say $n }) };
+.finish for @threads;
+my $semaphore = Semaphore.new(2);
+$semaphore.acquire; $semaphore.release;
+hyper for 1..100 { .say }
+race for 1..100 { .say }
+my @r = (1..10).hyper(:degree(4), :batch(2)).map(* * 2);
+my @r2 = (1..10).race.map(* * 2);
+
+# ── Unit-scoped declarations, modules, and exports ──
+unit module Warehouse::Inventory;
+our sub exported-fn is export { 1 }
+sub tagged is export(:DEFAULT, :extras) { 2 }
+sub only-extras is export(:extras) { 3 }
+our constant $VERSION = v1.2.3;
+module Inner { our sub nested { 4 } }
+package Pkg { our $var = 5 }
+my $version = Version.new("1.2.3");
+say v6.d.PREVIEW;
+say $?DISTRO.name, $*VM.name, $*PERL.version, $*KERNEL, $*DISTRO, $*TZ, $*HOME, $*TMPDIR, $*USER, $*EXECUTABLE;
+say $?PACKAGE, $?CLASS, $?ROLE, $?MODULE, $?LINE, $?FILE, $?NL;
+say &?ROUTINE, &?BLOCK, $?TABSTOP, $=pod, $=finish, $*IN, $*OUT, $*ERR, $*ARGFILES, $*PROGRAM-NAME, $*PROGRAM, @*INC, %*ENV;
+say Nil, Any, Mu, Failure, Empty, Whatever, WhateverCode, HyperWhatever, Cool, Junction, Order::More;
+
+# ── Heredocs, formats, and quoting variations ──
+my $q1 = q:to/EOF/;
+    heredoc
+    EOF
+my $q2 = qq:to/EOF/;
+    interpolated {$scalar}
+    EOF
+my $q3 = qq:to [END];
+    bracketed terminator
+    END
+my $q4 = q:w<a b c>;
+my $q5 = qw<a b c>;
+my $q6 = qqw/a $scalar c/;
+my $q7 = Q:q[nested [brackets] work];
+my $q8 = q:b'with \t escape';
+my $q9 = qq:!c"no closures {1+1}";
+my $q10 = q:s[scalar $scalar only];
+my $q11 = q:a[array @array only];
+my $q12 = q:h[hash %hash only];
+my $q13 = q:f[function &code() only];
+my $q14 = ｢fullwidth corner quotes｣;
+my $q15 = “curly double quotes”;
+my $q16 = ‘curly single quotes’;
+my $q17 = „low double quote“;
+my $q18 = <<"double angle with $scalar">>;
+my $q19 = << 'plain' words >>;
+my $q20 = «guillemets with $scalar and {1 + 1}»;
+my $fmt = 'Total: %.2f'.sprintf(3.14159);
+say sprintf('%s has %d items costing %.2f', 'x', 3, 9.99), 5.fmt('%03d'), 255.base(16), :16<FF>, "ff".parse-base(16);
+say Q:to/END/;
+    Q heredoc: no interpolation, no escapes \n at all
+    END
+
+# ── Pod and declarator blocks ──
+=begin pod :kind<example>
+=TITLE Warehouse
+=SUBTITLE Inventory
+=head2 Syntax
+=para A paragraph with B<bold>, I<italic>, U<underline>, C<code>, V<verbatim>, E<gt> and L<link|https://example.com>,
+X<index entry>, Z<comment>, N<note>, P<placement>, D<definition>, K<keyboard>, T<terminal>, R<replaceable>.
+=begin table
+ Sku  | Qty
+ =====+====
+ AC-1 | 25
+=end table
+=begin item
+Item content
+=end item
+=defn Term
+Definition text.
+=for code :lang<raku>
+say "pod code";
+=begin nested
+=para Nested block
+=end nested
+=config head1 :like<head2>
+=END
+Anything after =END is documentation only.

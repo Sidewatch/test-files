@@ -1,5 +1,6 @@
 ;;; sample.el --- Warehouse stock helpers  -*- lexical-binding: t; -*-
 
+;; Emacs Lisp (Emacs 30.1) — syntax showcase
 ;; Copyright (C) 2026 Acme Inc.
 ;; Author: Acme Dev <dev@example.com>
 ;; Version: 1.0.0
@@ -323,6 +324,25 @@ newline"
 (when (and (boundp 'x) (featurep 'org) (derived-mode-p 'text-mode) (bound-and-true-p warehouse-mode)) nil)
 (if (version< emacs-version "28.1") (error "old") (message "ok"))
 (when noninteractive (kill-emacs 0))
-
+;; ── Emacs 29/30 additions ──
+(setopt warehouse-reorder-point 40)
+(static-if (>= emacs-major-version 30) (message "30+") (message "older"))
+(static-when (fboundp 'treesit-available-p) (treesit-available-p))
+(static-unless noninteractive (message "interactive"))
+(define-keymap :keymap warehouse-mode-map "C-c w s" #'warehouse-save)
+(defvar-keymap warehouse-repeat-map :repeat t "n" #'next-line)
+(defun warehouse-memo (k) (with-memoization (gethash k warehouse--cache) (* k 2)))
+(defun warehouse-modes () (declare (modes warehouse-mode)) (interactive) nil)
+(pcase-setq `(,a ,b) '(1 2))
+(if-let* ((x (car warehouse-bins)) (y x)) y 'none)
+(string-pad "ab" 5) (string-fill "a b c" 3) (take 2 '(1 2 3)) (ntake 2 (list 1 2 3))
+(seq-keep #'car '((1) nil)) (length= '(1 2) 2) (length< '(1) 2) (ensure-list 'a)
+(cl-defmethod warehouse-describe ((x (derived-mode text-mode))) x)
+(with-undo-amalgamate (insert "x"))
+(let ((f (lambda (&rest args) (ignore args)))) (funcall f 1 2))
+(defvar warehouse--rec #s(warehouse-item "A-100" 1 2.5))
+(defvar warehouse--closure (let ((n 0)) (lambda () (setq n (1+ n)))))
+(condition-case nil (user-error "x") (user-error nil))
+(define-minor-mode warehouse-global-mode "Global." :global t :init-value nil)
 (provide 'sample)
 ;;; sample.el ends here

@@ -1,3 +1,4 @@
+-# Haml 6.3 (Ruby 3.4 attribute hashes) — syntax showcase
 -# ── Comments ──
 -# Haml silent comment: the whole block below is removed from output.
 -# @orders and current_user come from the controller.
@@ -171,7 +172,7 @@
     -# ── XML namespace and html-style attributes with expressions ──
     %html(xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en")
     %p(class="a #{interpolated}" data-x='y')
-    %p(foo=bar baz="qux" @attr=1)
+    %p(foo=bar baz="qux")
     %p{"data-a" => 1, :b => 2, c: 3, "d-e": 4, f: nil, g: false, h: true}
     %p{class: [:a, "b", nil, false], id: [:x, "y"]}
     %a{href: url_for(controller: "orders", action: "show", id: 1)} Link with a call
@@ -324,3 +325,35 @@
     %p
       = "ruby on following line"
     %p Non-ASCII: café 日本語 ☕ &mdash; &#169;
+
+    -# ── Haml 6 additions and remaining forms ──
+    /[if lt IE 9]
+      %script{src: "html5shiv.js"}
+    /[if gte IE 9]><!
+    %p Not-IE content
+    /<![endif]
+    %p.class-one.class-two#unique-id{data: {turbo_frame: "x"}}= "shorthand with attributes and script"
+    %input{type: "checkbox", checked: @flag, disabled: !@flag}
+    %option{selected: true, value: ""} Empty
+    %a{href: "/search?q=#{CGI.escape(query)}&page=#{page}"} Interpolated attribute value
+    %div{"aria-hidden": "true", "data-x": nil, hidden: true}
+    %tag-with-dashes_and_underscores:with-colon content
+    %p= "Ruby 3.4 string with #{"nested #{"interpolation"}"}"
+    - value = { name: "widget", price: 9.5 }
+    %p= value => {name:}
+    %p{id: dom_id(@order), class: ["order", ("paid" if @order.paid?)]} Dynamic id and class array
+    = render Components::Card.new(title: "Card") do |card|
+      - card.with_header { "Header" }
+      %p Body
+    = turbo_frame_tag "frame" do
+      %p Framed
+    %button{type: "button", "data-action": "click->menu#toggle"} Stimulus attribute
+    %svg{viewBox: "0 0 10 10"}
+      %path{d: "M0 0L10 10"}/
+    = yield(:head)
+    %p.long-text
+      A paragraph written on following lines,
+      which Haml joins into one block of text.
+    %p
+      :plain
+        Filter inside an element

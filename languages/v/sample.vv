@@ -1,4 +1,5 @@
 #!/usr/bin/env v run
+// V 0.4 — syntax showcase
 // ── Comments ───────────────────────────────────────────────
 // Line comment. TODO: persist the stock to disk. FIXME: rounding.
 /* Block comment
@@ -587,3 +588,106 @@ fn try_it() {
 fn test_main() {
 	assert true, 'this passes'
 }
+
+// ── Additions: more declaration and expression forms ───────
+enum Color as u8 {
+	red
+	green = 10
+	blue
+}
+
+pub enum Level as i64 {
+	low  = -1
+	high = 1
+}
+
+struct Dog implements Describer {
+mut:
+	counter int
+}
+
+fn (d Dog) describe() string {
+	return 'dog'
+}
+
+interface Repo[T] {
+	find(id int) ?T
+}
+
+fn pair() (int, string) {
+	return 1, 'one'
+}
+
+fn multi_return() {
+	n, label := pair()
+	_, only := pair()
+	mut a, mut b := 1, 2
+	a, b = b, a
+	_ = [n, a, b]
+	_ = label + only
+}
+
+fn closures() {
+	factor := 3
+	scale := fn [factor] (x int) int {
+		return x * factor
+	}
+	mut counter := 0
+	bump := fn [mut counter] () {
+		counter++
+	}
+	bump()
+	_ = scale(2)
+	apply := fn (f fn (int) int, v int) int {
+		return f(v)
+	}
+	_ = apply(scale, 2)
+}
+
+fn defers_and_options() {
+	defer(fn) {
+		println('function-scoped defer')
+	}
+	value := maybe(1) or { return }
+	forced := maybe(2) or { panic('no value') }
+	_ = [value, forced]
+	if v := maybe(3) {
+		_ = v
+	}
+	mut it := [1, 2, 3].iterator()
+	for x in it {
+		_ = x
+	}
+	for mut i in [1, 2, 3] {
+		i *= 2
+	}
+	for i, x in 'abc' {
+		_ = '${i}${x}'
+	}
+}
+
+fn match_forms(x int, s Outcome) {
+	_ = match x {
+		0 { 'zero' }
+		1, 2, 3 { 'small' }
+		4...9 { 'medium' }
+		else { 'large' }
+	}
+	_ = match true {
+		x < 0 { 'neg' }
+		x > 0 { 'pos' }
+		else { 'zero' }
+	}
+	if s is Item {
+		println(s.sku)
+	} else if s is string {
+		println(s)
+	}
+	if s !is int {
+		println('not an int')
+	}
+	r := if x > 0 { 1 } else { 2 }
+	_ = r
+}
+
+// Not shown, unsure about the exact latest syntax: v-specific `comptime` string tricks

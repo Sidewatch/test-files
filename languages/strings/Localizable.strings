@@ -1,4 +1,5 @@
-/* ── Comments ──
+/* Apple .strings (property-list text format, current Xcode 26 / Foundation) — syntax showcase
+   ── Comments ──
    Localizable.strings — English. Keys are stable identifiers; values are what users see.
    A block comment can span several lines and precede any entry.
    TODO: ask translators to review the plural forms.
@@ -42,6 +43,11 @@
 "format.positional" = "%2$@ shipped %1$d units";
 "format.positional.mixed" = "%1$@ has %2$d of %3$.1f%% capacity";
 "format.star" = "Column: %*d";
+"format.int64" = "Big: %lld and %1$lld and %lu and %zd and %hhd";
+"format.upper" = "Legacy: %D %U %O %C %S %F %E %G %a %A";
+"format.flags" = "Flags: %+d % d %#x %#o %'d";
+"format.stringsdict" = "%#@orders@";
+"format.localized" = "Localised: %@ (%1$@)";
 
 /* Escapes */
 "error.gateway" = "The payment gateway said \"try later\".\nYour card was not charged.";

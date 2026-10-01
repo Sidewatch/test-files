@@ -1,5 +1,5 @@
 /- kdl-version 2
-// ── KDL: a warehouse service definition exercising the whole grammar ──
+// KDL 2.0 — syntax showcase: a warehouse service definition exercising the whole grammar
 /* Block comment
    /* nested block comment */
    still inside */
@@ -144,7 +144,7 @@ rare-strings {
     unicode-escapes "\u{e9}\u{4e2d}\u{1F600}"
     identifier-strings foo.bar a-b a_b a+b a:b @at ~tilde !bang ?q $dollar %pct ^caret &amp *star |pipe
     unicode-identifier Zürich 東京 ✓ ключ
-    dotted-number-like .5x -x +x --flag
+    dotted-number-like -x +x --flag
 }
 
 rare-numbers {

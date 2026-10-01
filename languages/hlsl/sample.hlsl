@@ -1,3 +1,4 @@
+// HLSL (DXC, HLSL 2021, Shader Model 6.8) — syntax showcase
 // ── Comments ──
 // HLSL: vertex, pixel, geometry, hull, domain and compute stages for a lit, textured mesh.
 /* Block comment. TODO: add cascaded shadows. FIXME: banding on low-end GPUs. */
@@ -505,5 +506,102 @@ float MoreOperators(float a, int b, uint c) {
     float2 swz = mat._m00_m11;
     return r + lit + mm + cmp + ib + uc;
 }
+
+
+// ── Shader Model 6.5–6.8: inline ray queries, work graphs, typed loads, logical intrinsics ──
+[shader("compute")]
+[numthreads(8, 8, 1)]
+void CSRayQuery(uint3 id : SV_DispatchThreadID) {
+    RayDesc ray = { float3(0, 0, 0), 0.001, float3(0, 0, 1), 100.0 };
+    RayQuery<RAY_FLAG_CULL_NON_OPAQUE | RAY_FLAG_SKIP_PROCEDURAL_PRIMITIVES> q;
+    q.TraceRayInline(scene, RAY_FLAG_NONE, 0xFF, ray);
+    while (q.Proceed()) {
+        if (q.CandidateType() == CANDIDATE_NON_OPAQUE_TRIANGLE) {
+            q.CommitNonOpaqueTriangleHit();
+        }
+    }
+    if (q.CommittedStatus() == COMMITTED_TRIANGLE_HIT) {
+        float t = q.CommittedRayT();
+        uint inst = q.CommittedInstanceID();
+        float2 bary = q.CommittedTriangleBarycentrics();
+        outputImage[id.xy] = float4(bary, t, inst);
+    }
+}
+
+struct EntryRecord {
+    uint3 gridSize : SV_DispatchGrid;
+    uint  id;
+};
+struct ChildRecord { uint value; };
+
+[Shader("node")]
+[NodeLaunch("broadcasting")]
+[NodeDispatchGrid(8, 1, 1)]
+[NumThreads(64, 1, 1)]
+[NodeIsProgramEntry]
+void EntryNode(
+    DispatchNodeInputRecord<EntryRecord> input,
+    [MaxRecords(4)] NodeOutput<ChildRecord> Child,
+    uint gtid : SV_GroupThreadID) {
+    ThreadNodeOutputRecords<ChildRecord> rec = Child.GetThreadNodeOutputRecords(1);
+    rec.Get().value = gtid + input.Get().id;
+    rec.OutputComplete();
+}
+
+[Shader("node")]
+[NodeLaunch("thread")]
+void LeafNode(ThreadNodeInputRecord<ChildRecord> input) {
+    uint v = input.Get().value;
+}
+
+[Shader("node")]
+[NodeLaunch("coalescing")]
+[NumThreads(32, 1, 1)]
+void CoalescedNode([MaxRecords(32)] GroupNodeInputRecords<ChildRecord> inputs, uint gi : SV_GroupIndex) {
+    if (gi < inputs.Count()) { uint v = inputs[gi].value; }
+}
+
+[WaveSize(16, 64)]
+[numthreads(64, 1, 1)]
+void CSWaveRange() {}
+
+[numthreads(64, 1, 1)]
+void CSTypedLoads(uint3 id : SV_DispatchThreadID) {
+    float4 a = rawIn.Load<float4>(id.x * 16);
+    uint2  b = rawIn.Load<uint2>(id.x * 8);
+    rawOut.Store<float4>(id.x * 16, a);
+    bool both = and(a.x > 0, b.x > 0);
+    bool either = or(a.x > 0, b.x > 0);
+    float picked = select(both, 1.0, 0.0);
+    float3 sel3 = select(bool3(true, false, true), float3(1, 2, 3), float3(4, 5, 6));
+}
+
+// ── C++11 attributes (HLSL 2021) and SPIR-V (DXC -spirv) attributes ──
+[[vk::binding(0, 1)]] Texture2D<float4> vkTexture;
+[[vk::binding(1, 1)]] SamplerState vkSampler;
+[[vk::push_constant]] struct PushConstants { float4x4 mvp; uint flags; } pushConstants;
+[[vk::constant_id(0)]] const int kSpecialization = 4;
+[[vk::input_attachment_index(0)]] SubpassInput<float4> vkSubpass;
+struct VkVertexOut {
+    [[vk::location(0)]] float3 normal : NORMAL;
+    [[vk::builtin("PointSize")]] float pointSize : PSIZE;
+};
+float4 VkFragment(VkVertexOut i) : SV_Target {
+    [[likely]] if (i.normal.x > 0) { return vkSubpass.SubpassLoad(); }
+    [[unlikely]] if (i.normal.y > 0) { return float4(0, 0, 0, 0); }
+    switch (kSpecialization) {
+        case 0: [[fallthrough]];
+        case 1: return float4(1, 1, 1, 1);
+        default: break;
+    }
+    return vkTexture.Sample(vkSampler, i.normal.xy);
+}
+
+// ── Exports and libraries ──
+export float LibraryFunction(float x) { return x * 2.0; }
+[shader("vertex")] float4 VertexInLibrary(float3 p : POSITION) : SV_Position { return float4(p, 1); }
+[shader("pixel")] float4 PixelInLibrary() : SV_Target { return 1; }
+[shader("hull")] [domain("quad")] [partitioning("integer")] [outputtopology("triangle_ccw")] [outputcontrolpoints(4)] [patchconstantfunc("PatchConstants")]
+VSOut HullInLibrary(InputPatch<VSOut, 4> p, uint i : SV_OutputControlPointID) { return p[i]; }
 
 // Non-ASCII: café 日本語 ☕

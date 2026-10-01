@@ -1,4 +1,5 @@
 #!/usr/bin/env fennel
+;; Fennel 1.6 — syntax showcase (fennel is not installed locally)
 ;; ── Comments ──
 ;; Line comment. TODO: persist bins. FIXME: handle negative stock.
 ;;; Section comment
@@ -7,6 +8,7 @@
 ;; ── Requires and modules ──
 (local fennel (require :fennel))
 (local {: view : dofile} fennel)
+(local {:view fennel-view} (require :fennel))
 (local json (require :cjson))
 (import-macros {: assert-eq} :test-macros)
 (require-macros :warehouse-macros)
@@ -147,12 +149,12 @@ break"])
 
 ;; ── Further constructs ──
 ;; Metadata, attributes, and function forms
-(fn ^:fnl/arglist documented [a b] "Doc string" (+ a b))
+(fn documented [a b] "Doc string" (+ a b))
 (fn named-args [{: sku &as whole}] whole)
 (fn tail-call [n acc] (if (= n 0) acc (tail-call (- n 1) (+ acc n))))
 (lambda strict [x ?opt] (+ x (or ?opt 0)))
-(local <const> frozen 42)
-(local <close> handle (io.open "/dev/null"))
+(local frozen <const> 42)
+(local handle <close> (io.open "/dev/null"))
 (with-open [f (io.open "/dev/null")] (f:read "*a"))
 (doto (io.stdout) (: :write "chained ") (: :flush))
 (hashfn (+ $1 $2))
@@ -216,6 +218,18 @@ line string"])
 (case 5 5 :five _ :other)
 (case-try (pcall error :x) (true v) v (catch (false e) e))
 (fennel.eval "(+ 1 2)" {:env _G})
+
+;; ── Newer forms ──
+(fn each-forms [t]
+  (each [k v (pairs t) &until (= k :stop)] (print k v))
+  (for [i 1 10 &until (> i 5)] (print i))
+  (icollect [_ v (ipairs t) &into [0]] v)
+  (collect [k v (pairs t) &into {:seed 1}] (values k v))
+  (accumulate [acc 0 _ v (ipairs t) &until (> acc 10)] (+ acc v)))
+(local (ok? result) (pcall each-forms [1 2 3]))
+(fn rest-pattern [[head & tail] {:key ?value}] (values head tail ?value))
+(local nested-quote `(fn [x#] (+ x# ,(+ 1 2))))
+(print (: :abc :len) (-?> {:a {:b 1}} (. :a) (. :b)) (-?>> 5 (+ 1)))
 
 ;; ── Module return ──
 (local M {: clamp : greet : make-light})

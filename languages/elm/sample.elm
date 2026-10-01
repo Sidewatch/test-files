@@ -1,3 +1,4 @@
+-- Elm 0.19.1 — syntax showcase (latest stable; the compiler is not installed locally)
 port module Warehouse exposing (Model, Msg(..), Category(..), main, update, view)
 
 {-| Module documentation comment.
@@ -24,7 +25,9 @@ import Html.Events exposing (onClick, onInput)
 import Json.Decode as Decode exposing (Decoder, field, int, list, string)
 import Http
 import Json.Encode as Encode
-import Set
+import Set exposing (..)
+import Task as T
+import Url.Parser exposing ((</>), (<?>), Parser, s)
 import Time exposing (Posix)
 
 
@@ -541,3 +544,35 @@ keep a _ =
 testExpectations : List String
 testExpectations =
     [ Debug.toString 1, Debug.toString [ 1, 2 ], Debug.toString "s", Debug.toString ( 1, 'c' ) ]
+
+
+-- ── Extra forms ──
+
+
+qualifiedUse : String
+qualifiedUse =
+    String.toUpper "x"
+
+
+negatives : List Int
+negatives =
+    [ -1, negate 2, -0x10, 1 - -1 ]
+
+
+multiArgLambda : Int -> Int -> Int
+multiArgLambda =
+    \a b -> a * b
+
+
+whereLike : Int
+whereLike =
+    let
+        go : Int -> Int -> Int
+        go acc n =
+            if n <= 0 then
+                acc
+
+            else
+                go (acc + n) (n - 1)
+    in
+    go 0 10

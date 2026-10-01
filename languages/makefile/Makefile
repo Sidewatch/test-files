@@ -1,3 +1,4 @@
+# GNU Make 4.4 — syntax showcase (only make 3.81 is installed here, so the 4.x-only lines sit behind a MAKE_VERSION guard)
 # ── Comments ──
 # Build, test and package the warehouse service.
 # TODO: add a coverage target. FIXME: parallel install.

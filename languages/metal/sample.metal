@@ -1,4 +1,4 @@
-// Metal showcase: stock-map rendering and a compute pass for reorder levels.
+// Metal Shading Language 4.0 — syntax showcase: stock-map rendering and a compute pass for reorder levels.
 /* A block comment
    spanning two lines. */
 /// Documentation comment for the shader library.
@@ -105,7 +105,7 @@ inline float3 tonemap(float3 c) {
     return pow(c, 1.0f / kGamma);
 }
 
-static float luminance(float3 c) { return dot(c, float3(0.2126f, 0.7152f, 0.0722f)); }
+[[maybe_unused]] static float luminance(float3 c) { return dot(c, float3(0.2126f, 0.7152f, 0.0722f)); }
 
 // ── Vertex stage ──
 vertex VertexOut vertex_main(VertexIn in [[stage_in]],
@@ -270,7 +270,8 @@ kernel void use_args(constant ArgBuffer& args [[buffer(0)]], uint tid [[thread_p
 [[stitchable]] float stitched(float x) { return x + 1.0f; }
 
 // ── Object, mesh and tessellation stage qualifiers (declarations only) ──
-struct [[patch(triangle, 3)]] PatchIn { float4 pos [[attribute(0)]]; };
+struct PatchIn { float4 pos [[attribute(0)]]; };
+[[patch(triangle, 3)]] vertex VertexOut tess_vertex(PatchIn p [[stage_in]], uint pid [[patch_id]], float3 loc [[position_in_patch]]) { VertexOut o; o.position = p.pos; o.uv = loc.xy; o.normal = loc; o.pointSize = 1.0; o.layer = pid; return o; }
 [[max_total_threads_per_threadgroup(256)]] kernel void limited(uint t [[thread_position_in_grid]]) {}
 [[early_fragment_tests]] fragment float4 early_main(VertexOut in [[stage_in]]) { return float4(1); }
 
@@ -288,4 +289,92 @@ kernel void misc(device uint* out [[buffer(0)]], const device packed_float3* v [
     bool4 i = bool4(true, false, true, false);
     out[0] = select(a, 0u, any(i)) + (all(i) ? 1u : 0u) + popcount(a) + clz(a) + ctz(a) + extract_bits(a, 0, 4) + reverse_bits(a);
     out[1] = uint(abs(e)) + min(a, 3u) + max(a, 3u) + uint(fma(b, 2.0f, 1.0f)) + uint(f) + uint(g.x) + uint(h) + uint(d.x);
+}
+
+// ── Mesh shading (object + mesh stages) ──
+#include <metal_mesh>
+struct MeshVertex { float4 position [[position]]; float3 color; };
+struct MeshPrim { float3 tint [[flat]]; };
+struct ObjectPayload { uint indices[16]; };
+using TriMesh = metal::mesh<MeshVertex, MeshPrim, 3, 1, topology::triangle>;
+
+[[object, max_total_threads_per_threadgroup(32)]]
+void object_main(object_data ObjectPayload& payload [[payload]],
+                 mesh_grid_properties grid,
+                 uint tid [[thread_index_in_threadgroup]]) {
+    payload.indices[tid % 16] = tid;
+    grid.set_threadgroups_per_grid(uint3(1, 1, 1));
+}
+
+[[mesh, max_total_threads_per_threadgroup(3)]]
+void mesh_main(TriMesh output,
+               const object_data ObjectPayload& payload [[payload]],
+               uint tid [[thread_index_in_threadgroup]]) {
+    output.set_primitive_count(1);
+    MeshVertex v;
+    v.position = float4(float(tid), 0.0, 0.0, 1.0);
+    v.color = float3(1.0);
+    output.set_vertex(tid, v);
+    output.set_index(tid, tid);
+    if (tid == 0) { MeshPrim p; p.tint = float3(0.5); output.set_primitive(0, p); }
+}
+
+// ── Ray tracing ──
+#include <metal_raytracing>
+using namespace metal::raytracing;
+
+[[intersection(triangle, triangle_data, instancing)]]
+bool tri_filter(uint prim [[primitive_id]], float2 bc [[barycentric_coord]]) { return bc.x > 0.1; }
+
+struct BBoxResult { bool accept [[accept_intersection]]; float distance [[distance]]; };
+[[intersection(bounding_box)]]
+BBoxResult bbox_main(float3 origin [[origin]], float3 dir [[direction]],
+                                           float tmin [[min_distance]], float tmax [[max_distance]]) {
+    BBoxResult r;
+    r.accept = true;
+    r.distance = tmin;
+    return r;
+}
+
+kernel void trace(instance_acceleration_structure scene [[buffer(0)]],
+                  intersection_function_table<triangle_data, instancing> table [[buffer(1)]],
+                  visible_function_table<float(float)> vft [[buffer(2)]],
+                  texture2d<float, access::write> img [[texture(0)]],
+                  uint2 tid [[thread_position_in_grid]]) {
+    ray r(float3(0, 0, -1), float3(0, 0, 1), 0.001f, 100.0f);
+    intersector<triangle_data, instancing> i;
+    i.assume_geometry_type(geometry_type::triangle);
+    i.force_opacity(forced_opacity::opaque);
+    intersection_result<triangle_data, instancing> hit = i.intersect(r, scene, table);
+    float v = hit.type == intersection_type::triangle ? hit.distance : 0.0f;
+    img.write(float4(v), tid);
+}
+
+// ── Compiler extensions, attributes and qualifiers ──
+#pragma METAL internals : enable
+[[clang::always_inline]] inline float fast_sq(float x) { return x * x; }
+[[clang::optnone]] void no_opt() {}
+[[deprecated("use fast_sq")]] float old_sq(float x) { return x * x; }
+[[nodiscard]] static inline int must_use() { return 1; }
+static_assert(sizeof(float4) == 16, "float4 is 16 bytes");
+constant constexpr int kCount = 4;
+template <typename T> T twice(T v) { return v + v; }
+template <typename T> struct Box { T value; constexpr Box() : value() {} };
+namespace stock { namespace detail { inline float scale(float x) { return x * 2.0f; } } }
+union Bits { uint u; float f; };
+struct Packed { packed_float3 p; packed_uint2 q; packed_half4 h; };
+struct Aligned { alignas(16) float x; };
+float use_lambda(float v) {
+    auto lambda_demo = [](float x) { return x + 1.0f; };
+#pragma clang loop unroll(full)
+    for (int i = 0; i < 4; ++i) { v = lambda_demo(v); }
+    return v;
+}
+
+// ── Metal 4 tensors (MSL 4.0) ──
+#include <metal_tensor>
+kernel void tensor_demo(tensor<device float, dextents<int, 2>> t [[buffer(0)]],
+                        uint2 tid [[thread_position_in_grid]]) {
+    int rows = t.get_extent(0);
+    if (int(tid.x) < rows) { t[tid.y, tid.x] = 1.0f; }
 }

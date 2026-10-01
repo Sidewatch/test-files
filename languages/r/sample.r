@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+# R 4.5 — syntax showcase
 # ── Comments ──
 # R showcase: warehouse inventory analysis.
 # TODO: read orders from the database. FIXME: handle NA totals.
@@ -266,3 +267,153 @@ Sys.getenv("HOME")
 exists("orders")
 get("orders")
 invisible(gc())
+
+# ── Native pipe placeholder, lambdas and recent syntax (R 4.1 to 4.5) ──
+orders |> lm(total ~ number, data = _)
+orders |> _$total
+orders |> subset(total > 0) |> _[["total"]] |> mean()
+c(1, 4, 9) |> sqrt() |> sum()
+sq <- \(x) x^2
+(\(x, y = 2) x + y)(1)
+Map(\(a, b) a * b, 1:3, 4:6)
+NULL %||% "default"
+r"(C:\path\no\escapes)"
+r"-[dashes and [brackets]]-"
+R"---(three dashes)---"
+0x1.8p3
+0xAbCdEfL
+1e-3L
+100000L
+.5e2
+1i^2
+TRUE && FALSE || !TRUE
+if (TRUE) 1 else 2
+f <- function(x) -x
+g <- function(a,
+              b = c("one", "two"),
+              ...) {
+  b <- match.arg(b)
+  extras <- list(...)
+  n <- ...length()
+  second <- ...elt(2)
+  names(extras)
+}
+
+# ── Assignment forms ──
+x1 <- 1; x2 = 2; 3 -> x3; x4 <<- 4; 5 ->> x5
+assign("x6", 6); delayedAssign("lazy", stop("never"))
+`my-name` <- 7
+names(v)[2] <- "b"
+attr(v, "units") <- "kg"
+levels(fac)[1] <- "new"
+dim(m) <- c(3, 2)
+body(square) <- quote(x^3)
+environment(square) <- globalenv()
+is.na(v) <- 2
+substr(single, 1, 1) <- "S"
+lst$new$deep <- 1
+lst[["k"]][["j"]] <- 2
+m[m > 3] <- 0
+obj@slot <- 1
+x <- y <- z <- 0
+
+# ── Indexing: every form ──
+v[1]; v[[1]]; v[-1]; v[c(-1, -2)]; v[v > 1 & !is.na(v)]; v["a"]; v[]; v[0]
+lst[1]; lst[[1]]; lst$a; lst$`odd name`; lst[["a"]][["b"]]; lst[[c(1, 2)]]
+m[1, 2]; m[1, ]; m[, 1]; m[-1, , drop = FALSE]; m[cbind(1, 2)]
+arr[1, 2, 3]; arr[, , 1]
+df <- data.frame(a = 1:3, b = letters[1:3])
+df$a; df[["a"]]; df[1, ]; df[, "a"]; df[df$a > 1, "b"]; df[order(df$a, decreasing = TRUE), ]
+df[["c"]] <- df$a * 2
+with(df, a + 1)
+within(df, d <- a + 1)
+transform(df, e = a * 2)
+
+# ── Formulas, tidy evaluation, data.table ──
+y ~ x
+y ~ x1 + x2 + x1:x2 + x1 * x2 + I(x1^2) + log(x2) - 1
+~ x | g
+lhs ~ .
+. ~ rhs
+orders |> group_by(status) |> summarise(n = n(), mean_total = mean(total, na.rm = TRUE))
+orders |> mutate(total2 = total * 2, .keep = "all") |> select(starts_with("t"), -number)
+my_fn <- function(data, col) data |> summarise(m = mean({{ col }}))
+by_var <- function(data, var) data |> group_by(.data[[var]])
+dyn <- function(df, name, value) df |> mutate("{name}" := value)
+splice_args <- function(...) rlang::list2(!!!list(...))
+!!sym("total")
+.x + .y
+..1 + ..2
+purrr::map(1:3, ~ .x * 2)
+purrr::map2(1:3, 4:6, ~ .x + .y)
+glue::glue("sku {orders$number[1]} total {orders$total[1]}")
+library(data.table)
+DT <- as.data.table(orders)
+DT[total > 20, .(n = .N, avg = mean(total)), by = status]
+DT[, new := total * 2]
+DT[, `:=`(a = 1, b = 2)]
+DT[order(-total)][1:3]
+DT[.N]
+DT[, .SD, .SDcols = c("number", "total")]
+
+# ── Classes: S3, S4, RC and S7 ──
+print.stack <- function(x, ...) { cat("<stack of", length(unclass(x)), ">\n"); invisible(x) }
+"+.money" <- function(e1, e2) structure(unclass(e1) + unclass(e2), class = "money")
+"[.myvec" <- function(x, i) structure(unclass(x)[i], class = "myvec")
+"$.record" <- function(x, name) unclass(x)[[name]]
+"==.money" <- function(e1, e2) unclass(e1) == unclass(e2)
+Ops.temperature <- function(e1, e2) { v <- get(.Generic)(unclass(e1), unclass(e2)); if (.Generic %in% c("+", "-")) structure(v, class = "temperature") else v }
+as.character.money <- function(x, ...) paste0("$", format(unclass(x)))
+length.stack <- function(x) length(unclass(x))
+area <- function(shape, ...) UseMethod("area")
+area.default <- function(shape, ...) stop("unknown shape")
+area.circle <- function(shape, ...) pi * shape$r^2
+area.square <- function(shape, ...) { NextMethod() }
+
+setClass("Base", representation("VIRTUAL", id = "integer"))
+setClass("Derived", contains = "Base", slots = c(label = "character"), prototype = list(label = "x"))
+setGeneric("describe", function(x, ...) standardGeneric("describe"), valueClass = "character")
+setMethod("describe", signature("Derived"), function(x, ...) paste("derived", x@label))
+setMethod("show", "Derived", function(object) cat("<Derived>\n"))
+setMethod("+", signature("Derived", "Derived"), function(e1, e2) e1)
+setMethod("initialize", "Derived", function(.Object, ...) { .Object <- callNextMethod(.Object, ...); .Object })
+setRefClass("Account", fields = list(balance = "numeric"), methods = list(
+  deposit = function(x) { balance <<- balance + x; invisible(.self) }
+))
+Person <- S7::new_class("Person", properties = list(name = S7::class_character, age = S7::class_numeric))
+S7::method(print, Person) <- function(x, ...) cat(x@name, "\n")
+greet <- S7::new_generic("greet", "x")
+S7::method(greet, Person) <- function(x) paste("Hello", x@name)
+
+# ── Conditions, environments, and language objects ──
+cond <- structure(class = c("custom_error", "error", "condition"), list(message = "boom", call = sys.call(-1)))
+tryCatch(stop(cond), custom_error = function(e) conditionMessage(e))
+withRestarts(invokeRestart("myRestart", 1), myRestart = function(x) x)
+warning("careful", call. = FALSE, immediate. = TRUE)
+rlang::abort("typed", class = "my_error")
+stopifnot("x must be positive" = x1 > 0)
+on.exit(close(con), add = TRUE, after = FALSE)
+Recall
+sys.function()
+match.call()
+do.call("sum", list(1, 2))
+Reduce(function(a, b) paste0(a, b), letters[1:3], accumulate = TRUE, right = TRUE)
+Negate(is.na)(1)
+Vectorize(function(a, b) a + b)(1:3, 1:3)
+local({ a <- 1; function() a })()
+env <- new.env(parent = emptyenv())
+assign("k", 1, envir = env); get("k", envir = env); exists("k", envir = env, inherits = FALSE)
+with(env, k)
+e <- quote(f(x, y = 2))
+e[[1]]; as.list(e); as.call(list(as.name("sum"), 1, 2))
+deparse(e)
+eval(e, list(f = function(x, y) x + y, x = 1))
+bquote(.(x1) + .(x2))
+substitute(a + b, list(a = 1, b = quote(z)))
+expression(a, b + 1)[[2]]
+function(x, ...) NULL
+(function() invisible(NULL))()
+`if`(TRUE, "yes", "no")
+`for`(i, 1:2, print(i))
+`[`(v, 2)
+sapply(1:3, `-`)

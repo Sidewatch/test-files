@@ -1,3 +1,4 @@
+<%# EJS 3.1 — syntax showcase (tags: <% <%_ <%= <%- <%# <%% and closers %> -%> _%> %%>) %>
 <%# ── Comments ── EJS comment tag: renders nothing. TODO: paginate. FIXME: escape notes. %>
 <%# Warehouse stock page rendered by Express; `bins`, `user`, `flash` come from the route. %>
 <%_ /* underscore-trimmed scriptlet: strips preceding whitespace */ _%>
@@ -106,5 +107,19 @@
     &copy; <%= new Date().getFullYear() %> Acme Inc. &middot; <%- footerHtml %>
     <%= locals.version || 'dev' %> <%- typeof extra !== 'undefined' ? extra : '' -%>
   </footer>
+
+  <%# ── Remaining tag forms ── %>
+  <%# comment with newline trim -%>
+  <%_ const unused = 1; -%>
+  <% const tail = 'newline-slurp close'; -%>
+  <%= tail _%>
+  <%- tail _%>
+  <%_ if (tail) { -%>
+    <p>trimmed both sides</p>
+  <%_ } _%>
+  <p>Escaped closer: %%> and escaped opener <%% inside text</p>
+  <%- include('partials/footer', { year: 2026 }) %>
+  <%- include('partials/footer') -%>
+  <%= locals.missing ?? 'default' %>
 </body>
 </html>

@@ -1,3 +1,4 @@
+; NASM 3.00 (x86-64, Intel syntax) — syntax showcase
 ; ======================================================================
 ; Warehouse stock counter in x86-64 NASM, System V ABI (Linux).
 ; Build: nasm -felf64 sample.asm && ld -o sample sample.o
@@ -452,3 +453,186 @@ $label_with_dollar:
 ?question_label:
     ret
 ; TODO: use VEX encodings for the SSE section.
+
+; ── NASM 2.15 – 3.00: preprocessor extras ───────────────────────────
+%defalias OLD_NAME NEW_NAME
+%undefalias OLD_NAME
+%ifdirective bits
+    %define HAS_BITS_DIRECTIVE
+%endif
+%ifusing smartalign
+%endif
+%ifnidn __OUTPUT_FORMAT__, bin
+    %define NOT_FLAT_BINARY
+%endif
+%ifndef UNKNOWN_SYMBOL
+%elifn 0
+%elifdef MAX_ITEMS
+%elif 1
+%else
+%endif
+%unimacro CASELESS 0
+%clear
+%include "defs.inc"
+%assign running_total (running_total + 1)
+%define CONCAT_DEMO(a, b) a %+ b
+%define EXPAND_DEMO %[MAX_ITEMS]
+%defstr HOME_DIR %!HOME
+%define ENV_DEMO %!PATH
+
+%macro SHOW_ARGS 1-*
+    %rep %0
+        db %1, 0
+        %rotate 1
+    %endrep
+%endmacro
+
+%macro RANGE_DEMO 3
+    mov rax, %{1:2}
+    mov rbx, %{-1}
+    db  %?, %??
+%endmacro
+
+%imacro ANYCASE 1+.nolist
+    nop %1
+%endmacro
+
+%macro COND_LABEL 2
+%if %2 > 0
+.%1:
+%endif
+%endmacro
+
+; Stack-frame helpers: %arg, %local, %stacksize
+%stacksize flat64
+func_with_frame:
+%push frame_ctx
+%arg first:qword, second:dword
+%local temp:qword, buf[16]:byte
+    mov     [temp], rdi
+    mov     eax, [second]
+%pop
+    ret
+%assign %$unused 0
+
+; Special tokens and standard macros
+%define NASM_VERSION_NUM __?NASM_VERSION_ID?__
+db __?NASM_MAJOR?__, __?NASM_MINOR?__, __?NASM_SUBMINOR?__
+db __?FILE?__, 0
+dd __?LINE?__
+db __?DATE?__, __?TIME?__, __?UTC_DATE?__, __?UTC_TIME?__, __?POSIX_TIME?__, 0
+%if __?BITS?__ == 64
+    %define IS_64BIT
+%endif
+%define SECT_NAME __?SECT?__
+dq __?Infinity?__, __?QNaN?__, __?SNaN?__, __?NaN?__
+dw __?float16?__(1.5)
+dd __?float32?__(1.5), __?bfloat16?__(2.0)
+dq __?float64?__(2.5)
+dt __?float80m?__(1.0), __?float80e?__(1.0)
+do __?float128l?__(1.0), __?float128h?__(1.0)
+dd __?ilog2e?__(64), __?ilog2w?__(100), __?ilog2f?__(100), __?ilog2c?__(100)
+db __?utf8?__("text"), __?utf16le?__("wide"), __?utf16be?__("wide"), __?utf32le?__("ucs"), __?utf32be?__("ucs")
+
+; Struct and union definitions (NASM struc / istruc)
+struc Item
+    .sku:      resb 8
+    .quantity: resd 1
+    .price:    resq 1
+    alignb 8
+endstruc
+struc Variant
+    .tag:  resb 1
+    .data: resq 1
+endstruc
+section .data
+sample_item:
+    istruc Item
+        at Item.sku,      db "A-100", 0
+        at Item.quantity, dd 12
+        at Item.price,    dq 4.5
+    iend
+section .text
+    mov  eax, [sample_item + Item.quantity]
+    mov  eax, Item_size
+    mov  rdx, Item.price
+
+; Preprocessor-time string and token operations
+%strlen LEN_RESULT "hello"
+%substr SUB_RESULT "hello" 2,3
+%strcat STR_RESULT "a", "b", "c"
+%tokpaste TOK_RESULT first_, second
+%if %isstr("literal") && %isnum(5) && %istoken(rax) && %isidn(a, a)
+%endif
+%assign big_num 0x1_0000_0000
+%assign neg_num -1
+%assign ternary 5 > 3 ? 10 : 20
+%assign low_bits (neg_num >> 1) & 0xFF
+%assign sel_value %sel(2, 10, 20, 30)
+%assign cond_value %cond(MAX_ITEMS > 4, 1, 0)
+%assign abs_value %abs(-5)
+%assign strlen_value %strlen("four")
+
+; Segment, section and attribute forms
+section .init   progbits alloc exec nowrite align=16
+section .fini   progbits alloc exec nowrite align=16
+section .tdata  progbits alloc noexec write align=8 tls
+section .tbss   nobits alloc noexec write align=8 tls
+section .comment progbits noalloc noexec nowrite align=1
+section .debug_info progbits noalloc noexec nowrite
+section .data   data   align=16 vstart=0x1000
+section .rdata  rdata  align=16
+section .bss    bss    align=16
+section __DATA,__data
+section __TEXT,__text
+section .text   follows=.init
+section .text   start=0x1000
+section .pdata  rdata  align=4
+section .idata  idata
+section .edata  edata
+
+; AVX-512 and newer instruction forms
+    vaddps  zmm0 {k1}{z}, zmm1, zmm2
+    vaddps  zmm0, zmm1, [rax]{1to16}
+    vcvtps2pd zmm0, ymm1{sae}
+    vfmadd231ps zmm0, zmm1, zmm2{rd-sae}
+    vpcompressd zmm0 {k1}, zmm1
+    vpmovzxbd zmm0, xmm1
+    vpermt2d zmm0, zmm1, zmm2
+    vp2intersectd k0, zmm1, zmm2
+    kandw   k0, k1, k2
+    kortestw k0, k1
+    vpopcntd zmm0, zmm1
+    vpshufbitqmb k1, zmm0, zmm1
+    vpdpbusd zmm0, zmm1, zmm2
+    vcvtne2ps2bf16 zmm0, zmm1, zmm2
+    tilezero tmm0
+    tileloadd tmm0, [rax + rbx]
+    tdpbssd tmm0, tmm1, tmm2
+    adcx rax, rbx
+    adox rax, rbx
+    mulx rax, rbx, rcx
+    rorx rax, rbx, 5
+    pdep rax, rbx, rcx
+    pext rax, rbx, rcx
+    andn rax, rbx, rcx
+    bextr rax, rbx, rcx
+    blsi rax, rbx
+    tzcnt rax, rbx
+    lzcnt rax, rbx
+    rdrand rax
+    rdseed rax
+    xsaveopt [rax]
+    clflushopt [rax]
+    clwb [rax]
+    movdir64b rax, [rbx]
+    cmpxchg16b [rax]
+    xend
+    xbegin .fallback
+    xabort 0xFF
+    serialize
+    endbr32
+    rdpid rax
+    wbnoinvd
+    vzeroall
+.fallback:

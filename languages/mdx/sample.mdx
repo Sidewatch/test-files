@@ -10,7 +10,7 @@ stock:
     - south
 ---
 
-{/* An MDX comment: this never renders. */}
+{/* MDX 3 — syntax showcase. An MDX comment: this never renders. */}
 
 import { Callout, Tabs, Tab } from "@/components/callout";
 import Chart from "./revenue-chart.jsx";
@@ -226,3 +226,127 @@ next line. Escapes: \* \_ \# \` \[ \] \< \{ \}.
 [^note]: Another footnote.
 
 <https://example.com/auto> and www.example.com and user@example.com.
+
+## ── More Markdown spellings ──
+
+Reference forms: [full][ref], [collapsed][], [shortcut], ![image][], ![shortcut image].
+
+[collapsed]: <https://example.com/with space> 'Single-quoted title'
+[shortcut]: https://example.com/short (Paren title)
+[shortcut image]: ./a.png
+
+Link forms: [inline](<./path with spaces.md>), [with title](./a.md 'title'), [email](mailto:user@example.com),
+[relative](../up.md#anchor), [heading link](#more-markdown-spellings).
+
+Emphasis spellings: *a*, _a_, **a**, __a__, ***a***, ___a___, **bold _nested italic_ bold**, *italic **nested bold** italic*.
+Code spans: `one`, ``two `with` backticks``, ` padded `. Strikethrough: ~~two~~ and ~one~.
+
+Ordered lists with other markers and starts:
+
+7. Starts at seven
+8. Next
+9) Paren marker
+10) Another
+
+- Loose list item one
+
+- Loose list item two with a paragraph
+
+  And a continuation paragraph.
+
+- Item with code:
+
+  ```ts
+  const x: number = 1;
+  ```
+
+1. Item with a JSX child
+   <Badge>inside list</Badge>
+
+Block quote with other blocks:
+
+> ### Heading in a quote
+> - list in quote
+> ```bash
+> echo quoted
+> ```
+> <Callout>JSX inside a quote</Callout>
+
+Fenced code with longer fences and info strings:
+
+````md
+```js
+nested fence
+```
+````
+
+```jsx
+const el = <b>jsx fence</b>;
+```
+
+```json5 title="a.json5" showLineNumbers {1,3-4} /highlight/
+{ a: 1 }
+```
+
+```
+no language
+```
+
+Autolink literals: https://example.com, www.example.com, user@example.com. Task list in a table:
+
+| Done | Task |
+| :--: | ---- |
+| [x]  | one  |
+
+Footnote reference to a longer one.[^long]
+
+[^long]: First paragraph of the footnote.
+
+    Indented second paragraph of the footnote.
+
+## ── More JSX and expression forms ──
+
+export const answer = await Promise.resolve(42);
+export const fnExpr = function named(a, b = 2, ...rest) { return a + b + rest.length; };
+export const arrow = async (x) => { for (const i of [1, 2]) { if (i > x) break; } return x ?? 0; };
+export class Widget { static count = 0; #secret = 1; get secret() { return this.#secret; } }
+export let counter = 0, other = "x";
+export var legacy = function () {};
+export { year as currentYear, meta as default3 };
+export * as helpers from "./helpers";
+import defaultOnly from "./only";
+import {} from "./side-effects";
+import "./global.css";
+import { a as b, "string name" as c } from "./mod";
+import * as everything from "./everything";
+import cfg from "./cfg.json" with { type: "json" };
+
+<Chart.Line.Smooth series={[..."abc"]} cond={year > 2000 ? <b>new</b> : <i>old</i>} fn={function () { return 1; }} tpl={`a${year}b`} nested={{ a: { b: [1, { c: 2 }] } }} str='single "quoted"' dbl="double 'quoted'" entity="&amp;" />
+
+<a:b c:d="x" />
+<Foo.Bar.Baz boolean string="s" expr={1} spread={...[]} />
+
+Expressions in prose: {year > 2000 && "modern"} {year ?? "none"} {meta?.author} {(() => 1 + 1)()} {typeof year} {void 0} {new Date(0).getTime()} {[1, 2, 3].map((n) => n * 2).join(",")} {/* comment */} {`multi
+line ${year} template`} {await Promise.resolve("top-level await")} {import("./lazy.js").then(() => null)}.
+
+<div>
+  Text, {"expression"}, <span>inline element</span>, &nbsp; entity &lt; &gt; &#123; and {"{"} escaped {"}"} braces.
+  <img src="a.png" alt="" />
+  <input type="text" disabled value={"x"} onChange={(e) => e.target.value} />
+</div>
+
+<Callout>
+
+Markdown **inside** JSX, with a [link](https://example.com) and `code`.
+
+- list inside
+- JSX
+
+</Callout>
+
+<Callout>Inline markdown *inside* JSX on one line needs a flow wrapper.</Callout>
+
+<div style={{ color: "red" }} className="a b" data-x="1" aria-hidden>
+</div>
+
+\{ escaped brace \} and \< escaped angle.

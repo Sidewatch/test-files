@@ -1,5 +1,6 @@
 /*
- * sample.c - warehouse stock management, exercising C99/C11 syntax.
+ * C23 — syntax showcase (ISO/IEC 9899:2024)
+ * sample.c - warehouse stock management, exercising C99 through C23 syntax.
  *
  * Doxygen-style comments are used throughout.
  * TODO: replace the linear search with a hash table.
@@ -119,7 +120,7 @@ static double compute_interest(double principal, double rate);
 int sum_values(int count, ...);
 void process(const int *restrict in, int *restrict out, size_t n);
 static inline int clamp(int v, int lo, int hi);
-_Noreturn void die(const char *msg);
+_Noreturn void die(const char *msg); // _Noreturn: deprecated in C23, use [[noreturn]]
 
 // ── Functions ───────────────────────────────────────────────────────
 /**
@@ -251,9 +252,13 @@ retry:
 }
 
 // ── Further constructs ──────────────────────────────────────────────
-#include "local_header.h"
+#if __has_include("local_header.h")
+#  include "local_header.h"
+#endif
 #include_next <stdlib.h>
-#import "objc_style.h"
+#if __has_include("objc_style.h")
+#  import "objc_style.h"
+#endif
 #define STR(x) #x
 #define XSTR(x) STR(x)
 #define PASTE3(a, b, c) a##b##c
@@ -279,8 +284,7 @@ retry:
 #endif
 #ifdef __cplusplus
 extern "C" {
-#endif
-#ifdef __cplusplus
+int cpp_visible(void);
 }
 #endif
 #warning "diagnostic via #warning"
@@ -401,14 +405,116 @@ void statements(int n, char *s) {
 
 // Function forms
 void noreturn_fn(void) __attribute__((noreturn));
-int old_style(a, b) int a; char b; { return a + b; }
+// K&R-style definitions (int f(a, b) int a; ...) were REMOVED in C23, so none appear here.
 static inline __attribute__((always_inline)) int gnu_attr(int v) { return v; }
 [[nodiscard]] int cpp_attr(void);
 [[deprecated("use gnu_attr")]] int old_api(void);
 [[maybe_unused]] static int unused_helper(void) { return 0; }
 int vla_param(int n, int a[static n]);
 void vla_demo(int n) { int vla[n]; (void)vla; }
-int (*get_handler(int sel))(int, int) { return sel ? 0 : 0; }
+int (*get_handler(int sel))(int, int) { return sel ? NULL : NULL; }
 int variadic_demo(const char *fmt, ...) ATTR_PRINTF(1, 2);
 int main2(void) { return EXIT_SUCCESS; }
 // TODO: add _Generic dispatch for numeric kinds.
+
+// ── C23 additions ───────────────────────────────────────────────────
+#ifdef ALPHA
+#  define BRANCH 1
+#elifdef BETA
+#  define BRANCH 2
+#elifndef GAMMA
+#  define BRANCH 3
+#else
+#  define BRANCH 4
+#endif
+
+// Attributes with the standard [[ ]] syntax, plain and vendor-prefixed
+[[noreturn]] void fatal_exit(void);
+[[gnu::unused, gnu::cold]] static int vendor_attr(void) { return 0; }
+[[clang::always_inline]] static inline int clang_attr(int v) { return v; }
+[[__maybe_unused__]] static int dunder_attr;
+[[reproducible]] int pure_fn(const char *s);
+[[unsequenced]] int pure_fn2(int v);
+int attributed_decl [[maybe_unused]] = 1;
+int *[[gnu::unused]] attributed_ptr;
+signed int explicit_signed = -1;
+signed char explicit_signed_char = -1;
+nullptr_t null_object = nullptr;
+int *null_ptr = nullptr;
+
+// Enumerations with fixed underlying type; empty initialiser
+enum Colour : unsigned char { RED, GREEN = 5, BLUE };
+enum Wide : long long { HUGE_VALUE_ENUM = 1LL << 40 };
+struct EmptyInit { int a; int b; };
+struct EmptyInit empty_init = {};
+int empty_array[3] = {};
+
+// Binary literals, digit separators, bit-precise integers, #embed
+int c23_literals[] = {0b1010'1010, 1'000'000, 0x7FFF'FFFF, 0B11};
+unsigned _BitInt(128) wide_bits = 0xFFFFuwb;
+_BitInt(8) narrow_bits = 3wb;
+#if __has_embed("logo.bin") == 1
+static const unsigned char logo[] = {
+#embed "logo.bin"
+};
+#endif
+
+// Keywords promoted in C23
+static_assert(true, "true and false are keywords now");
+alignas(16) static char aligned_buf[32];
+thread_local static int thread_counter;
+constexpr double PI_APPROX = 3.14159;
+bool c23_bool = false;
+typeof(PI_APPROX) another = 2.0;
+
+// Unnamed parameters and abstract declarators
+int unnamed_param(int, double);
+int unnamed_def(int, double) { return 0; }
+int (*abstract_fn)(int (*)(int), char (*)[4]);
+size_t abstract_sizes = sizeof(int (*)(void)) + sizeof(int (*)[3]) + sizeof(int (*));
+void takes_fn(void (*)(void), int (*)[5], int *(*)(void));
+int variably_modified(int n, int (*arr)[n]);
+
+// Compiler extensions (GNU, Clang, MSVC) — grammar-known, not standard C
+int gnu_range_init[10] = {[0 ... 4] = 1, [5 ... 9] = 2};
+int ext_value(void) { return __extension__ ({ int tmp = 3; tmp * 2; }); }
+void gnu_asm_goto(int v) {
+    asm goto("jmp %l0" : : : : target_label);
+target_label:
+    return;
+}
+int gnu_statement_expr(void) {
+    int r = ({ int a = 1; int b = 2; a + b; });
+    switch (r) { case 1: [[fallthrough]]; default: break; }
+    return r;
+}
+
+__declspec(dllexport) int ms_exported(void);
+__declspec(align(16)) struct MsAligned { int x; };
+int __cdecl ms_cdecl(void);
+int __stdcall ms_stdcall(void);
+int __fastcall ms_fastcall(void);
+char *__ptr32 ms_ptr32;
+char *__ptr64 ms_ptr64;
+char *__restrict ms_restrict;
+char *__sptr ms_sptr;
+char *__uptr ms_uptr;
+char *__unaligned ms_unaligned;
+int __based(base_segment) *ms_based;
+void ms_seh(void) {
+    __try {
+        ms_exported();
+        __leave;
+    } __except (1) {
+        puts("exception");
+    }
+    __try {
+        ms_exported();
+    } __finally {
+        puts("cleanup");
+    }
+}
+
+// <stdnoreturn.h> macro spelling: obsolescent since C23 (deprecated), still accepted
+#include <stdnoreturn.h>
+noreturn void legacy_noreturn(void);

@@ -1,5 +1,6 @@
+// Go 1.25 — syntax showcase
 //go:build linux || darwin
-// +build linux darwin
+// +build linux darwin (deprecated: superseded by //go:build)
 
 // Package inventory tracks stock levels for a small warehouse.
 //
@@ -639,4 +640,43 @@ func uniçode() {
 func verbs() {
 	fmt.Printf("%v %+v %#v %T %% %t %b %c %d %o %O %q %x %X %U %e %E %f %F %g %G %s %p %8.3f|%-8d|%+d|%08b|% x|%[2]d %[1]d %*d\n",
 		1, 1, 1, 1, true, 5, 'x', 10, 8, 8, "q", 255, 255, 0x1F600, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, "s", &struct{}{}, 3.14159, 7, 7, 5, 1, 2, 4, 9)
+}
+
+// ── Go 1.24+: generic type aliases, iterators, WaitGroup.Go, parenthesised types, empty statements ──
+type Vec[T any] = []T // generic alias (Go 1.24)
+
+type Table[K comparable, V any] = map[K]V
+
+func Zip[A, B any](a []A, b []B) func(yield func(A, B) bool) { // iter.Seq2-shaped
+	return func(yield func(A, B) bool) {
+		for i := 0; i < min(len(a), len(b)); i++ {
+			if !yield(a[i], b[i]) {
+				return
+			}
+		}
+	}
+}
+
+func Convert[From, To any](f From, conv func(From) To) To { return conv(f) }
+
+func newForms() {
+	var parenthesised (int) = 3 // parenthesised type
+	var fnType (func(int) int) = func(i int) int { return i }
+	var ptr *(int) = &parenthesised
+	_ = fnType
+	_ = ptr
+	explicit := Convert[int, string] // explicit instantiation without a call
+	_ = explicit
+	pair := Convert[int, string](7, func(i int) string { return fmt.Sprint(i) })
+	_ = pair
+	;
+	for a, b := range Zip([]int{1}, []string{"x"}) {
+		_, _ = a, b
+	}
+	var wg sync.WaitGroup
+	wg.Go(func() {}) // Go 1.25
+	wg.Wait()
+	for i := range 3 {
+		defer func() { _ = i }() // per-iteration loop variable (Go 1.22)
+	}
 }

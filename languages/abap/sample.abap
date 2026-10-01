@@ -1,3 +1,4 @@
+* ABAP 7.58 (ABAP Platform 2023, ABAP Cloud language scope) — syntax showcase
 *&---------------------------------------------------------------------*
 *& Report  Z_WAREHOUSE_STOCK
 *&---------------------------------------------------------------------*
@@ -459,3 +460,265 @@ END-OF-SELECTION.
   WRITE: / 'Done', sy-uname, sy-datum.
   NEW-LINE.
   FORMAT RESET.
+
+" ── ABAP 7.5x: inline declarations, constructor expressions ───────────
+START-OF-SELECTION.
+  FINAL(lo_final) = NEW lcl_warehouse( p_werks ).
+  FINAL(lv_final) = 42.
+  DATA(lt_groups) = VALUE string_table( FOR i = 1 UNTIL i > 3 ( |row { i }| ) ).
+  DATA(lt_while)  = VALUE string_table( FOR j = 0 WHILE j < 3 ( CONV #( j ) ) ).
+  DATA(lt_for_in) = VALUE tt_stock( FOR ls IN gt_stock WHERE ( labst > 0 ) ( ls ) ).
+  DATA(lv_let)    = COND string( LET base = `x` IN WHEN gv_count > 0 THEN base && `+` ELSE base ).
+  DATA(lv_exact)  = EXACT i( '12' ).
+  DATA(lv_boolc)  = boolc( gv_count > 0 ).
+  DATA(lr_ref)    = REF #( gs_stock ).
+  DATA(lt_base)   = VALUE tt_stock( BASE gt_stock ( matnr = 'M-9' ) ).
+  DATA(lt_corr)   = CORRESPONDING tt_stock( gt_stock EXCEPT labst ).
+  DATA(lt_deep)   = CORRESPONDING #( DEEP gt_stock ).
+  DATA(lt_using)  = CORRESPONDING tt_stock( gt_stock USING KEY primary_key ).
+  DATA(lv_switch) = SWITCH #( gv_count WHEN 0 THEN `none` WHEN 1 THEN `one` ELSE THROW cx_sy_itab_line_not_found( ) ).
+  DATA(lv_cond_t) = COND #( WHEN gv_count > 0 THEN `pos` ELSE THROW lcx_stock_error( ) ).
+  DATA(lv_tbl_exp) = VALUE #( gt_stock[ KEY primary_key INDEX 1 ] DEFAULT VALUE #( ) ).
+  DATA(lv_lines)   = lines( gt_stock ).
+  DATA(lv_exists)  = xsdbool( line_exists( gt_stock[ matnr = 'M-1' ] ) ).
+  DATA(lv_idx)     = line_index( gt_stock[ matnr = 'M-1' ] ).
+
+  " Grouping, table comprehension and reductions
+  LOOP AT gt_stock INTO DATA(ls_g) GROUP BY ( werks = ls_g-werks size = GROUP SIZE index = GROUP INDEX )
+       ASCENDING WITHOUT MEMBERS ASSIGNING FIELD-SYMBOL(<ls_group>).
+    WRITE / <ls_group>-werks.
+  ENDLOOP.
+  LOOP AT gt_stock INTO ls_g GROUP BY ls_g-werks INTO DATA(lv_key).
+    LOOP AT GROUP lv_key ASSIGNING FIELD-SYMBOL(<ls_member>).
+      WRITE / <ls_member>-matnr.
+    ENDLOOP.
+  ENDLOOP.
+  DATA(lt_grouped) = VALUE string_table( FOR GROUPS grp OF wa IN gt_stock GROUP BY wa-werks ( |{ grp }| ) ).
+  DATA(lv_max) = REDUCE i( INIT m = 0 FOR wa IN gt_stock NEXT m = nmax( val1 = m val2 = CONV i( wa-labst ) ) ).
+  DATA(lv_str) = REDUCE string( INIT t = `` FOR wa IN gt_stock NEXT t = t && wa-matnr && `,` ).
+  DATA(lv_joined) = concat_lines_of( table = lt_names sep = `,` ).
+
+  " Table functions, keys and expressions
+  DATA gt_keyed TYPE SORTED TABLE OF ty_stock WITH UNIQUE KEY primary_key COMPONENTS matnr werks
+                                              WITH NON-UNIQUE SORTED KEY by_plant COMPONENTS werks.
+  DATA gt_empty TYPE STANDARD TABLE OF ty_stock WITH EMPTY KEY.
+  READ TABLE gt_keyed WITH TABLE KEY by_plant COMPONENTS werks = '1000' ASSIGNING FIELD-SYMBOL(<ls_k>).
+  LOOP AT gt_keyed USING KEY by_plant ASSIGNING <ls_k> WHERE werks = '1000'.
+  ENDLOOP.
+  INSERT VALUE #( matnr = 'M-2' ) INTO TABLE gt_keyed.
+  APPEND LINES OF gt_stock FROM 1 TO 2 TO gt_empty.
+  DELETE gt_empty FROM 1 TO 1.
+  gt_empty = VALUE #( ).
+  ASSIGN gt_stock[ matnr = 'M-1' ] TO FIELD-SYMBOL(<ls_line>).
+  FINAL(lv_off) = gv_text+1(2).
+  gv_text = gv_text(5).
+  gv_text = segment( val = gv_text index = 2 sep = `,` ).
+  gv_text = substring_after( val = gv_text sub = `,` ).
+  gv_text = substring_before( val = gv_text sub = `,` ).
+  gv_text = condense( val = gv_text del = ` ` ).
+  gv_text = shift_left( val = gv_text places = 1 ).
+  gv_text = to_mixed( val = `snake_case` sep = `_` ).
+  gv_text = from_mixed( val = `camelCase` sep = `_` ).
+  gv_text = repeat( val = `ab` occ = 3 ).
+  gv_text = reverse( gv_text ).
+  gv_text = escape( val = gv_text format = cl_abap_format=>e_html_text ).
+  gv_a = find( val = gv_text sub = `a` ) + count( val = gv_text regex = `[0-9]` ) + strlen( gv_text ).
+  gv_flag = matches( val = gv_text regex = `^[A-Z]+$` ).
+  gv_flag = contains( val = gv_text start = `ab` end = `yz` ).
+  gv_flag = contains_any_of( val = gv_text sub = `abc` ).
+  gv_a = lines( gt_stock ) + nmax( val1 = 1 val2 = 2 ) + nmin( val1 = 1 val2 = 2 ) + trunc( '1.5' ) + frac( '1.5' ).
+  gv_a = distance( val1 = gv_text val2 = `abd` ).
+  gv_text = cmax( val1 = `a` val2 = `b` ).
+  gv_text = utclong_current( ).
+  DATA(lv_utc) = utclong_add( val = utclong_current( ) days = 1 ).
+  DATA(lv_bits) = bit-set( 5 ).
+  DATA(lv_hex)  = xstrlen( gv_bin ) + xsdbool( gv_bin IS NOT INITIAL ).
+  DATA(lv_b64)  = cl_http_utility=>encode_base64( `data` ).
+
+  " Further operators: comparison, bit tests, ranges
+  gv_flag = xsdbool( gv_bin O gc_hex AND gv_bin Z gc_hex AND gv_bin M gc_hex ).
+  gv_flag = xsdbool( gv_text CO 'abc' OR gv_text CN 'abc' OR gv_text CA 'abc' OR gv_text NA 'abc' ).
+  gv_flag = xsdbool( gv_text CS 'a' OR gv_text NS 'b' OR gv_text CP 'a*' OR gv_text NP 'b*' ).
+  gv_flag = xsdbool( gv_count IN gt_range OR gv_count NOT IN gt_range ).
+  gv_flag = xsdbool( <ls_stock> IS ASSIGNED AND lo_final IS BOUND AND lo_final IS INSTANCE OF lcl_warehouse ).
+  gv_flag = xsdbool( gt_stock IS INITIAL OR gv_text IS NOT SUPPLIED ).
+  gv_a = ( 1 + 2 ) * 3 ** 2 / 4 MOD 2 DIV 1.
+
+  " Exceptions and messages
+  TRY.
+      RAISE EXCEPTION TYPE lcx_stock_error EXPORTING iv_matnr = 'M-1'.
+    CATCH lcx_stock_error INTO DATA(lx_catch).
+      DATA(lv_msg) = lx_catch->get_text( ).
+      RAISE EXCEPTION lx_catch.
+    CATCH BEFORE UNWIND cx_root.
+      RESUME.
+    CLEANUP.
+  ENDTRY.
+  MESSAGE e001(zwh) WITH 'a' 'b' INTO DATA(lv_message).
+  MESSAGE ID 'ZWH' TYPE 'I' NUMBER '001' DISPLAY LIKE 'E'.
+  MESSAGE lx_catch TYPE 'S'.
+
+  " ABAP SQL (7.5x): host expressions, joins on itabs, set operators
+  SELECT FROM mard
+    FIELDS matnr, werks, labst, @gc_plant AS plant, 'A' AS lit, labst * 2 AS doubled
+    WHERE werks = @gc_plant AND labst > @( gc_threshold )
+    ORDER BY matnr
+    INTO TABLE @DATA(lt_new)
+    UP TO 100 ROWS.
+  SELECT FROM @gt_stock AS it
+    FIELDS matnr, SUM( labst ) AS total
+    GROUP BY matnr
+    INTO TABLE @DATA(lt_itab_sql).
+  SELECT FROM mard AS m
+    INNER JOIN mara AS a ON a~matnr = m~matnr
+    LEFT OUTER JOIN makt AS t ON t~matnr = a~matnr AND t~spras = @sy-langu
+    RIGHT OUTER JOIN t001w AS w ON w~werks = m~werks
+    CROSS JOIN t001 AS c
+    FIELDS m~matnr, a~mtart, t~maktx, w~name1
+    INTO TABLE @DATA(lt_joins).
+  SELECT matnr FROM mara UNION ALL SELECT matnr FROM mard INTO TABLE @DATA(lt_union_all).
+  SELECT matnr, COALESCE( labst, 0 ) AS qty, CAST( labst AS CHAR( 20 ) ) AS qty_c,
+         LENGTH( matnr ) AS len, UPPER( matnr ) AS up, SUBSTRING( matnr, 1, 3 ) AS sub,
+         LTRIM( matnr, '0' ) AS trimmed, LPAD( matnr, 18, '0' ) AS padded,
+         ROUND( labst, 1 ) AS rounded, CEIL( labst ) AS ceiled, DIV( 7, 2 ) AS divd, MOD( 7, 2 ) AS modd
+    FROM mard INTO TABLE @DATA(lt_funcs).
+  SELECT SINGLE FROM mara FIELDS matnr WHERE matnr = @gc_plant INTO @DATA(lv_single) .
+  SELECT * FROM mard FOR ALL ENTRIES IN @gt_stock WHERE matnr = @gt_stock-matnr INTO TABLE @DATA(lt_fae).
+  SELECT * FROM mard WHERE matnr LIKE 'M%' ESCAPE '#' AND labst BETWEEN 1 AND 9 INTO TABLE @DATA(lt_like) BYPASSING BUFFER.
+  SELECT * FROM mard INTO TABLE @DATA(lt_priv) WITH PRIVILEGED ACCESS.
+  SELECT * FROM mard INTO TABLE @DATA(lt_off) ORDER BY matnr UP TO 10 ROWS OFFSET 5.
+  SELECT matnr FROM mard WHERE EXISTS ( SELECT matnr FROM mara WHERE matnr = mard~matnr ) INTO TABLE @DATA(lt_exists).
+  SELECT matnr FROM mard WHERE labst > ( SELECT AVG( labst ) FROM mard ) INTO TABLE @DATA(lt_sub).
+  INSERT mard FROM TABLE @gt_stock ACCEPTING DUPLICATE KEYS.
+  UPDATE mard FROM @gs_stock.
+  MODIFY mard FROM @( VALUE #( matnr = 'M-1' ) ).
+  DELETE mard FROM TABLE @gt_stock.
+  GET TIME STAMP FIELD DATA(lv_stamp).
+  ASSERT sy-subrc = 0.
+
+  " Calls: functional, static, dynamic, chained
+  DATA(lv_chained) = lo_final->lif_reorder~needs_reorder( gs_stock ).
+  DATA(lv_static)  = cl_abap_typedescr=>describe_by_data( gv_a )->absolute_name.
+  DATA(lv_dyn)     = CAST cl_abap_structdescr( cl_abap_typedescr=>describe_by_data( gs_stock ) )->components.
+  CALL METHOD lo_final->load
+    EXPORTING it_range = gt_range
+    IMPORTING et_stock = gt_stock
+    CHANGING  cv_count = gv_count
+    EXCEPTIONS OTHERS = 1.
+  DATA(lt_ptab) = VALUE abap_parmbind_tab( ( name = 'IT_RANGE' kind = cl_abap_objectdescr=>exporting value = REF #( gt_range ) ) ).
+  CALL METHOD lo_final->('LOAD') PARAMETER-TABLE lt_ptab.
+  GET BADI DATA(lo_badi) FILTERS werks = gc_plant.
+  CALL BADI lo_badi->notify EXPORTING iv_matnr = 'M-1'.
+
+" ── Classes: every definition modifier ────────────────────────────────
+CLASS lcl_base DEFINITION ABSTRACT CREATE PROTECTED.
+  PUBLIC SECTION.
+    TYPES ty_id TYPE i.
+    CONSTANTS c_max TYPE i VALUE 10.
+    EVENTS changed EXPORTING VALUE(iv_id) TYPE i.
+    CLASS-EVENTS class_changed.
+    METHODS run ABSTRACT IMPORTING iv_in TYPE i RETURNING VALUE(rv_out) TYPE i.
+    METHODS stop FINAL.
+    METHODS hook DEFAULT IGNORE.
+    METHODS must_override DEFAULT FAIL.
+    METHODS with_opt IMPORTING iv_a TYPE i OPTIONAL iv_b TYPE i DEFAULT 5 PREFERRED PARAMETER iv_a.
+    METHODS resumable RAISING RESUMABLE(cx_sy_zerodivide).
+    METHODS generic IMPORTING it_any TYPE ANY TABLE ig_any TYPE any ir_data TYPE REF TO data.
+    CLASS-METHODS create RETURNING VALUE(ro_new) TYPE REF TO lcl_base.
+  PROTECTED SECTION.
+    ALIASES change FOR lif_reorder~needs_reorder.
+    DATA mv_id TYPE ty_id.
+ENDCLASS.
+
+CLASS lcl_child DEFINITION INHERITING FROM lcl_base FINAL CREATE PRIVATE FRIENDS lcl_base.
+  PUBLIC SECTION.
+    INTERFACES lif_reorder ABSTRACT METHODS needs_reorder.
+    METHODS run REDEFINITION.
+    METHODS stop_hook FOR EVENT changed OF lcl_base IMPORTING iv_id sender.
+    DATA mo_sender TYPE REF TO lcl_base.
+ENDCLASS.
+
+CLASS lcl_child IMPLEMENTATION.
+  METHOD run.
+    rv_out = iv_in + c_max.
+    RAISE EVENT changed EXPORTING iv_id = 1.
+  ENDMETHOD.
+  METHOD stop_hook.
+    mv_id = iv_id.
+  ENDMETHOD.
+  METHOD lif_reorder~needs_reorder.
+    rv_yes = abap_false.
+  ENDMETHOD.
+ENDCLASS.
+
+" ── ABAP Unit ─────────────────────────────────────────────────────────
+CLASS ltc_warehouse DEFINITION FINAL FOR TESTING DURATION SHORT RISK LEVEL HARMLESS.
+  PRIVATE SECTION.
+    DATA mo_cut TYPE REF TO lcl_warehouse.
+    METHODS setup.
+    METHODS teardown.
+    METHODS load_returns_rows FOR TESTING RAISING cx_static_check.
+    CLASS-METHODS class_setup.
+ENDCLASS.
+
+CLASS ltc_warehouse IMPLEMENTATION.
+  METHOD class_setup.
+  ENDMETHOD.
+  METHOD setup.
+    mo_cut = NEW #( '1000' ).
+  ENDMETHOD.
+  METHOD teardown.
+    CLEAR mo_cut.
+  ENDMETHOD.
+  METHOD load_returns_rows.
+    cl_abap_unit_assert=>assert_equals( act = 1 exp = 1 msg = 'one equals one' ).
+    cl_abap_unit_assert=>assert_bound( mo_cut ).
+    cl_abap_unit_assert=>fail( ).
+  ENDMETHOD.
+ENDCLASS.
+
+" ── Enumerations, interfaces with generics, pragmas ───────────────────
+TYPES: BEGIN OF ENUM ty_level BASE TYPE i,
+         level_low  VALUE 0,
+         level_mid  VALUE 5,
+         level_high VALUE 10,
+       END OF ENUM ty_level.
+DATA gv_level TYPE ty_level VALUE level_mid.
+DATA gv_pragma2 TYPE i ##NEEDED ##UNUSED.
+TYPES ty_generic TYPE STANDARD TABLE OF REF TO data WITH EMPTY KEY.
+INTERFACE lif_generic PUBLIC.
+  TYPES ty_t TYPE STANDARD TABLE OF i WITH EMPTY KEY.
+  CONSTANTS c_x TYPE i VALUE 1.
+  DATA mv_shared TYPE i.
+  METHODS get RETURNING VALUE(rt_all) TYPE ty_t.
+ENDINTERFACE.
+
+" ── ABAP RESTful programming model (behavior implementation) ──────────
+CLASS lhc_stock DEFINITION INHERITING FROM cl_abap_behavior_handler.
+  PRIVATE SECTION.
+    METHODS reorder FOR MODIFY IMPORTING keys FOR ACTION stock~reorder RESULT result.
+    METHODS validate FOR VALIDATE ON SAVE IMPORTING keys FOR stock~validate.
+    METHODS get_auth FOR INSTANCE AUTHORIZATION IMPORTING keys REQUEST requested_authorizations FOR stock RESULT result.
+ENDCLASS.
+
+CLASS lhc_stock IMPLEMENTATION.
+  METHOD reorder.
+    READ ENTITIES OF zi_stock IN LOCAL MODE
+      ENTITY stock
+        ALL FIELDS WITH CORRESPONDING #( keys )
+        RESULT DATA(lt_stock_ent).
+    MODIFY ENTITIES OF zi_stock IN LOCAL MODE
+      ENTITY stock
+        UPDATE FIELDS ( labst )
+        WITH VALUE #( FOR s IN lt_stock_ent ( %tky = s-%tky labst = s-labst + 1 ) )
+      REPORTED DATA(lt_reported)
+      FAILED DATA(lt_failed).
+    result = VALUE #( FOR s IN lt_stock_ent ( %tky = s-%tky %param = s ) ).
+  ENDMETHOD.
+  METHOD validate.
+    APPEND VALUE #( %tky = keys[ 1 ]-%tky ) TO failed-stock.
+  ENDMETHOD.
+  METHOD get_auth.
+  ENDMETHOD.
+ENDCLASS.
+COMMIT ENTITIES RESPONSE OF zi_stock FAILED DATA(lt_cf) REPORTED DATA(lt_cr).

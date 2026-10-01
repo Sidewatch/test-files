@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+// JSX (React 19 / ECMAScript 2025) — syntax showcase; JSX is checked against the TSX grammar, TypeScript-only constructs are omitted
 // ── Imports ──
 import React, { useState, useEffect, useMemo, useCallback, useReducer, createContext, useContext } from "react";
 import PropTypes from "prop-types";
@@ -226,3 +228,97 @@ async function boot() {
 }
 
 boot().catch(console.error);
+
+// ── React 19 additions ──
+function Greeting({ ref, name }) {
+  // ref is a plain prop in React 19; no forwardRef needed
+  return <h1 ref={ref}>Hello, {name}</h1>;
+}
+
+function AddItemForm({ addItem }) {
+  const [message, submitAction, isPending] = React.useActionState(async (previous, formData) => {
+    await addItem(formData.get("sku"));
+    return "added";
+  }, null);
+  const [optimistic, addOptimistic] = React.useOptimistic([], (state, next) => [...state, next]);
+  return (
+    <form action={submitAction}>
+      <title>Add item</title>
+      <meta name="description" content="Add a stock item" />
+      <link rel="stylesheet" href="/form.css" precedence="default" />
+      <input name="sku" required />
+      <button type="submit" disabled={isPending} formAction={submitAction}>Add</button>
+      <output>{message}{optimistic.length}</output>
+    </form>
+  );
+}
+
+const ThemeContext = React.createContext("light");
+const themed = <ThemeContext value="dark"><Greeting name="Acme" /></ThemeContext>;
+function Reader({ promise }) { const data = React.use(promise); return <pre>{data}</pre>; }
+
+// ── Plain JavaScript statements and expressions ──
+let counter = 0;
+counter++; ++counter; counter--; --counter;
+counter += 1; counter -= 1; counter *= 2; counter /= 2; counter %= 5; counter **= 2;
+counter <<= 1; counter >>= 1; counter >>>= 1; counter &= 7; counter |= 8; counter ^= 3;
+let flagA = null; flagA ||= 1; flagA &&= 2; flagA ??= 3;
+const arithmetic = (7 % 3) + (2 ** 3) - (6 / 2) * 4;
+const bitwise = (5 & 3) | (5 ^ 3) | (1 << 2) | (16 >> 1) | (16 >>> 1) | ~5;
+const comparisons = [1 == 1, 1 != 2, 1 === 1, 1 !== 2, 1 <= 2, 2 >= 1];
+const sequence = (counter++, counter--, counter);
+const kinds = [typeof counter, void 0, delete inObject.element, "x" in inObject, inObject instanceof Object];
+
+function* numbers() { yield 1; yield* [2, 3]; }
+const genFn = function* () { yield 0; };
+const namedFn = function named(a, b = 1, ...rest) { return [a, b, rest, new.target, arguments.length]; };
+const pattern = /ab+c/giu.test("abbc");
+const html = "<!-- not an HTML comment in a string -->";
+
+label: for (let i = 0; i < 3; i++) {
+  for (var j = 0; j < 3; j++) {
+    if (j === 1) continue label;
+    if (i === 2) break label;
+  }
+}
+for (const key in inObject) { if (key) continue; }
+for (const value of [1, 2]) { if (value) break; }
+let loops = 0;
+while (loops < 2) loops++;
+do { loops--; } while (loops > 0);
+;
+if (loops) { } else if (!loops) { } else { }
+try {
+  throw new Error("boom", { cause: "demo" });
+} catch (error) {
+  console.error(error?.cause, error?.["message"], error?.toString?.());
+} finally {
+  debugger;
+}
+try { JSON.parse("{"); } catch { /* optional catch binding */ }
+
+class Base { constructor() { this.id = 1; } greet() { return "base"; } }
+class Derived extends Base {
+  static #count = 0;
+  #secret = 1;
+  static { Derived.#count = 1; }
+  constructor() { super(); this.#secret++; }
+  greet() { return super.greet() + (#secret in this ? "!" : "?"); }
+  get secret() { return this.#secret; }
+  set secret(value) { this.#secret = value; }
+}
+const ClassExpression = class extends Base {};
+const dynamicImport = () => import("./Settings.jsx");
+const metaUrl = import.meta.url;
+
+// ── Module forms and escapes ──
+import * as everything from "./Settings.jsx";
+import config from "./config.json" with { type: "json" };
+export * as settingsNamespace from "./Settings.jsx";
+export * from "./Settings.jsx";
+export { everything as allSettings, config };
+const escaped = "tab\t newline\n quote\" backslash\\ hex\x41 unicodeB braces\u{1F4E6} nul\0 vtab\v bell-ish\b ff\f cr\r";
+const escapedSingle = 'it\'s é';
+{
+  using resource = { [Symbol.dispose]() {} }; // explicit resource management (ES2026)
+}

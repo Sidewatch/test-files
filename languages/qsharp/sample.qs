@@ -1,3 +1,4 @@
+// Q# (Microsoft QDK 1.x, Std library) — syntax showcase
 // ── Comments ──
 // Q# showcase: quantum routines for a warehouse slot-assignment search.
 // TODO: add noise models. FIXME: the oracle ignores bin capacity.
@@ -25,18 +26,22 @@
 
 namespace Warehouse.Quantum {
     // ── Imports ──
-    open Microsoft.Quantum.Intrinsic;
-    open Microsoft.Quantum.Canon;
-    open Microsoft.Quantum.Measurement;
-    open Microsoft.Quantum.Math;
-    open Microsoft.Quantum.Arrays as Arrays;
-    open Microsoft.Quantum.Convert as Conv;
-    open Microsoft.Quantum.Diagnostics;
+    open Std.Intrinsic;
+    open Std.Canon;
+    open Std.Measurement;
+    open Std.Math;
+    open Std.Arrays as Arrays;
+    open Std.Convert as Conv;
+    open Std.Diagnostics;
+    import Std.Random.*;
+    import Std.Arrays.Mapped, Std.Arrays.Fold;
+    import Std.Convert.IntAsDouble as ToDouble;
 
     // ── Types ──
-    newtype Slot = (Aisle : Int, Shelf : Int);
-    newtype Named = (Label : String, Position : Slot);
-    newtype Stock = (Sku : String, Qty : Int, Weight : Double);
+    struct Slot { Aisle : Int, Shelf : Int }
+    struct Named { Label : String, Position : Slot }
+    struct Stock { Sku : String, Qty : Int, Weight : Double }
+    newtype Legacy = (Id : Int, Name : String); // deprecated: use struct
 
     // ── Literals ──
     function Literals() : Unit {
@@ -106,10 +111,9 @@ namespace Warehouse.Quantum {
         set list += [2];
         mutable text = "a";
         set text += "b";
-        let unwrapped = Slot(1, 2)!;
-        let (aisle, shelf) = Slot(1, 2)!;
-        let item = Named("x", Slot(3, 4))::Position::Aisle;
-        let copied = Slot(1, 2) w/ Aisle <- 5;
+        let slot = new Slot { Aisle = 1, Shelf = 2 };
+        let copied = new Slot { ...slot, Aisle = 5 };
+        let item = new Named { Label = "x", Position = slot }.Position.Aisle;
     }
 
     // ── Functions ──
@@ -247,6 +251,89 @@ namespace Warehouse.Quantum {
         let _ = n;
     }
 
+    // ── Further forms ──
+    function MoreForms() : Unit {
+        // array updates by copy-and-update assignment
+        mutable arr = [1, 2, 3];
+        set arr w/= 0 <- 10;
+        set arr w/= 1..2 <- [20, 30];
+        // tuple reassignment and discard
+        mutable (a, b) = (1, 2);
+        set (a, b) = (b, a);
+        let (_, second) = (1, 2);
+        // nested lambdas and operation lambdas
+        let adder = x -> y -> x + y;
+        let applyH = q => H(q);
+        let adj = (q => S(q), q => Adjoint S(q));
+        // ranges: all forms
+        let r1 = 0..5;
+        let r2 = 0..2..10;
+        let r3 = 5..-1..0;
+        let r4 = ...3;
+        let r5 = 2...;
+        let r6 = ...;
+        let r7 = 0..2...;
+        let r8 = ...2..10;
+        // numeric forms
+        let big = 1000000000000L;
+        let sci = 1e3;
+        let tiny = 1.0E-10;
+        let c = Complex(1.0, 2.0);
+        let paulis = (PauliI, PauliX, PauliY, PauliZ);
+        let results = (Zero, One);
+        // types spelled out
+        let t1 : Int = 1;
+        let t2 : BigInt = 1L;
+        let t3 : Double = 1.0;
+        let t4 : Bool = true;
+        let t5 : String = "s";
+        let t6 : Result = Zero;
+        let t7 : Pauli = PauliX;
+        let t8 : Range = 1..2;
+        let t9 : Int[] = [1];
+        let t10 : (Int, Bool) = (1, true);
+        let t11 : Int[][] = [[1], [2]];
+        let t12 : (Int -> Int) = x -> x;
+        let t13 : (Qubit => Unit is Adj + Ctl) = q => X(q);
+        let t14 : Unit = ();
+        let t15 : Complex = Complex(0.0, 1.0);
+    }
+
+    function Generic<'T, 'U>(x : 'T, f : 'T -> 'U) : 'U { f(x) }
+
+    operation Intrinsics(q : Qubit) : Unit is Adj + Ctl {
+        body intrinsic;
+    }
+
+    operation Simulatable(q : Qubit) : Unit is Adj {
+        body ... { X(q); }
+        adjoint self;
+    }
+
+    operation Teleport(msg : Qubit, target : Qubit) : Unit {
+        use here = Qubit();
+        H(here);
+        CNOT(here, target);
+        CNOT(msg, here);
+        H(msg);
+        if M(msg) == One { Z(target); }
+        if MResetZ(here) == One { X(target); }
+    }
+
+    operation RotationsAndMeasure() : Result[] {
+        use qs = Qubit[3];
+        Rx(PI() / 2.0, qs[0]);
+        Ry(PI() / 4.0, qs[1]);
+        Rz(2.0 * PI(), qs[2]);
+        ApplyToEach(H, qs);
+        ApplyToEachA(T, qs);
+        Controlled X([qs[0], qs[1]], qs[2]);
+        let r = MeasureEachZ(qs);
+        let p = Measure([PauliX, PauliZ], qs[0..1]);
+        ResetAll(qs);
+        return r + [p];
+    }
+
     // ── Entry point and attributes ──
     @Config(Base)
     internal function Hidden() : Unit {}
@@ -262,6 +349,8 @@ namespace Warehouse.Quantum {
 
     @EntryPoint()
     operation Main() : Double {
+        let sample = new Stock { Sku = "AC-1001", Qty = 25, Weight = 1.5 };
+        Message($"{sample.Sku} x {sample.Qty}");
         mutable samples = [];
         for _ in 1 .. 100 {
             set samples += [BellPair()];
@@ -270,4 +359,5 @@ namespace Warehouse.Quantum {
         DumpMachine();
         return Agreement(samples);
     }
+    export Main, BellPair, Factorial;
 }

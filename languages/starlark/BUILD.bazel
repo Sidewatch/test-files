@@ -1,5 +1,6 @@
 #!/usr/bin/env bazel
 # ── Comments ──
+# Starlark (Bazel 8.x BUILD dialect) — syntax showcase
 # Bazel BUILD file (Starlark): the inventory service.
 # TODO: split the test suites per warehouse
 # FIXME: glob picks up editor backup files
@@ -292,6 +293,67 @@ my_macro(name = "macro_target", skus = [sku_label("ABC-1"), sku_label("ABC-2", u
 inventory_rule(name = "manifest", version = VERSION, srcs = [":all_sources"], threads = 8)
 inventory_library(name = "extras", srcs = ["extras.c"], visibility = ["//visibility:private"])
 
+# ── Call forms: unpacking, selects, symbolic macros, extensions ──
+_ARGS = ["a", "b"]
+_KWARGS = {"sep": "-"}
+UNPACK_CALL = sku_label(*_ARGS, **_KWARGS)
+MERGED = dict(CONFIG, extra = 1)
+UPDATED = CONFIG | {"threads": 8}  # dict union
+LIST_UNION = REGIONS + ["x"]
+TUPLE_UNPACK = (lambda *a, **kw: a)(1, 2, k = 3)
+CONDITIONAL_SELECT = select(
+    {
+        ":debug": ["-O0"],
+        "//conditions:default": ["-O2"],
+    },
+    no_match_error = "unsupported mode",
+)
+NESTED_COMP = [[i * j for j in range(3)] for i in range(3)]
+STRUCT = struct(name = "inventory", version = VERSION)
+ATTR_ACCESS = STRUCT.name
+FREEZE_CHECK = native.existing_rules()
+GLOBAL_LOOKUP = {"k": [1, 2]}["k"][0]
+
+visibility(["//services/..."])  # .bzl load visibility (Bazel 8)
+
+def _symbolic_impl(name, visibility, srcs, **kwargs):
+    native.filegroup(name = name, visibility = visibility, srcs = srcs)
+
+symbolic_macro = macro(
+    implementation = _symbolic_impl,
+    attrs = {"srcs": attr.label_list(allow_files = True, configurable = False)},
+    inherit_attrs = native.filegroup,
+)
+
+def _repo_impl(rctx):
+    rctx.file("BUILD.bazel", "exports_files(glob([\"**\"]))")
+
+inventory_repo = repository_rule(
+    implementation = _repo_impl,
+    attrs = {"url": attr.string()},
+    local = True,
+    environ = ["HOME"],
+)
+
+def _ext_impl(mctx):
+    for mod in mctx.modules:
+        for tag in mod.tags.add:
+            inventory_repo(name = tag.name, url = tag.url)
+
+inventory_ext = module_extension(
+    implementation = _ext_impl,
+    tag_classes = {"add": tag_class(attrs = {"name": attr.string(), "url": attr.string()})},
+)
+
+def _transition_impl(settings, attr):
+    return {"//command_line_option:compilation_mode": "opt"}
+
+opt_transition = transition(
+    implementation = _transition_impl,
+    inputs = [],
+    outputs = ["//command_line_option:compilation_mode"],
+)
+
 # ── Dictionary / string methods ──
 _METHODS = [
     "x".upper(),
@@ -306,6 +368,14 @@ _METHODS = [
     CONFIG.values(),
     CONFIG.items(),
     dir(CONFIG),
+    "x".removeprefix("x"), "xy".removesuffix("y"), "a b".partition(" "), "a.b".rpartition("."),
+    "ab".elems(), "ab".codepoints(), "abc".count("b"), "a\nb".splitlines(), "Ab".title(),
+    "ab".capitalize(), "a".isalpha(), "1".isdigit(), " ".isspace(), "a".islower(), "A".isupper(),
+    "abc".index("b"), "abc".rfind("c"), "abc".startswith("a"), "x".lstrip(), "x".rstrip(),
+    "a b c".rsplit(" ", 1), "abc".lower(), "x".format(), "{0}".format("a"),
+    [1].append, [1, 2].index(2), [3, 1].pop(), CONFIG.pop("name", None), CONFIG.popitem,
+    CONFIG.setdefault("k", 0), CONFIG.update, CONFIG.clear, REGIONS.extend, REGIONS.insert,
+    REGIONS.remove, range(0, 10, 2), list(REGIONS), tuple(REGIONS), dict(a = 1), fail,
     str(1), int("2"), float("3.5"), bool(0), repr("x"),
     len(REGIONS), min(1, 2), max(1, 2), sorted([3, 1, 2]), reversed([1, 2]),
     enumerate(REGIONS), zip(REGIONS, REGIONS), any([False]), all([True]),

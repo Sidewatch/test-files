@@ -1,4 +1,5 @@
-<!-- ── Comments ─────────────────────────────────────────────
+<!-- Vue 3.5 — syntax showcase
+     ── Comments ─────────────────────────────────────────────
      Vue 3 single-file component: the warehouse stock table.
      TODO: virtualise the list. FIXME: keyboard focus after delete. -->
 
@@ -8,12 +9,12 @@ export const COMPONENT_NAME = "StockTable";
 export default { name: COMPONENT_NAME, inheritAttrs: false };
 </script>
 
-<script setup lang="ts">
+<script setup lang="ts" generic="TKey extends string = string">
 /**
  * Script setup: everything below runs per instance.
  * @see https://vuejs.org
  */
-import { computed, ref, reactive, watch, watchEffect, onMounted, onBeforeUnmount, provide, inject, nextTick } from "vue";
+import { useTemplateRef, useId, defineAsyncComponent, computed, ref, reactive, watch, watchEffect, onMounted, onBeforeUnmount, provide, inject, nextTick } from "vue";
 import type { PropType, Ref } from "vue";
 import StatusBadge from "./StatusBadge.vue";
 import { useStockStore } from "@/stores/stock";
@@ -39,6 +40,11 @@ defineOptions({ inheritAttrs: false });
 
 // ── State ──────────────────────────────────────────────────
 const query = ref("");
+const inputEl = useTemplateRef<HTMLInputElement>("input"); // Vue 3.5
+const uid = useId(); // Vue 3.5
+const AsyncPanel = defineAsyncComponent(() => import("./AsyncPanel.vue"));
+const { greeting = "hi", size = 3 } = defineProps<{ greeting?: string; size?: number }>(); // reactive props destructure (3.5)
+const keyed = ref<TKey>();
 const input = ref<HTMLInputElement | null>(null);
 const state = reactive({ loading: false, error: null as string | null, selected: new Set<string>() });
 const sortKey = ref<keyof Item>("sku");
@@ -114,7 +120,7 @@ onBeforeUnmount(() => state.selected.clear());
     </ul>
 
     <component :is="state.loading ? 'span' : 'div'" v-bind:id="`c-${count}`" #default>dynamic</component>
-    <Teleport to="body"><div class="modal" v-if="state.selected.size">Selected</div></Teleport>
+    <Teleport defer to="body"><div class="modal" v-if="state.selected.size">Selected</div></Teleport>
     <Transition name="fade" mode="out-in"><div :key="query">{{ query }}</div></Transition>
     <KeepAlive><StatusBadge :status="'paid'" /></KeepAlive>
     <Suspense><template #default><AsyncPanel /></template><template #fallback>Loading…</template></Suspense>
@@ -130,8 +136,8 @@ onBeforeUnmount(() => state.selected.clear());
 
     <!-- Event and key modifiers, bind modifiers, legacy and special attributes -->
     <button @click.once="onSelect('a')" @click.capture="onSelect('b')" @scroll.passive="onSelect('c')" @click.self="onSelect('d')" @click.exact="onSelect('e')" @click.left="onSelect('f')" @contextmenu.right.prevent="onSelect('g')" @mouseup.middle="onSelect('h')">Modifiers</button>
-    <input @keyup.esc="query = ''" @keydown.tab.shift="onSelect('t')" @keyup.page-down="onSelect('p')" @keydown.alt.enter.exact="onSelect('x')" @input.native="onSelect('n')" />
-    <MyInput v-model.trim.number.lazy="query" v-model:title.trim="query" :foo.camel="query" :bar.prop="query" :baz.attr="query" :aria-label.sync="query" />
+    <input @keyup.esc="query = ''" @keydown.tab.shift="onSelect('t')" @keyup.page-down="onSelect('p')" @keydown.alt.enter.exact="onSelect('x')" />
+    <MyInput v-model.trim.number.lazy="query" v-model:title.trim="query" :foo.camel="query" :bar.prop="query" :baz.attr="query" />
     <div :class="[state.loading ? 'busy' : '', { active: count > 0, 'is-low': lowCount > 0 }]" :style="[{ color: accent }, { fontSize: '12px' }]" :data-count.number="count"></div>
     <p>{{ $t("stock.title") }} {{ $slots.default ? "slot" : "no slot" }} {{ $refs.input?.value }} {{ $props.title }} {{ $attrs.id }} {{ $emit }} {{ $el }} {{ $parent }} {{ $root }}</p>
     <p>{{ count | 0 }} {{ query || "empty" }} {{ items?.[0]?.sku ?? "none" }} {{ [1, 2, 3].map((n) => n * 2).join(", ") }} {{ `template ${count}` }} {{ !state.loading && count >= 1 }} {{ count ** 2 }} {{ typeof count }}</p>
@@ -149,7 +155,7 @@ onBeforeUnmount(() => state.selected.clear());
     <svg viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg"><circle cx="5" cy="5" r="4" :fill="accent" /></svg>
     <MyComp v-slot:[dynamicSlot]="{ item: { sku, qty } }">{{ sku }} {{ qty }}</MyComp>
     <MyComp #item="{ item }" #[dynamicSlot]>dynamic slot</MyComp>
-    <input v-focus v-custom:arg.mod1.mod2="{ a: 1 }" v-bind:[dynamicKey].sync="value" />
+    <input v-focus v-custom:arg.mod1.mod2="{ a: 1 }" v-bind:[dynamicKey]="value" />
   </section>
 </template>
 

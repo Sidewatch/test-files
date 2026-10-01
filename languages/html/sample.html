@@ -1,3 +1,4 @@
+<!-- HTML Living Standard (October 2026) — syntax showcase -->
 <!DOCTYPE html>
 <!-- ── Comments ── -->
 <!-- Main landing page markup. TODO: split partials. FIXME: contrast on hero. -->
@@ -192,7 +193,7 @@ text</textarea>
     <INPUT TYPE=TEXT NAME=upper VALUE=CASE DISABLED><DIV CLASS=upper-case>Upper-case tags and attributes</DIV>
     <p class = "spaces around equals" id = 'also' data-x = unquoted-with-dash>Whitespace around equals</p>
     <p data-empty="" data-novalue data-single='it"s' data-double="it's" data-both="a &quot;b&quot; &#39;c&#39;">Quote forms</p>
-    <a href=/path/without/quotes?a=1&b=2>Unquoted URL</a>
+    <a href=/path/without/quotes?query>Unquoted URL (no = or quotes inside)</a>
     <button type=button disabled=disabled aria-pressed=false>Boolean forms</button>
 
     <!-- ── Shadow DOM, popover, dialog, slots ── -->
@@ -243,18 +244,49 @@ text</textarea>
     </svg>
     <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><mrow><mfrac><mn>1</mn><mn>2</mn></mfrac><mo>+</mo><msqrt><mi>x</mi></msqrt><msup><mi>y</mi><mn>2</mn></msup><munderover><mo>&sum;</mo><mi>i</mi><mi>n</mi></munderover></mrow><annotation encoding="TeX">\frac12+\sqrt x</annotation></math>
 
-    <!-- ── Processing instruction, CDATA and odd constructs ── -->
-    <?xml-stylesheet type="text/css" href="style.css"?>
-    <![CDATA[ This is treated as a bogus comment in HTML ]]>
+    <!-- ── Current Living Standard additions ── -->
+    <img src="/img/hero.jpg" alt="Hero" fetchpriority="high" decoding="async" sizes="(min-width: 600px) 50vw, 100vw" srcset="/img/h-600.jpg 600w, /img/h-1200.jpg 1200w" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <input type="checkbox" switch name="notifications" checked>
+    <input type="text" name="nick" autocomplete="nickname" enterkeyhint="done" inputmode="text" popovertarget="pop" popovertargetaction="toggle">
+    <details name="faq" open><summary>Exclusive accordion item one</summary><p>Only one details with name="faq" is open at a time.</p></details>
+    <details name="faq"><summary>Item two</summary><p>Second.</p></details>
+    <div id="menu-pop" popover="manual">Manual popover</div>
+    <button popovertarget="menu-pop" popovertargetaction="show">Show</button>
+    <button popovertarget="menu-pop" popovertargetaction="hide">Hide</button>
+    <button command="request-close" commandfor="dlg2">Request close</button>
+    <button command="show-popover" commandfor="menu-pop">Show via command</button>
+    <button command="toggle-popover" commandfor="menu-pop">Toggle via command</button>
+    <button command="--custom-command" commandfor="dlg2">Custom command</button>
+    <select name="styled"><button type="button"><selectedcontent></selectedcontent></button><option value="a"><span>Rich</span> option</option></select>
+    <iframe src="/lazy" loading="lazy" allow="fullscreen; clipboard-write" credentialless referrerpolicy="origin" srcdoc="&lt;p&gt;Inline document&lt;/p&gt;"></iframe>
+    <p contenteditable="plaintext-only" writingsuggestions="false" autocorrect="off" spellcheck="true">Editable plain text</p>
+    <div hidden="until-found">Found by page search</div>
+    <div inert>Not interactive</div>
+    <a href="/download.zip" download="archive.zip" ping="/track" hreflang="en" type="application/zip" rel="noopener noreferrer nofollow" referrerpolicy="no-referrer">Download</a>
+    <script type="module" blocking="render" src="/js/critical.mjs" fetchpriority="high"></script>
+    <link rel="modulepreload" href="/js/app.mjs" fetchpriority="low" blocking="render">
+    <template shadowrootmode="closed" shadowrootdelegatesfocus shadowrootclonable shadowrootserializable><slot></slot></template>
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#1a73e8" media="(prefers-color-scheme: light)">
+    <time datetime="PT2H30M">2h 30m</time> <time datetime="2026-W40">week 40</time> <time datetime="2026-10">October</time>
+    <rt>annotation outside ruby</rt>
+    <ruby>東京<rp>(</rp><rt>Tōkyō</rt><rp>)</rp></ruby>
+    <label><input type="radio" name="r" value="1">One</label>
+    <output for="a b">Result</output>
+    <audio controls preload="metadata" controlslist="nodownload" crossorigin="anonymous"><source src="/a.ogg" type="audio/ogg"><track kind="metadata" src="/m.vtt"></audio>
+    <video playsinline disablepictureinpicture disableremoteplayback preload="none"><track kind="subtitles" src="/s.vtt" srclang="fr" label="Français"></video>
+    <portal-like-custom-element></portal-like-custom-element>
+
+    <!-- ── Parse-error recovery (valid for browsers, flagged by validators) ── -->
+    </span>
+
+    <!-- ── Odd constructs ── -->
     <!-- Comment with -- double dash inside --  and a trailing space -->
     <!---->
     <!-- <p>commented out markup</p> -->
     <p>Unclosed paragraph
     <p>Another, implicitly closing the previous
     <li>List item without a list
-    <br/ >
-    <div / >Stray slash</div>
-    <p>Stray < and > and & characters, &unknown; entity, &amp without semicolon, &#xZZ; bad numeric</p>
   </main>
 
   <footer>

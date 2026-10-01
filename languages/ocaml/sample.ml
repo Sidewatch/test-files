@@ -1,4 +1,4 @@
-(* OCaml showcase: variants, records, modules, functors, GADTs, objects and effects. *)
+(* OCaml 5.4 — syntax showcase: variants, records, modules, functors, GADTs, objects and effects. *)
 (* A comment (* with a nested comment *) still going *)
 (** A documentation comment for [status].
     @param x the input
@@ -316,6 +316,157 @@ let ppx_match = match%ext 1 with _ -> ()
 [@@@attr_floating]
 [%%ext_item]
 let () = ()
+
+(* ── OCaml 5.x: effect handlers in match, labeled tuples, binding operators ── *)
+type _ Effect.t += Yield : int -> unit Effect.t | Get : int Effect.t
+
+let handler_match f =
+  match f () with
+  | v -> v
+  | exception Not_found -> 0
+  | effect (Yield n), k -> ignore n; Effect.Deep.continue k ()
+  | effect Get, k -> Effect.Deep.continue k 42
+
+let labeled_tuple : x:int * y:int = ~x:1, ~y:2
+let labeled_pun = let x = 1 and y = 2 in (~x, ~y)
+let labeled_pat = let (~x, ~y) = labeled_tuple in x + y
+let labeled_partial = let (~x, _) = labeled_tuple in x
+type labeled = lx:int * ly:string * float
+
+let ( let+ ) o f = Option.map f o
+let ( and+ ) = ( and* )
+let map_op = let+ a = Some 1 and+ b = Some 2 in a + b
+let ( let@ ) f k = f k
+let with_resource = let@ r = fun k -> k 5 in r + 1
+
+(* ── Types: more forms ── *)
+type nonrec t2 = t
+type 'a constrained = 'a list constraint 'a = int
+type unboxed = U of int [@@unboxed]
+type bx = { v : int } [@@boxed]
+type ('a, 'b) pair2 = 'a * 'b
+type 'a opt = 'a option = None | Some of 'a
+type rec_t = { mutable m : int; imm : string }
+type inline_rec = Rec of { mutable f : int; g : string }
+type poly_closed = [ `A | `B of int ]
+type poly_open = [> `A | `B ]
+type poly_lower = [< `A | `B > `A ]
+type poly_ext = [ poly_closed | `C ]
+type obj_t = < m : int; .. >
+type fn_t = int -> ?opt:string -> lbl:float -> unit
+type lazy_t2 = int Lazy.t
+type first_class = (module STACK with type 'a t = 'a list)
+type 'a gadt = G : int -> int gadt | H : 'a * 'b -> ('a * 'b) gadt
+type existential = E : 'a * ('a -> string) -> existential
+type (_, _) eq = Refl : ('a, 'a) eq
+type 'a vec = 'a array
+type +'a covar = Cov of 'a
+type -'a contra = 'a -> unit
+type ocaml_module_ty = (module Set.OrderedType)
+
+(* ── Module system: more forms ── *)
+module type COMPARABLE = sig
+  type t
+  val compare : t -> t -> int
+  val equal : t -> t -> bool [@@deprecated "use compare"]
+end
+
+module type EXTENDED = sig
+  include COMPARABLE
+  include module type of struct include String end with type t := t
+  module Sub : COMPARABLE with type t = int
+  val x : int
+  external prim : int -> int = "%identity"
+  class type ct = object method m : int end
+  type 'a w
+  val f : ('a -> 'b) -> 'a w -> 'b w
+end
+
+module F (A : COMPARABLE) (B : COMPARABLE with type t = A.t) = struct
+  let same = A.equal
+end
+module G = functor (A : COMPARABLE) -> struct include A end
+module App = F (String) (String)
+module Gen () = struct let id = Random.bits () end
+module Applied = Gen ()
+module type FUNCTOR_TY = functor (A : COMPARABLE) -> COMPARABLE with type t = A.t
+module type S3 = sig type t end
+module Constrained : S3 with type t := int = struct end
+module Opened = struct open Printf let p = sprintf end
+module Coerced = (Stack : STACK)
+module Packed = (val first_class : STACK)
+module Deprecated = struct end [@@deprecated "old"]
+module Ext = struct type extensible += Another end
+module OfType : module type of Stack = Stack
+include Stack
+include (val first_class)
+include functor Gen
+open Stack
+open! Stack
+let open_in_expr = Stack.(empty)
+let open_bang = let open! Stack in empty
+let module_in_expr = let module L = List in L.length []
+let ( !+ ) = succ
+
+(* ── Classes: more forms ── *)
+class virtual animal =
+  object (self : 'self)
+    val virtual name : string
+    method virtual speak : string
+    method private secret = 1
+    method private virtual hidden : int
+    method! overridden = 2
+    method pair = (self#speak, self#secret)
+    initializer print_string "created"
+    constraint 'self = < speak : string; .. >
+  end
+
+class dog name =
+  object
+    inherit animal as super
+    val name = name
+    method speak = "woof"
+    method hidden = 0
+    method! overridden = super#overridden + 1
+  end
+
+class ['a] box (v : 'a) = object method get : 'a = v end
+class type shape_t = object method area : float end
+class virtual ['a, 'b] two = object method virtual f : 'a -> 'b end
+class point_c = fun x y -> object method x = x method y = y end
+class c_ext = object inherit point_c 1 2 method sum = 3 end
+class c_let = let k = 5 in object method k = k end
+let obj_immediate = object (_) method m = 1 end
+let obj_cast = (new dog "rex" :> animal)
+let obj_cast2 = (new dog "rex" : dog :> animal)
+let obj_call = (new box 1)#get
+type point_t = < x : int; y : int >
+
+(* ── Misc syntax ── *)
+let (x, y) as pair = (1, 2)
+let _ = pair
+let f ~(x : int) ?(y : int option) ?(z : int = 5) () = x
+let g (type a b) (x : a) (y : b) = (x, y)
+let h : type a. a -> a = fun x -> x
+let k = fun ?(a = 1) ~b () -> a + b
+let array_ops = [| 1; 2; 3 |].(0)
+let array_dot = Array.(get [| 1 |] 0)
+let string_ops = "abc".[0]
+let bytes_ops = Bytes.of_string "abc"
+let bigarray_ops = Bigarray.Array1.create Bigarray.int Bigarray.c_layout 1
+let index_ops = let ( .%[] ) s i = s.[i] and ( .%[]<- ) b i c = Bytes.set b i c in "x".%[0]
+let user_index = let ( .!{} ) a i = a.(i) in [| 1 |].!{0}
+let if_let = if true then 1 else if false then 2 else 3
+let nested_comment = (* outer (* inner *) outer *) 1
+let quote_in_comment = (* it's "quoted" {|raw|} *) 2
+let polymorphic_variant_ops = match `A with `A | `B -> true
+let attribute_forms = (fun [@inline] x -> x) [@inlined]
+let ext_forms = [%e 1]
+let () = [%e print_string "x"]
+let%e ppx_binding = 1
+module%e Ppx_module = struct end
+type%e ppx_type = int
+let nums = [ 1_0; 0x1F; 0b11; 0o17; 1e3; 1.; 5e1 ]
 
 let () =
   let orders = [ { number = 1; total = 120.5; status = Paid 20260924. }

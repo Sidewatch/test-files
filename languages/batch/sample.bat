@@ -1,4 +1,5 @@
 @echo off
+:: Windows Batch (cmd.exe, Windows 11) — syntax showcase
 :: Warehouse nightly build and stock export for Windows.
 :: TODO: replace xcopy with robocopy.
 REM Classic comment form, also valid.
@@ -116,6 +117,7 @@ netstat -an | find "LISTEN"
 reg query HKCU\Software\Acme /v Setting
 schtasks /query /tn "Nightly"
 wmic os get caption
+:: wmic is deprecated (removed from current Windows 11); kept for highlighting. Prefer: powershell -Command "(Get-CimInstance Win32_OperatingSystem).Caption"
 powershell -NoProfile -Command "Get-Date -Format s"
 
 :: ── Success and failure exits ───────────────────────────────────────
@@ -262,3 +264,116 @@ start "title" /b /wait /d "%CD%" cmd /c exit 0
 subst X: C:\work
 vol
 verify on
+
+:: ── Modern Windows commands and cmd.exe features ────────────────────
+:: Built-in dynamic variables
+echo %=ExitCode% %=ExitCodeAscii% %=C:% %__CD__% %__APPDIR__% %CD% %CMDCMDLINE%
+echo %ERRORLEVEL% %RANDOM% %TIME% %DATE% %CMDEXTVERSION% %DIRCMD% %COPYCMD%
+
+:: Tools shipped with Windows 10/11
+where /q git && echo git found
+where /r C:\Tools *.exe
+curl -sSfL -o "%TEMP%\download.zip" https://example.com/archive.zip
+tar -xf "%TEMP%\download.zip" -C "%TEMP%\extracted"
+tar -czf "%DROP%\backup.tar.gz" -C "%ROOT%" src
+winget install --id Example.Tool -e --silent
+wsl.exe --list --verbose
+wsl -d Ubuntu -- ls -la
+powershell -NoProfile -ExecutionPolicy Bypass -File "%ROOT%build.ps1" -Config %CONFIG%
+pwsh -NoLogo -Command "Get-ChildItem | Measure-Object"
+setx EXAMPLE_HOME "%ROOT%" /m
+setx PATH "%PATH%;%ROOT%bin"
+icacls "%DROP%" /grant Users:(OI)(CI)R /t
+net use Z: \\server\share /persistent:no
+net user
+sc query Spooler
+sc stop Spooler
+bcdedit /enum
+cipher /w:C:\
+compact /c /s:"%DROP%"
+fsutil file createnew "%TEMP%\blob.bin" 1048576
+certutil -hashfile "%DROP%\b.txt" SHA256
+certutil -encode in.bin out.b64
+expand -r archive.cab "%TEMP%"
+clip < files.txt
+findstr /c:"exact phrase" /s /i *.log
+findstr /r /c:"^[A-Z]-[0-9][0-9]*$" stock.csv
+forfiles /p "%DROP%" /m *.log /d -30 /c "cmd /c del @path"
+getmac /fo csv /nh
+hostname
+ipconfig /all
+nslookup example.com
+ping -n 1 -w 500 192.0.2.1 >nul
+tracert -d example.com
+robocopy "%ROOT%src" "%DROP%\src" /E /Z /R:2 /W:5 /LOG+:"%TEMP%\copy.log" /TEE /XD .git /XF *.tmp
+reg add HKCU\Software\Acme /v Setting /t REG_SZ /d "value" /f
+reg export HKCU\Software\Acme "%TEMP%\acme.reg" /y
+schtasks /create /tn "Nightly" /tr "\"%ROOT%run.bat\"" /sc daily /st 02:00 /rl highest /f
+systeminfo | findstr /b /c:"OS Name"
+whoami /groups /fo list
+cmd /d /s /c "echo hello"
+start "" /affinity 3 /high "%ProgramFiles%\Tool\tool.exe"
+start "" ms-settings:privacy
+start "" https://example.com
+
+:: Parenthesised blocks with delayed expansion and nested quotes
+set "count=0"
+for /f "usebackq delims=" %%L in ("%ROOT%list.txt") do (
+    set /a count+=1
+    set "line=%%L"
+    if "!line:~0,1!"=="#" (
+        echo Comment #!count!: !line!
+    ) else if "!line!"=="" (
+        echo Blank
+    ) else (
+        echo Entry !count!: !line!
+    )
+)
+
+:: Argument parsing with shift loop
+:parse_args
+if "%~1"=="" goto :args_done
+if /i "%~1"=="--verbose" (set "VERBOSE=1" & shift & goto :parse_args)
+if /i "%~1"=="--output" (set "OUTPUT=%~2" & shift & shift & goto :parse_args)
+if "%~1:~0,2%"=="--" (echo Unknown option %~1 & exit /b 2)
+set "FILES=%FILES% %~1"
+shift
+goto :parse_args
+:args_done
+
+:: Admin check, self-elevation, and error handling idioms
+net session >nul 2>&1 || (echo Administrator rights required & exit /b 5)
+fltmc >nul 2>&1 && echo elevated
+command1 && command2 || command3
+(command1 & command2) && echo both ran
+copy a.txt b.txt >nul 2>&1 && (echo copied) || (echo copy failed & exit /b 1)
+if %ERRORLEVEL% neq 0 exit /b %ERRORLEVEL%
+
+:: Here-document style output via parenthesised echo, and string tricks
+(
+    echo @echo off
+    echo echo generated script
+    echo exit /b 0
+) > "%TEMP%\generated.bat"
+set "str=Hello, World"
+set "len=0"
+:strlen_loop
+if not "!str:~%len%,1!"=="" (set /a len+=1 & goto :strlen_loop)
+echo Length: %len%
+echo %str:Hello=Goodbye% %str:~7% %str:~-5% %str:~0,-7%
+set "upper=%str%"
+for %%c in (A B C D E F G H I J K L M N O P Q R S T U V W X Y Z) do set "upper=!upper:%%c=%%c!"
+
+:: Percent-encoded and special characters in set /a, with grouping
+set /a "a=1, b=2, c=a+b, d=c*c, e=d/2, f=d%%3, g=c<<2, h=(a|b)&c, i=a^b"
+set /a "j=(1+2)*(3+4)"
+set /a result=%a%+%b%
+set /a "k = ~0"
+
+:: Redirect handles 3-9, and appending stderr to a file
+call :noisy 3>handle3.txt 4>&1
+(call :noisy) 2>>errors.log
+echo to-handle-9 9>nul
+
+:: Exit with explicit codes
+exit /b 0

@@ -1,3 +1,4 @@
+;; Clojure 1.12 — syntax showcase
 ;; Warehouse inventory in Clojure.
 ;; Semicolons start line comments; #_ discards the next form.
 ;; TODO: persist the stock map to a database.
@@ -355,3 +356,110 @@ Math/E
   (run-tests)
   (pprint (data/diff {:a 1} {:a 2})))
 ;; TODO: replace with a transducer pipeline.
+
+;; ── Clojure 1.11 and 1.12 additions ─────────────────────────────────
+(ns sample.modern
+  (:require [clojure.string :as-alias str-alias]   ; alias without loading
+            [clojure.repl.deps :refer [add-lib add-libs sync-deps]]
+            [clojure.java.basis :as basis]))
+
+;; Param-tags metadata and qualified methods (1.12)
+(map String/.length ["a" "bb" "ccc"])
+(map String/valueOf [1 2 3])
+(mapv Integer/parseInt ["1" "2"])
+(String/new "from constructor reference")
+(map Integer/new [1 2])
+(defn parse ^[String] [s] (Integer/parseInt s))
+(def length-fn ^[String] String/.length)
+(def indexed-of ^{:param-tags [String long]} String/.charAt)
+(^[long long] Math/max 1 2)
+(^[_ long] String/.substring "hello" 2)
+
+;; Array class syntax (1.12)
+(def longs-class long/1)
+(def strings-class String/1)
+(def matrix-class double/2)
+(into-array String/1 [["a"] ["b"]])
+(aget (make-array long/2 2 2) 0 0)
+
+;; Functional interface conversion (1.12)
+(let [^java.util.function.Function f inc
+      ^java.util.function.Predicate p even?]
+  [(.apply f 1) (.test p 2)])
+(.forEach [1 2 3] println)
+(java.util.concurrent.CompletableFuture/supplyAsync (fn [] 42))
+(Thread/ofVirtual)
+(-> (Thread/ofVirtual) (.start (fn [] (println "virtual thread"))))
+
+;; New core functions (1.11 and 1.12)
+(parse-long "42")
+(parse-double "3.14")
+(parse-uuid "00000000-0000-0000-0000-000000000000")
+(parse-boolean "true")
+(random-uuid)
+(abs -5)
+(NaN? ##NaN)
+(infinite? ##Inf)
+(update-keys {:a 1 :b 2} name)
+(update-vals {:a 1 :b 2} inc)
+(iteration (fn [k] {:next (when (< k 3) (inc k)) :v k}) :vf :v :kf :next :initk 0)
+(partitionv 3 (range 10))
+(partitionv-all 3 (range 10))
+(splitv-at 2 [1 2 3 4])
+(stream-reduce! + 0 (java.util.stream.Stream/of 1 2 3))
+(stream-into! [] (java.util.stream.Stream/of 1 2 3))
+(stream-seq! (java.util.stream.Stream/of 1 2 3))
+(stream-transduce! (map inc) + 0 (java.util.stream.Stream/of 1 2 3))
+(requiring-resolve 'clojure.string/join)
+(add-lib 'org.clojure/data.json)
+(basis/initial-basis)
+
+;; More binding and conditional forms
+(if-some [v (get {:a nil} :a)] v :absent)
+(when-some [v (get {:a 1} :a)] (inc v))
+(when-first [x [1 2 3]] x)
+(cond->> [1 2 3] true (map inc) false (filter even?))
+(condp = 2 1 :one 2 :two :other)
+(condp contains? #{1 2} 1 :found :missing)
+(case 'sym sym :symbol "str" :string :default)
+(let [{:keys [a b] :or {b 2} :as m} {:a 1}
+      {:keys [x/y] :as ns-map} {:x/y 1}
+      {:person/keys [name age]} {:person/name "Ann" :person/age 30}
+      [p q & more] (range 5)
+      {[r s] :pair} {:pair [1 2]}]
+  [a b m y name age p q more r s])
+
+;; Records, protocols and multimethods in newer forms
+(defrecord Order [id sku qty]
+  Summary
+  (summarise [this] (str "Order " id)))
+(->Order 1 "A-100" 5)
+(map->Order {:id 1 :sku "A-100" :qty 5})
+(defprotocol Repo
+  (find-one [this id])
+  (find-all [this] [this opts]))
+(defmulti handle (juxt :type :version))
+(defmethod handle [:order 1] [m] :order-v1)
+(defmethod handle [:order 2] [m] :order-v2)
+(defmethod handle :default [m] :unknown)
+
+;; Transients, volatile state and concurrency helpers
+(persistent! (reduce conj! (transient []) (range 5)))
+(let [v (volatile! 0)] (vswap! v inc) @v)
+(def pool (java.util.concurrent.Executors/newFixedThreadPool 2))
+(pmap inc (range 10))
+(pcalls #(1) #(2))
+(pvalues (+ 1 1) (+ 2 2))
+(let [c (chan 10)] (async/>!! c 1) (async/<!! c))
+(async/go-loop [i 0] (when (< i 3) (async/<! (async/timeout 1)) (recur (inc i))))
+(async/alts!! [(async/timeout 10)])
+
+;; Metadata, reader conditionals and tagged literals in one place
+^{:added "1.12" :see-also ["other"]} (defn tagged-fn [] 1)
+#?(:clj  (defn platform [] :jvm)
+   :cljs (defn platform [] :js)
+   :cljr (defn platform [] :clr))
+[1 #?@(:clj [2 3] :cljs [4]) 5]
+#inst "2025-06-15T12:00:00.000-00:00"
+#uuid "11111111-1111-1111-1111-111111111111"
+(def tagged {:when #inst "2025-06-15" :id #uuid "11111111-1111-1111-1111-111111111111"})

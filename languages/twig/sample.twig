@@ -1,4 +1,5 @@
-{# ── Comments ───────────────────────────────────────────────
+{# Twig 3.21 — syntax showcase
+   ── Comments ───────────────────────────────────────────────
    Twig: the warehouse stock page. `items`, `user` and `warehouse`
    come from the controller. TODO: paginate the table.
    {# Twig comments do not nest, but this text is still inside one #}
@@ -80,7 +81,8 @@
     </table>
   {% endif %}
 
-  {% for key, value in map if value is not null %}
+  {# the `for … if` form was removed in Twig 3: filter instead #}
+  {% for key, value in map|filter(v => v is not null) %}
     {{ key }} = {{ value }}{{ not loop.last ? ',' }}
   {% endfor %}
 
@@ -88,7 +90,6 @@
   {{ 1 + 2 - 3 * 4 / 5 % 6 ** 2 // 3 }}
   {{ 'a' ~ 'b' }}
   {{ a == b or a != b and a < b or a > b or a <= b or a >= b }}
-  {{ a === b or a !== b }}
   {{ a <=> b }}
   {{ x ?: 'elvis' }} {{ x ?? 'coalesce' }} {{ x ? 'yes' : 'no' }}
   {{ 'x' in list }} {{ 'x' not in list }}
@@ -114,6 +115,7 @@
   {{~ 'tilde trimming' ~}}
 
   {# ── Tags: apply, autoescape, embed, include, with, verbatim ── #}
+  {% spaceless %}{# deprecated since 3.12 #}<p> a </p>{% endspaceless %}
   {% apply upper|trim %}shouting {{ user.name }}{% endapply %}
   {% autoescape 'html' %}{{ unsafe }}{% endautoescape %}
   {% autoescape false %}{{ trusted }}{% endautoescape %}
@@ -161,9 +163,9 @@
   {{ x is constant('Item::MAX') }} {{ x is empty }} {{ x is null }} {{ n is odd }} {{ x is mapping }} {{ x is sequence }}
   {{ x is not same as(y) }} {{ 'a' is defined and 'b' is not defined }} {{ n is divisible by(2) }}
   {{ 'a'|abs }} {{ list|batch(3, 'No item') }} {{ s|capitalize }} {{ s|column('sku') }} {{ a|convert_encoding('UTF-8', 'ISO-8859-1') }}
-  {{ n|currency }} {{ d|date_modify('+1 day')|date('d/m/Y') }} {{ x|default('none') }} {{ s|escape('url') }} {{ s|e('html_attr') }}
+  {{ n|format_currency('EUR') }} {{ d|date_modify('+1 day')|date('d/m/Y') }} {{ x|default('none') }} {{ s|escape('url') }} {{ s|e('html_attr') }}
   {{ s|first }} {{ s|last }} {{ n|format_number }} {{ s|format('%s', 1) }} {{ m|keys }} {{ s|length }} {{ s|nl2br }} {{ n|number_format(2, '.', ',') }}
-  {{ s|replace({'a': 'b'}) }} {{ list|reverse }} {{ s|slug }} {{ list|shuffle }} {{ s|spaceless }} {{ s|split(',') }} {{ s|striptags }}
+  {{ s|replace({'a': 'b'}) }} {{ list|reverse }} {{ s|slug }} {{ list|shuffle }} {{ s|spaceless }}{# deprecated since 3.12 #} {{ s|split(',') }} {{ s|striptags }}
   {{ s|title }} {{ s|trim('-') }} {{ s|u.truncate(8, '...') }} {{ s|upper }} {{ s|url_encode }} {{ list|merge([1]) }} {{ m|data_uri }}
   {{ s|inline_css }} {{ s|markdown_to_html }} {{ s|html_to_markdown }} {{ s|sort }} {{ n|round(1, 'ceil') }} {{ s|json_encode(constant('JSON_PRETTY_PRINT')) }}
   {{ date() }} {{ date('2026-03-01') }} {{ enum('App\\Status') }} {{ enum_cases('App\\Status') }} {{ html_classes('a', {b: true}) }} {{ html_cva(base: 'btn') }}

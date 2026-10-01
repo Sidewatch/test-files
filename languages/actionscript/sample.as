@@ -1,3 +1,4 @@
+// ActionScript 3.0 (Adobe AIR SDK 51 / ECMAScript 4 draft dialect) — syntax showcase
 /**
  * Warehouse inventory model for a Flash-style stock viewer.
  *
@@ -269,3 +270,193 @@ internal interface IExtras extends IStockHolder {
 internal function topLevel(a:int, b:int = 2, ...rest):void {
     trace(arguments.length, arguments.callee);
 }
+
+// ── Unnamed package, conditional compilation, SWF metadata ───────────
+package {
+    import flash.display.Sprite;
+    import flash.display.Stage;
+    import flash.events.*;
+    import flash.utils.Proxy;
+    import flash.utils.flash_proxy;
+    import flash.utils.describeType;
+    import flash.utils.getDefinitionByName;
+    import flash.utils.getQualifiedClassName;
+
+    use namespace flash_proxy;
+
+    [SWF(width="800", height="600", frameRate="60", backgroundColor="#102030")]
+    [Frame(factoryClass="Preloader")]
+    [ExcludeClass]
+    [DefaultProperty("children")]
+    [ArrayElementType("String")]
+    [RemoteClass(alias="com.example.Stock")]
+    [Style(name="gap", type="Number", inherit="no")]
+    [Event(name="ready", type="flash.events.Event")]
+    [Bindable("changed")]
+    [Transient]
+    [Inject]
+    public final class Showcase extends Sprite {
+
+        // Conditional compilation constants and blocks
+        CONFIG::debug {
+            private var debugLog:Array = [];
+        }
+        CONFIG::release {
+            private var releaseFlag:Boolean = true;
+        }
+        CONFIG::debug const verbose:Boolean = true;
+
+        // Modifier orderings and visibility
+        public static const ONE:int = 1, TWO:int = 2;
+        static public var shared:Object = {};
+        static private var hidden:int;
+        final public function sealedMethod():void {}
+        public final override function toString():String { return "Showcase"; }
+        override protected function dispatchEvent_(e:Event):Boolean { return false; }
+        internal static function helper():void {}
+
+        // Rest, default values, typed and untyped params
+        public function many(first:*, second:int = 2, third:String = "x", ... rest:Array):void {
+            var count:int = rest.length;
+            var args:Array = [first, second, third].concat(rest);
+        }
+
+        // Nested functions, closures and function expressions
+        public function closures():Function {
+            var counter:int = 0;
+            function inner(step:int = 1):int { return counter += step; }
+            var anon:Function = function(x:int):int { return x * 2; };
+            var bound:Function = inner;
+            return function():int { return inner() + anon(2); };
+        }
+
+        // Types: Vector, Dictionary, generics-like syntax, wildcard
+        public function types():void {
+            var v1:Vector.<int> = new Vector.<int>();
+            var v2:Vector.<*> = new <*>[1, "two", 3.0];
+            var v3:Vector.<Vector.<String>> = new Vector.<Vector.<String>>(2, true);
+            var d:Dictionary = new Dictionary(false);
+            var u:uint = 0xFFFFFFFF;
+            var i:int = -2147483648;
+            var n:Number = 1.5E+10 + .5 + 5. + 0x1F;
+            var s1:String = 'single "quoted"';
+            var s2:String = "double 'quoted' é \x41 \101";
+            var multi:String = "line one\
+line two";
+            var re:RegExp = /(?P<year>\d{4})-(?P<month>\d\d)/gimsx;
+            var re2:RegExp = new RegExp("a+b", "g");
+            var cls:Class = getDefinitionByName("flash.display.Sprite") as Class;
+            var qn:QName = new QName("urn:x", "name");
+            var date:Date = new Date(2024, 0, 1, 12, 30, 0, 0);
+            var err:Error = new RangeError("bad range", 1);
+            var xmlList:XMLList = new XMLList("<a/><b/>");
+        }
+
+        // Operators: is, as, in, instanceof, typeof, delete, void, comma
+        public function operators(o:Object):void {
+            var a:Boolean = o is String;
+            var b:Object = o as Sprite;
+            var c:Boolean = "k" in o;
+            var d:Boolean = o instanceof Object;
+            var e:String = typeof o;
+            var f:Boolean = delete o.key;
+            var g:* = void 0;
+            var h:int = (1, 2);
+            var cast1:Sprite = Sprite(o);
+            var cast2:int = int("12");
+            var cast3:Number = Number("1.5");
+            var cast4:Boolean = Boolean(o);
+            var cast5:String = String(o);
+            var cast6:Array = Array(o);
+            var cast7:XML = XML("<x/>");
+            var t:Boolean = a ? b != null : !c;
+            var shift:uint = 1 << 31 >>> 28 >> 1;
+        }
+
+        // Statements: for, for each, for in, while, do, labels, with, switch
+        public function statements(list:Array, dict:Object):void {
+            for (var i:int = 0, j:int = 10; i < j; i++, j--) {}
+            for (;;) { break; }
+            for each (var item:* in list) { if (item == null) continue; }
+            for each (var val:String in dict) { trace(val); }
+            for (var key:* in dict) { trace(key, dict[key]); }
+            var k:int = 0;
+            while (k < 3) k++;
+            do k--; while (k > 0);
+            top: for (var x:int = 0; x < 2; x++) { for (var y:int = 0; y < 2; y++) { if (y) continue top; } }
+            with (dict) { trace(length); }
+            switch (k) {
+                case 0: case 1: trace("low"); break;
+                case 2: { trace("two"); break; }
+                default: trace("other");
+            }
+            if (k) trace("a"); else if (!k) trace("b"); else trace("c");
+            try { throw "string error"; } catch (e:*) { trace(e); } finally { trace("end"); }
+            try { null.x; } catch (e:TypeError) { trace(e.errorID); }
+            return;
+        }
+
+        // E4X: descendants, filters, namespaces, mutation, literals
+        public function e4x():void {
+            default xml namespace = new Namespace("http://example.com/ns");
+            var xml:XML = <catalog xmlns:p="http://example.com/p">
+                <p:item id="1" price="9.5"><name>Alpha</name></p:item>
+                <p:item id="2" price="3"><name>Beta</name></p:item>
+                <!-- comment node -->
+                <?pi processing instruction?>
+            </catalog>;
+            var p:Namespace = xml.namespace("p");
+            var names:XMLList = xml.p::item.name;
+            var cheap:XMLList = xml.p::item.(@price < 5);
+            var first:XML = xml.p::item[0];
+            var allAttrs:XMLList = xml.p::item.@*;
+            var deep:XMLList = xml..name;
+            var text:String = xml.p::item.name.text();
+            var kids:XMLList = xml.*;
+            var count:int = xml.p::item.length();
+            xml.p::item[0].@price = 10;
+            xml.p::item[1].name = "Gamma";
+            xml.appendChild(<p:item id="3"/>);
+            xml.p::item += <p:item id="4"/>;
+            delete xml.p::item[0];
+            var dyn:XML = <row id={count} label={"n" + count}>{names}</row>;
+            XML.ignoreWhitespace = true;
+            XML.prettyPrinting = false;
+            var attrName:String = "id";
+            var viaExpr:String = first.@[attrName];
+            var viaQName:String = first.@p::id;
+        }
+
+        // Proxy overrides (flash_proxy namespace)
+        flash_proxy override function getProperty(name:*):* { return null; }
+        flash_proxy override function callProperty(name:*, ... rest):* { return null; }
+        flash_proxy override function hasProperty(name:*):Boolean { return false; }
+        flash_proxy override function nextNameIndex(index:int):int { return 0; }
+    }
+}
+
+// ── Several types in one file: interface inheritance, dynamic, native ─
+internal interface IReadable extends IEventDispatcher, IStockHolder {
+    function read(count:uint = 1):Array;
+    function get length():uint;
+}
+
+internal dynamic class Registry extends Proxy implements IReadable {
+    private var _items:Array = [];
+    public function read(count:uint = 1):Array { return _items.slice(0, count); }
+    public function get length():uint { return _items.length; }
+}
+
+internal class StaticInit {
+    public static var table:Object;
+    // static initialiser block
+    {
+        table = {a: 1, b: 2};
+        trace("class initialised");
+    }
+}
+
+// Deprecated-but-valid: octal literals, with, prototype-based classes
+function LegacyClass():void { this.value = 0; }
+LegacyClass.prototype.getValue = function():int { return this.value; };
+var legacyInstance:Object = new LegacyClass();

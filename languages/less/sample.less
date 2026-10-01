@@ -1,3 +1,4 @@
+// Less 4.x — syntax showcase (lessc is not installed here; written against the Less 4 documentation)
 // Less: a warehouse UI stylesheet exercising the whole language.
 /* Block comment (kept in output) */
 /** Doc-style block comment */
@@ -299,3 +300,24 @@ each(@selectors, {
 .hacks { *display: inline; _zoom: 1; color: red\9; color: red !ie; filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#80000000', endColorstr='#80000000'); -ms-filter: "alpha(opacity=50)"; }
 // line comment at end of file without trailing newline issues
 /* final block comment */
+
+// ── Less 4 additions ──
+@import (inline) "legacy.css";
+@import (once) "shared";
+@import (optional, reference) "maybe-missing";
+@plugin (optional) "plugins/extras";
+@math-division: (10px / 2);          // division needs parentheses since Less 4 (math: parens-division)
+@math-product: 2 * 3px;
+@selector-list: ~".a, .b";
+@{selector-list} { color: red; }
+.mixin-as-function() { @result: 10px; @other: 20px; }
+.use-return { width: .mixin-as-function()[@result]; height: .mixin-as-function[@other]; }
+@detached-call: {
+  .inner { color: @brand; }
+};
+.call-detached { @detached-call(); }
+.operations { w: (@base-size * 2) + 4px; h: @base-size - (2 * 3px); z: -@base-size; r: percentage((1 / 3)); }
+@media screen and (min-width: @breakpoints[lg]) { .wide { display: none; } }
+@plugin "plugins/pi";
+.with-plugin { pi: pi(); }
+.js-eval { width: ~`Math.round(1.5)`px; }

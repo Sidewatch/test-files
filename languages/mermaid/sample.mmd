@@ -6,7 +6,7 @@ config:
     curve: basis
 ---
 %%{init: {"theme": "neutral", "securityLevel": "loose"}}%%
-%% Mermaid showcase: one diagram per family. Comments start with two percent signs.
+%% Mermaid 11 — syntax showcase: one diagram per family. Comments start with two percent signs.
 
 flowchart TB
     direction LR
@@ -392,3 +392,118 @@ sankey-beta
 "Quoted, name",Target,10.5
 
 classDef hot fill:#f96
+
+flowchart TD
+    %% ── Mermaid 11 shape names via @{ shape: … } ──
+    s1@{ shape: rect, label: "rect" }
+    s2@{ shape: rounded, label: "rounded" }
+    s3@{ shape: stadium, label: "stadium" }
+    s4@{ shape: fr-rect, label: "subprocess" }
+    s5@{ shape: cyl, label: "database" }
+    s6@{ shape: diam, label: "decision" }
+    s7@{ shape: hex, label: "prepare" }
+    s8@{ shape: lean-r, label: "input" }
+    s9@{ shape: lean-l, label: "output" }
+    s10@{ shape: trap-b, label: "priority" }
+    s11@{ shape: trap-t, label: "manual" }
+    s12@{ shape: dbl-circ, label: "stop" }
+    s13@{ shape: doc, label: "document" }
+    s14@{ shape: delay, label: "delay" }
+    s15@{ shape: h-cyl, label: "direct access" }
+    s16@{ shape: lin-cyl, label: "disk" }
+    s17@{ shape: curv-trap, label: "display" }
+    s18@{ shape: div-rect, label: "divided" }
+    s19@{ shape: tri, label: "extract" }
+    s20@{ shape: win-pane, label: "internal storage" }
+    s21@{ shape: f-circ, label: "junction" }
+    s22@{ shape: lin-doc, label: "lined document" }
+    s23@{ shape: notch-rect, label: "card" }
+    s24@{ shape: flag, label: "paper tape" }
+    s25@{ shape: bolt, label: "event" }
+    s26@{ shape: bow-rect, label: "stored data" }
+    s27@{ shape: cross-circ, label: "summary" }
+    s28@{ shape: docs, label: "documents" }
+    s29@{ shape: fork, label: "fork" }
+    s30@{ shape: hourglass, label: "collate" }
+    s31@{ shape: lin-rect, label: "lined process" }
+    s32@{ shape: odd, label: "odd" }
+    s33@{ shape: sl-rect, label: "manual input" }
+    s34@{ shape: text, label: "text block" }
+    s35@{ shape: tag-doc, label: "tagged document" }
+    s36@{ shape: tag-rect, label: "tagged process" }
+    s37@{ shape: brace, label: "comment" }
+    s38@{ shape: sm-circ, label: "start" }
+    s39@{ shape: fr-circ, label: "framed circle" }
+    s40@{ shape: st-rect, label: "stacked rectangle" }
+    s1 --> s2 --> s3
+    s4 ~~~ s5
+    s6 -- "yes" --> s7
+    s6 -. "no" .-> s8
+    s9 ==>|thick| s10
+    s11 --- s12
+    s13 --o s14
+    s15 --x s16
+    s17 <==> s18
+    s19 o--o s20
+    s21 x--x s22
+
+C4Container
+    title Container diagram
+    Person(user, "User", "A person")
+    System_Boundary(sys, "WMS") {
+        Container(web, "Web app", "TypeScript", "Serves the UI")
+        ContainerDb(db, "Database", "SQL", "Stores stock")
+        ContainerQueue(q, "Queue", "AMQP", "Events")
+    }
+    System_Ext(mail, "Mail", "Sends mail")
+    Rel(user, web, "Uses", "HTTPS")
+    BiRel(web, db, "Reads and writes")
+    Rel_U(db, web, "Returns")
+    UpdateRelStyle(user, web, $textColor="blue", $offsetY="-10")
+    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
+
+C4Component
+    title Component diagram
+    Container_Boundary(api, "API") {
+        Component(ctl, "Controller", "Handles requests")
+        ComponentDb(repo, "Repository", "SQL", "Persists")
+    }
+    Rel(ctl, repo, "Calls")
+
+C4Dynamic
+    title Dynamic diagram
+    Person(p, "Picker")
+    System(s, "WMS")
+    RelIndex(1, p, s, "Scans")
+
+C4Deployment
+    title Deployment diagram
+    Deployment_Node(dc, "Datacentre", "Region") {
+        Node(n1, "Node", "Linux") {
+            Container(app, "App", "Swift")
+        }
+    }
+
+%%{ init: { "flowchart": { "htmlLabels": false } } }%%
+sequenceDiagram
+    %% sequence extras: actor creation with aliases, grouping, background rects
+    participant Alice
+    actor Bob
+    Alice ->> Bob: solid arrow
+    Alice -->> Bob: dotted arrow
+    Alice -> Bob: solid line, no head
+    Alice --> Bob: dotted line, no head
+    Alice -x Bob: solid cross
+    Alice --x Bob: dotted cross
+    Alice -) Bob: solid open arrow
+    Alice --) Bob: dotted open arrow
+    Alice <<->> Bob: bidirectional solid
+    Alice <<-->> Bob: bidirectional dotted
+    rect rgba(0, 0, 255, .1)
+        Alice ->> Bob: in a rect
+    end
+    Note left of Alice: left note
+    Note over Alice: single-actor note
+    loop retry
+        Alice ->> Bob: again
+    end

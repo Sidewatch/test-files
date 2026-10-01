@@ -1,12 +1,19 @@
+* Stata 19 (StataNow) do-file — syntax showcase
 * ── Comments ──
 * Stata do-file: warehouse stock analysis.
 // Double-slash comment on its own line
+** Double-star comment, also a whole-line comment
+*! version 1.0.0 star-bang version comment (kept by which/ado describe)
+display "trailing // comment" // after a command
+display "continued " ///
+    "across lines"
+display "line one" /* inline block */ " line two"
 /* Block comment
    spanning lines */
 * TODO: add the supplier panel
 * FIXME: reorder flag ignores backorders
 
-version 18
+version 19
 clear all
 set more off
 set seed 20260924
@@ -157,10 +164,175 @@ assert price > 0 if !missing(price)
 confirm numeric variable qty
 confirm new variable fresh
 
+* ── Delimiters, tokens, macro functions ──
+#delimit ;
+regress revenue qty price
+    i.status,
+    vce(robust);
+#delimit cr
+tokenize `varlist'
+local second "`2'"
+gettoken head tail : varlist
+levelsof status, local(levels)
+local nlev : list sizeof levels
+local combined : list varlist | levels
+local common : list varlist & levels
+local diff : list varlist - levels
+local sorted : list sort varlist
+local fmt : format qty
+local vtype : type qty
+local lblname : value label status
+display "`: word 2 of `varlist''"
+display "`=trim("  padded  ")'"
+display "`c(username)' on `c(os)' / `c(machine_type)' " _newline
+display _col(10) "indented" _skip(3) "gap" _dup(5) "-"
+display as text "a" as result "b" as error "c" as input "d"
+display in smcl "{bf:bold} {it:italic} {hline 20} {c -(}braces{c )-}"
+display %9.2f 3.14159 %td td(01jan2026) %tc clock("01jan2026 10:00", "DMY hm")
+display "Item " 1 `"with "nested" quotes"'
+display "scalar: " scalar(myscalar)
+scalar myscalar = 3.5
+scalar drop myscalar
+matrix A = (1, 2 \ 3, 4)
+matrix B = A' * A
+matrix list B
+matrix rownames A = first second
+mat colnames A = c1 c2
+display A[1, 2] det(A) trace(A) rowsof(A) colsof(A)
+global i = 0
+local ++i
+local --i
+if inlist(status, 1, 2) & inrange(qty, 1, 9) | !missing(price) {
+    display "in-list"
+}
+if "`first'" != "" & regexm("`first'", "^s") display "starts with s"
+else display "no match"
+forvalues y = 2020(2)2026 {
+    local years `years' `y'
+}
+foreach var of varlist qty price {
+    capture confirm numeric variable `var'
+    if _rc continue
+}
+foreach x of newlist a b c {
+    display "`x'"
+}
+foreach v of varlist _all {
+    if "`v'" == "sku" continue
+    quietly count if missing(`v')
+}
+while 0 {
+    break
+}
+set varabbrev off
+set type double
+set rmsg on
+set maxvar 10000
+set linesize 120
+set scheme s2color
+set graphics off
+set cformat %9.3f
+adopath + "ado"
+which regress
+help summarize
+about
+display `"`:display %tdCCYY-NN-DD td(24sep2026)'"'
+
+* ── Frames ──
+frame create details
+frame details: use "details.dta", clear
+frame change details
+frame change default
+frlink m:1 sku, frame(details)
+frget supplier, from(details)
+frame copy default backup, replace
+frame rename backup archive
+frame drop archive
+frame pwf
+cwf default
+frame default: summarize qty
+frame details {
+    list in 1/3
+}
+
+* ── Tables and collect (Stata 17+) ──
+table (status) (paid), statistic(mean qty) statistic(sd qty) nformat(%9.2f)
+table status paid, stat(frequency) stat(percent) totals
+dtable qty price i.status, by(paid) nformat(%9.2f mean sd) export("summary.docx", replace)
+collect clear
+collect: regress revenue qty price
+collect layout (colname) (result[_r_b _r_se])
+collect style cell, nformat(%9.3f)
+collect export "results.docx", replace
+collect get r(mean), tags(var[qty])
+etable, estimates(m1 m2) mstat(N) mstat(r2) column(estimates) export("models.xlsx", replace)
+estimates store m1
+estimates restore m1
+estimates table m1 m2, b(%7.3f) se stats(N r2)
+eststo clear
+nlcom (ratio: _b[qty] / _b[price])
+lincom qty + price
+testparm i.status
+contrast status, effects
+marginsplot, recast(line)
+
+* ── Documents, Excel and Python ──
+putdocx begin, pagesize(A4)
+putdocx paragraph, style(Heading1)
+putdocx text ("Stock report"), bold
+putdocx table tbl1 = data(sku qty), varnames
+putdocx save "report.docx", replace
+putexcel set "results.xlsx", sheet("Summary") replace
+putexcel A1 = "SKU" B1 = "Qty" C1 = formula("=SUM(B2:B10)")
+putexcel A2 = matrix(A), names nformat(number_d2)
+putexcel close
+putpdf begin
+putpdf paragraph
+putpdf text ("Hello")
+putpdf save "report.pdf", replace
+python:
+import sfi
+import numpy as np
+data = np.array(sfi.Data.get(var="qty"))
+sfi.Macro.setLocal("avg", str(data.mean()))
+end
+python: print("one-line python")
+python script "helper.py", args(1 2)
+jupyter notebook "analysis.ipynb"
+
+* ── Postfile, simulation, Bayes, multiple imputation ──
+tempname memhold
+postfile `memhold' double(mean sd) using "sims.dta", replace
+forvalues r = 1/10 {
+    quietly summarize qty
+    post `memhold' (r(mean)) (r(sd))
+}
+postclose `memhold'
+set rng mt64
+set rngstream 2
+bayes, rseed(19): regress revenue qty price
+bayesstats summary
+mi set mlong
+mi register imputed price
+mi impute chained (regress) price = qty i.status, add(5) rseed(19)
+mi estimate: regress revenue qty price
+teffects ipw (revenue) (paid qty price)
+sem (revenue <- qty price)
+stcox qty price
+stset time, failure(event)
+xtreg revenue qty, re
+mixed revenue qty || warehouse_id:
+glm paid qty, family(binomial) link(logit)
+poisson visits qty, irr
+didregress (revenue) (treated), group(warehouse_id) time(period)
+cate po (revenue qty price) (paid), group(status)
+lasso linear revenue qty price
+dsregress revenue paid, controls(qty price)
+
 * ── Programs ──
 capture program drop describe_item
 program define describe_item, rclass
-    version 18
+    version 19
     syntax varlist(min=1 max=3) [if] [in] [, Detail Format(string) Level(cilevel)]
     marksample touse
     quietly summarize `varlist' if `touse', `detail'
@@ -189,6 +361,7 @@ greet "warehouse"
 * ── Mata ──
 mata:
 mata clear
+mata set matastrict on
 real matrix stock_matrix(real colvector q, real colvector p)
 {
     real matrix M
@@ -200,6 +373,33 @@ void report(string scalar name)
     real scalar n
     n = st_nobs()
     printf("{txt}%s has %g observations\n", name, n)
+}
+
+real scalar loops(real scalar n)
+{
+    real scalar i, total
+    string scalar s
+    transmorphic A
+    pointer(real scalar) p
+    total = 0
+    for (i = 1; i <= n; i++) {
+        if (i == 3) continue
+        else if (i > 8) break
+        total = total + i
+    }
+    do {
+        total--
+    } while (total > 100)
+    while (total < 0) total++
+    A = asarray_create()
+    asarray(A, "key", 1)
+    s = sprintf("%s=%g", "total", total)
+    p = &total
+    st_numscalar("result", *p)
+    st_local("msg", s)
+    st_store(., "qty", st_data(., "qty") :+ 1)
+    printf("%s\n", s)
+    return(total > 0 ? total : -total)
 }
 end
 

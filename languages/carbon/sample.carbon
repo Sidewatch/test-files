@@ -1,3 +1,4 @@
+// Carbon language (experimental, pre-0.1 design; no stable release yet) — syntax showcase
 // Carbon warehouse inventory: classes, generics, interfaces, choice types.
 // Line comments use double slashes; there are no block comments.
 // TODO: add destructors for owned buffers.
@@ -369,3 +370,61 @@ fn Patterns() {
 import Cpp library "<vector>";
 fn CppInterop() { Cpp.std.vector(i32).Make(); }
 fn Identity(x: i32) -> i32 { return x; }
+
+// ── Further design-document constructs (experimental syntax) ────────
+// Self-parameter binding modes: value (default), ref, and addr forms
+class Counter {
+  var count: i32;
+
+  fn Make() -> Self { return {.count = 0}; }
+  fn Get[self: Self]() -> i32 { return self.count; }
+  fn Bump[ref self: Self]() { self.count += 1; }
+  fn Reset[addr self: Self*]() { self->count = 0; }
+  fn Peek[val self: Self]() -> i32 { return self.count; }
+}
+
+// Entry point
+fn Main() -> i32 {
+  var c: Counter = Counter.Make();
+  c.Bump();
+  Core.Print(c.Get());
+  return 0;
+}
+
+// Partial and unformed objects, const-qualified types, `like` conversions
+fn Partials() {
+  var u: i32 = Core.Unformed;
+  var partial_value: partial Counter;
+  let k: const i32 = 3;
+  let p: const Counter* = Core.Null;
+}
+
+fn TakesLike(x: like i64) -> i64 { return x; }
+
+// Constraints with require, observe, and friend
+interface Reader {
+  let Result:! type;
+  fn Read[self: Self]() -> Result;
+}
+
+interface Writer {
+  require Self impls Reader;
+  fn Write[self: Self](data: String);
+}
+
+class Stream {
+  friend Helper;
+  impl as Reader where .Result = String {
+    fn Read[self: Self]() -> String { return "data"; }
+  }
+}
+
+fn Observed[T:! Reader & Writer](x: T) {
+  observe T impls Reader;
+}
+
+// Packages, libraries and impl files
+// package Warehouse impl;
+// import Warehouse library "stock";
+// import library "helpers" api;
+// library "stock" impl;

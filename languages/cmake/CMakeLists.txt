@@ -1,3 +1,4 @@
+# CMake 4.1 (CMake 4.x policy baseline; local cmake is newer) — syntax showcase
 # Warehouse inventory library and tools, C++20, with optional sanitizers.
 # Comments start with a hash and run to the end of the line.
 #[[ A bracket comment
@@ -384,4 +385,204 @@ second")
     return()
   endfunction()
   # TODO: add a package config file and exports.
+endif()
+
+# ── CMake 3.26 – 4.1 additions (parsed, never executed) ─────────────
+if(FALSE)
+  cmake_minimum_required(VERSION 3.25...4.1)
+  cmake_policy(VERSION 3.31...4.1)
+
+  # C++ modules and standard-library modules
+  set(CMAKE_CXX_STANDARD 23)
+  set(CMAKE_CXX_MODULE_STD ON)
+  add_library(modular)
+  target_sources(modular
+    PUBLIC
+      FILE_SET CXX_MODULES
+      BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/modules
+      FILES modules/stock.cppm modules/reorder.cppm
+    PRIVATE
+      FILE_SET HEADERS
+      BASE_DIRS include
+      FILES include/stock.hpp)
+  target_compile_features(modular PUBLIC cxx_std_23)
+
+  # Dependency providers and file API
+  cmake_language(SET_DEPENDENCY_PROVIDER provide_dep SUPPORTED_METHODS FIND_PACKAGE FETCHCONTENT_MAKEAVAILABLE_SERIAL)
+  cmake_language(GET_MESSAGE_LOG_LEVEL CURRENT_LEVEL)
+  cmake_language(TRACE ENABLE) 
+  cmake_language(EXIT 0)
+  cmake_language(DEFER ID deferred_id CALL message "deferred message")
+  cmake_language(DEFER CANCEL_CALL deferred_id)
+  cmake_language(DEFER GET_CALL_IDS ids)
+  cmake_instrumentation(API_VERSION 1 DATA_VERSION 1 HOOKS postBuild)
+
+  # pkg-config, link-library features, runtime DLLs
+  cmake_pkg_config(EXTRACT glib-2.0 REQUIRED)
+  target_link_libraries(inventory PRIVATE
+    "$<LINK_LIBRARY:WHOLE_ARCHIVE,archive_lib>"
+    "$<LINK_LIBRARY:FRAMEWORK,Foundation>"
+    "$<LINK_GROUP:RESCAN,a,b>"
+    "$<COMPILE_ONLY:headers_only>"
+    "$<LINK_ONLY:link_only>"
+    "$<HOST_LINK:-Wl,--gc-sections>"
+    "$<DEVICE_LINK:-arch=sm_80>"
+    "$<TARGET_NAME_IF_EXISTS:optional_lib>")
+  add_custom_command(TARGET inventory POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy -t $<TARGET_FILE_DIR:inventory> $<TARGET_RUNTIME_DLLS:inventory>
+    COMMAND_EXPAND_LISTS
+    VERBATIM)
+  add_custom_command(OUTPUT generated.hpp COMMAND gen DEPENDS gen.in CODEGEN DEPFILE gen.d)
+  add_custom_target(codegen_all DEPENDS generated.hpp JOB_POOL codegen_pool JOB_SERVER_AWARE TRUE)
+  set_property(GLOBAL PROPERTY JOB_POOLS codegen_pool=2)
+
+  # Generator expression families
+  message("$<PATH:GET_FILENAME,/a/b/c.txt>" "$<PATH:REMOVE_EXTENSION,c.tar.gz,LAST_ONLY>"
+          "$<PATH:APPEND,/a,b>" "$<PATH:CMAKE_PATH,NORMALIZE,/a/../b>" "$<PATH:IS_ABSOLUTE,/a>"
+          "$<FILTER:a;b;c,INCLUDE,^a>" "$<REMOVE_DUPLICATES:a;a;b>" "$<LIST:TRANSFORM,a;b,TOUPPER>"
+          "$<LIST:JOIN,a;b,->" "$<LIST:SORT,b;a>" "$<LIST:SUBLIST,a;b;c,1,1>" "$<LIST:FILTER,a;b,INCLUDE,a>"
+          "$<IN_LIST:a,a;b>" "$<TARGET_EXISTS:inventory>" "$<TARGET_NAME:inventory>" "$<TARGET_LINKER_FILE:inventory>"
+          "$<TARGET_SONAME_FILE:inventory>" "$<TARGET_BUNDLE_DIR:inventory>" "$<TARGET_IMPORT_FILE:inventory>"
+          "$<TARGET_PDB_FILE:inventory>" "$<GENEX_EVAL:$<TARGET_PROPERTY:inventory,SRC>>"
+          "$<CONFIG:Debug,Release>" "$<COMPILE_FEATURES:cxx_std_20>" "$<COMPILE_LANG_AND_ID:CXX,GNU,Clang>"
+          "$<C_COMPILER_ID:GNU>" "$<CXX_COMPILER_VERSION>" "$<PLATFORM_ID:Linux,Darwin>" "$<HOST_SYSTEM_NAME>"
+          "$<VERSION_LESS:1.2,1.10>" "$<VERSION_EQUAL:1.2,1.2>" "$<EQUAL:2,2>" "$<STREQUAL:a,a>" "$<STRING:TOLOWER,ABC>"
+          "$<BOOL:ON>" "$<AND:1,1>" "$<OR:0,1>" "$<NOT:0>" "$<IF:1,yes,no>" "$<LOWER_CASE:ABC>" "$<MAKE_C_IDENTIFIER:a-b>"
+          "$<DEVICE_LINK:x>" "$<TARGET_GENEX_EVAL:inventory,$<TARGET_PROPERTY:inventory,X>>"
+          "$<INSTALL_PREFIX>" "$<OUTPUT_CONFIG:Release>" "$<CROSSCOMPILING_EMULATOR>" "$<LINK_LANGUAGE:C,CXX>"
+          "$<SHELL_PATH:/a>" "$<QUOTE>" "$<ANGLE-R>" "$<COMMA>" "$<SEMICOLON>" "$<TARGET_POLICY:CMP0156>")
+
+  # Newer conditionals
+  if(DEFINED CACHE{MYVAR})
+  elseif(PATH_EQUAL "/a/b" "/a/b/")
+  elseif(TEST some_test)
+  elseif(IS_READABLE "${CMAKE_SOURCE_DIR}" AND IS_WRITABLE "${CMAKE_BINARY_DIR}" AND IS_EXECUTABLE "/bin/sh")
+  elseif(IS_SYMLINK "/tmp/link" OR IS_ABSOLUTE "/abs" OR IS_DIRECTORY "/tmp")
+  elseif("a.txt" IS_NEWER_THAN "b.txt")
+  elseif(1.2 VERSION_EQUAL 1.2.0 AND 1.2 VERSION_LESS 1.10 AND 2 VERSION_GREATER 1)
+  elseif("x" MATCHES "^x" AND NOT "y" MATCHES "^x")
+  elseif(DEFINED ENV{HOME} AND DEFINED CACHE{X} AND DEFINED VAR AND TARGET inventory AND TEST t AND COMMAND message)
+  elseif(NOT (A OR B) AND (C OR (D AND E)))
+  elseif(A EQUAL B OR A LESS_EQUAL B OR A GREATER_EQUAL B OR A STRLESS_EQUAL B OR A STRGREATER_EQUAL B)
+  elseif(VAR_NAME)
+  else()
+  endif()
+
+  # Block-scoped variables, return propagation, loop control
+  block(SCOPE_FOR VARIABLES)
+    set(only_here 1)
+    set(only_parent 2 PARENT_SCOPE)
+    return(PROPAGATE only_parent)
+  endblock()
+  block(PROPAGATE result)
+    set(result done)
+  endblock()
+  foreach(item IN LISTS a b ITEMS c d)
+    if(item STREQUAL "c")
+      continue()
+    endif()
+  endforeach()
+  foreach(k v IN ZIP_LISTS KEYS VALS)
+  endforeach()
+  foreach(i RANGE 10)
+  endforeach()
+  foreach(i RANGE 1 10 3)
+  endforeach()
+
+  # File, string, list, path and JSON operations from recent releases
+  file(REAL_PATH "../x" RESOLVED BASE_DIRECTORY ${CMAKE_SOURCE_DIR} EXPAND_TILDE)
+  file(CREATE_LINK a.txt b.txt SYMBOLIC)
+  file(CHMOD a.txt PERMISSIONS OWNER_READ OWNER_WRITE)
+  file(CHMOD_RECURSE dir FILE_PERMISSIONS OWNER_READ DIRECTORY_PERMISSIONS OWNER_EXECUTE)
+  file(ARCHIVE_CREATE OUTPUT out.tar.zst PATHS a b FORMAT paxr COMPRESSION Zstd COMPRESSION_LEVEL 5)
+  file(ARCHIVE_EXTRACT INPUT in.tar.gz DESTINATION out PATTERNS "*.txt" VERBOSE)
+  file(GET_RUNTIME_DEPENDENCIES EXECUTABLES a.out RESOLVED_DEPENDENCIES_VAR resolved UNRESOLVED_DEPENDENCIES_VAR unresolved)
+  file(SIZE a.txt SZ)
+  file(TOUCH a.txt)
+  file(TOUCH_NOCREATE a.txt)
+  file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/gen)
+  file(RENAME old new)
+  file(REMOVE_RECURSE dir)
+  file(READ_SYMLINK link target)
+  file(TIMESTAMP a.txt TS "%Y-%m-%d" UTC)
+  file(MD5 a.txt H)
+  file(UPLOAD a.txt https://example.com/u USERPWD user:example-not-a-real-key)
+  string(REPEAT "ab" 3 REPEATED)
+  string(PREPEND VAR "head")
+  string(SHA256 H "text")
+  string(JSON RESULT ERROR_VARIABLE ERR SET "{}" key "\"value\"")
+  string(JSON LEN LENGTH "[1,2,3]")
+  string(JSON KINDS TYPE "{\"a\": null}" a)
+  string(JSON EXISTS_VAR EXISTS "{\"a\":1}" a)
+  string(JSON MEMBER_VAR MEMBER "{\"a\":1}" 0)
+  string(JSON REMOVED REMOVE "{\"a\":1}" a)
+  string(JSON ARR GET "{\"a\":[1]}" a)
+  list(PREPEND LST first)
+  list(POP_FRONT LST front)
+  list(TRANSFORM LST APPEND "-x" AT 0 1)
+  list(TRANSFORM LST REPLACE "a" "b")
+  list(TRANSFORM LST STRIP)
+  list(TRANSFORM LST GENEX_STRIP)
+  list(SORT LST COMPARE NATURAL CASE INSENSITIVE ORDER DESCENDING)
+  list(REMOVE_AT LST 0)
+  list(REMOVE_ITEM LST x)
+  list(CONTAINS LST x FOUND)
+  cmake_path(RELATIVE_PATH P BASE_DIRECTORY /base OUTPUT_VARIABLE REL)
+  cmake_path(ABSOLUTE_PATH P BASE_DIRECTORY /base NORMALIZE OUTPUT_VARIABLE ABS)
+  cmake_path(CONVERT "a/b;c/d" TO_NATIVE_PATH_LIST NATIVE NORMALIZE)
+  cmake_path(HAS_ROOT_NAME P HAS_NAME)
+  cmake_path(COMPARE P1 EQUAL P2 SAME)
+  cmake_path(HASH P HASHED)
+  cmake_path(NATIVE_PATH P NORMALIZE NATIVE)
+  cmake_path(REMOVE_FILENAME P)
+  cmake_path(REMOVE_EXTENSION P LAST_ONLY)
+  cmake_path(IS_PREFIX P1 P2 NORMALIZE PREFIXED)
+
+  # Testing, packaging and presets-adjacent commands
+  add_test(NAME t COMMAND prog)
+  set_tests_properties(t PROPERTIES FIXTURES_REQUIRED setup RESOURCE_LOCK db TIMEOUT_AFTER_MATCH "30;ok" SKIP_RETURN_CODE 77)
+  gtest_discover_tests(unit_tests DISCOVERY_MODE PRE_TEST PROPERTIES LABELS unit)
+  include(GoogleTest)
+  include(CTest)
+  install(IMPORTED_RUNTIME_ARTIFACTS Foo::Foo RUNTIME_DEPENDENCY_SET deps DESTINATION lib)
+  install(RUNTIME_DEPENDENCY_SET deps PRE_EXCLUDE_REGEXES "api-ms-" POST_EXCLUDE_REGEXES ".*system32/.*\\.dll")
+  install(TARGETS inventory EXPORT InvTargets FILE_SET CXX_MODULES DESTINATION include/modules)
+  install(EXPORT InvTargets NAMESPACE Inv:: CXX_MODULES_DIRECTORY cxx-modules DESTINATION lib/cmake/Inv)
+  install(SCRIPT cleanup.cmake ALL_COMPONENTS)
+  cpack_add_component(runtime DISPLAY_NAME "Runtime" REQUIRED)
+  cpack_add_install_type(full DISPLAY_NAME "Full")
+
+  # Properties and variables of the 3.x/4.x series
+  set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
+  set(CMAKE_LINK_WARNING_AS_ERROR ON)
+  set(CMAKE_OPTIMIZE_DEPENDENCIES ON)
+  set(CMAKE_UNITY_BUILD ON)
+  set(CMAKE_UNITY_BUILD_BATCH_SIZE 8)
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+  set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>")
+  set(CMAKE_FIND_PACKAGE_TARGETS_GLOBAL ON)
+  set(CMAKE_FIND_PACKAGE_PREFER_CONFIG ON)
+  set(CMAKE_VERIFY_INTERFACE_HEADER_SETS ON)
+  set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY ON)
+  set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "example-not-a-real-key")
+  set_target_properties(inventory PROPERTIES
+    CXX_MODULE_STD ON
+    EXPORT_COMPILE_COMMANDS ON
+    COMPILE_WARNING_AS_ERROR ON
+    VERIFY_INTERFACE_HEADER_SETS ON
+    CXX_SCAN_FOR_MODULES ON
+    SYSTEM ON
+    EXCLUDE_FROM_ALL OFF)
+  set_source_files_properties(a.cpp PROPERTIES SKIP_LINTING ON LANGUAGE CXX COMPILE_OPTIONS "-O1;-g")
+  set_directory_properties(PROPERTIES EXCLUDE_FROM_ALL OFF)
+
+  # Legacy but still valid forms, labelled as such
+  # deprecated: set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+  # deprecated: file(GLOB without CONFIGURE_DEPENDS)
+  file(GLOB LEGACY_SOURCES "legacy/*.cpp")
+  # deprecated: include_directories / add_definitions at directory scope
+  include_directories(legacy)
+  add_definitions(-DLEGACY_MODE)
 endif()

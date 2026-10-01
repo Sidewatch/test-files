@@ -1,3 +1,4 @@
+//// Gleam 1.13 — syntax showcase
 //// Module documentation: a typed inventory pipeline in Gleam.
 //// Covers every syntactic category the language has.
 
@@ -313,7 +314,7 @@ pub fn more_literals() {
   let a = 1_000
   let b = 0b1111_0000
   let c = 0o17
-  let d = 0XFF
+  let d = 0xFF
   let e = 1.0e3
   let f = 1_000.5
   let g = 5.0e-2
@@ -418,6 +419,85 @@ pub fn nested_case(value: Result(Result(Int, String), String)) -> String {
 }
 
 // ── Tests and entry point ──
+// ── Case guards, discards, external types, qualified imports ──
+import gleam/dynamic as _dynamic_unused
+import gleam/set as _
+
+@external(erlang, "erlang", "self")
+pub type Pid
+
+@external(javascript, "./ffi.mjs", "now")
+@external(erlang, "erlang", "system_time")
+pub fn now() -> Int
+
+pub type Phantom(tag) {
+  Phantom(value: Int)
+}
+
+pub fn guards(pair: #(Int, Int), item: Item, flag: Bool, xs: List(Int)) {
+  case pair, item {
+    #(a, b), _ if a == b -> "equal"
+    #(a, _), _ if a + 1 > 3 && a * 2 < 100 -> "arithmetic guard"
+    _, Item(pence: p, ..) if p >= 100 || flag -> "price or flag"
+    _, _ if !flag -> "negated"
+    _, i if i.sku == "A-1" -> "field access"
+    p, _ if p.0 == 0 -> "tuple index"
+    _, _ if xs == [1, 2] -> "list equality"
+    _, _ -> "fallthrough"
+  }
+}
+
+pub fn discards(_unused: Int, _: String, used: Int) -> Int {
+  let _ = used
+  let _ignored = used + 1
+  used
+}
+
+pub fn labelled_discard(_ first: Int, label second: Int) -> Int {
+  first + second
+}
+
+pub fn block_clauses(n: Int) -> String {
+  case n {
+    0 -> {
+      let a = "zero"
+      a <> "!"
+    }
+    _ -> "other"
+  }
+}
+
+pub fn prefix_patterns(s: String) -> String {
+  case s {
+    "ab" <> rest as whole -> whole <> rest
+    "x" <> _ -> "starts with x"
+    _ -> s
+  }
+}
+
+pub fn use_with_zero_args() {
+  use <- defer_unit()
+  Nil
+}
+
+fn defer_unit(body: fn() -> Nil) -> Nil {
+  body()
+}
+
+pub fn constants_in_patterns(n: Int) -> String {
+  case n {
+    max_items -> "limit"
+    _ -> "other"
+  }
+}
+
+pub fn qualified_calls() {
+  let a = list.map([1], fn(x) { x })
+  let b = result.map(Ok(1), fn(x) { x + 1 })
+  let c = Some(1) |> option.map(fn(x) { x * 2 }) |> option.unwrap(0)
+  #(a, b, c)
+}
+
 pub fn main() {
   let lines = ["A-100,450", "B-200,oops", "C-300,9900"]
   io.println("total: " <> int.to_string(total(lines)))

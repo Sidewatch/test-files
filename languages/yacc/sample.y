@@ -1,3 +1,4 @@
+/* Bison 3.8 — grammar syntax showcase */
 %{
 /* ── Prologue (C) ──
  * Bison grammar: a stock-ledger command language.
@@ -23,7 +24,13 @@ static void add_stock(const char *sku, long qty);
 
 /* ── Bison declarations ── */
 %require "3.8"
-%defines
+%defines                        /* Bison 3.8 spells the same thing %header */
+%header "ledger.tab.h"
+%language "C"
+%yacc                           /* POSIX Yacc compatibility */
+%no-lines                       /* no #line directives in the output */
+%token-table
+%expect-rr 0
 %define api.pure full
 %define parse.error verbose
 %define parse.lac full
@@ -34,7 +41,19 @@ static void add_stock(const char *sku, long qty);
 %define api.value.type {union YYSTYPE}
 %define api.token.prefix {TOK_}
 %define api.symbol.prefix {S_}
-%name-prefix "ledger_"
+%name-prefix "ledger_"            /* deprecated: use %define api.prefix */
+%define api.prefix {ledger_}
+%define api.header.include {"ledger.tab.h"}
+%define api.filename.type {const char *}
+%define api.location.type {struct ledger_loc}
+%define api.token.raw false
+%define api.push-pull both
+%define lr.type ielr
+%define lr.default-reduction accepting
+%define lr.keep-unreachable-state true
+%define parse.assert
+%define parse.trace
+%define parse.error detailed
 %file-prefix "ledger"
 %output "ledger.tab.c"
 %skeleton "yacc.c"
@@ -48,9 +67,28 @@ static void add_stock(const char *sku, long qty);
 %code provides {
     int ledger_parse_file(const char *path);
 }
+%code {
+    /* unqualified %code: after the Bison-generated declarations */
+}
 %code top {
     #define _GNU_SOURCE
 }
+
+/* ── Directives for other skeletons and parser kinds (kept together; a real
+      grammar uses one skeleton) ── */
+%glr-parser                     /* generalised LR: enables %merge, %dprec, %?{ } */
+%nondeterministic-parser
+%pure-parser                    /* deprecated: use %define api.pure */
+%error-verbose                  /* deprecated: use %define parse.error verbose */
+%code imports { import java.io.*; }
+%define api.namespace {ledger}
+%define api.value.type variant
+%define api.token.constructor
+%define api.value.automove
+%skeleton "lalr1.cc"
+%define api.value.type union
+%define api.value.type union-directive
+%define api.value.type {struct ledger_value}
 
 /* ── Semantic values ── */
 %union {
@@ -70,12 +108,19 @@ static void add_stock(const char *sku, long qty);
 %token ASSIGN ":="
 %token EOL "end of line"
 %token YYEOF 0 "end of file"
+%token <num> HEXNUMBER 258 "hex number"      /* explicit token number */
+%token <str> QUOTED "quoted sku"
+%token <num> RATIO "ratio" <qty> COUNT "count" /* several tags in one declaration */
+%token PLUSPLUS "++" MINUSMINUS "--" ARROW "->" /* string aliases for operators */
 
 /* ── Types of nonterminals ── */
 %type  <num> expr term factor
 %type  <qty> quantity
 %type  <str> label
 %nterm <num> condition
+%nterm <num> anything
+%nterm untagged
+%type  <str> named_sku quoted_sku
 
 /* ── Precedence and associativity ── */
 %precedence LOW
@@ -90,6 +135,9 @@ static void add_stock(const char *sku, long qty);
 
 /* ── Destructors and printers ── */
 %destructor { free($$); } <str>
+%destructor { LOG("any tagged symbol"); } <*>
+%destructor { LOG("any untagged symbol"); } <>
+%destructor { free($$); } <str> label named_sku
 %destructor { LOG("discarding %g", $$); } NUMBER
 %printer { fprintf(yyo, "%g", $$); } <num>
 %printer { fprintf(yyo, "%s", $$); } <str>
@@ -115,6 +163,38 @@ statement
     | IF condition THEN statement ELSE statement END
     | WHILE condition DO statement END
     | %empty
+    ;
+
+/* ── Named references, mid-rule actions, predicates ── */
+
+named_sku
+    : SKU[name] '.' NUMBER[version]  { $$ = $name; LOG("version %g", $version); }
+    | SKU[sku] { $<num>$ = 1; } NUMBER { $$ = $sku; LOG("midrule %g", $<num>2); }
+    | SKU[left] '+' SKU[right]       { $$ = $left; free($right); }
+    | named_sku[inner] '.' SKU       { $$ = $inner; @$ = @inner; }
+    | error { yyclearin; yyerrok; $$ = NULL; }
+    ;
+
+quoted_sku
+    : '"' SKU '"'                    { $$ = $2; }
+    | '"' error '"'                  { $$ = NULL; YYACCEPT; }
+    | "quoted sku" %prec LOW         { $$ = $1; YYABORT; }
+    | IDENT { $<str>$ = strdup("mid"); } SKU { $$ = $<str>2; (void) $-1; }
+    ;
+
+/* GLR-only constructs (valid with %glr-parser): %merge, %dprec, semantic predicates */
+anything
+    : expr %dprec 1                  { $$ = $1; }
+    | label %dprec 2 %merge <ledger_merge> { $$ = 0; }
+    | %?{ count > 0 } expr           { $$ = $2; }
+    | expr %?{ $1 != 0 }             { $$ = $1; YYBACKUP(NUMBER, $1); }
+    | { LOG("recovering: %d", YYRECOVERING()); } %empty
+    ;
+
+untagged
+    : '\\'                          /* escaped char literals */
+    | '\n' | '\t' | '\x41' | '\101'
+    | "end of file"
     ;
 
 label

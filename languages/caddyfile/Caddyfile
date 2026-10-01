@@ -1,3 +1,4 @@
+# Caddy 2.10 (Caddyfile v2) — syntax showcase
 # Caddyfile for the warehouse stock portal.
 # Comments start with a hash and run to the end of the line.
 # TODO: split the sites into imported files.
@@ -398,3 +399,190 @@ import common {
 	respond "inside block"
 }
 # TODO: document each directive's default value.
+
+# ── Caddy 2.8 – 2.10 additions ───────────────────────────────────────
+# Header operators: set, add (+), remove (-), default (?), rename (>)
+modern.example.com {
+	header Cache-Control "no-store"
+	header +Set-Cookie "theme=dark; Path=/; Secure; HttpOnly"
+	header ?X-Content-Type-Options nosniff
+	header >X-Powered-By X-Served-By
+	header -Server
+	header {
+		X-Frame-Options DENY
+		+Link "</style.css>; rel=preload; as=style"
+		defer
+	}
+	request_header +X-Trace-Id {http.request.uuid}
+	request_header -Cookie
+
+	# Specific error handling by status code or range
+	handle_errors 404 410 {
+		rewrite * /not-found.html
+		file_server
+	}
+	handle_errors 5xx {
+		respond "Upstream problem: {err.status_code} {err.status_text}" {err.status_code}
+	}
+	handle_errors {
+		respond "{err.status_code} {err.message}"
+	}
+
+	# Encrypted Client Hello and TLS options (2.10)
+	tls {
+		issuer acme {
+			dir https://acme.example.com/directory
+			email ops@example.com
+			disable_http_challenge
+			dns cloudflare {env.CF_API_TOKEN}
+			propagation_delay 30s
+			propagation_timeout 5m
+			resolvers 192.0.2.53 [2001:db8::53]
+		}
+		issuer zerossl {env.ZEROSSL_API_KEY}
+		client_auth {
+			mode require_and_verify
+			trust_pool file {
+				pem_file /etc/caddy/ca.pem
+			}
+		}
+		curves x25519 secp256r1
+		alpn h2 http/1.1
+		reuse_private_keys
+	}
+
+	# Matchers combining negation and placeholders in the name
+	@not_internal not {
+		remote_ip private_ranges
+	}
+	@json_post {
+		method POST
+		header Content-Type application/json*
+	}
+	handle @json_post {
+		request_body {
+			max_size 1MB
+		}
+		reverse_proxy h2c://backend.internal:8080 {
+			lb_policy weighted_round_robin 3 1
+			lb_retry_match {
+				method GET HEAD
+			}
+			health_headers {
+				X-Probe check
+			}
+			health_follow_redirects
+			health_passes 2
+			health_fails 3
+			header_up @not_internal X-Public true
+			stream_timeout 1h
+			stream_close_delay 5m
+		}
+	}
+}
+
+# Snippets with positional and spread arguments, and block placeholders
+(site) {
+	{args[0]} {
+		root * /srv/{args[1]}
+		file_server
+		{block}
+	}
+}
+(all_args) {
+	respond "{args[:]}"
+	respond "{args.0} {args.1}"
+}
+import site static.example.com static {
+	log
+}
+import all_args one two three
+
+# Environment, file and system placeholders with defaults
+envs.example.com {
+	respond "{$GREETING:hello} {%OPTIONAL_VAR:fallback}"
+	respond "{env.HOME} {system.hostname} {system.os} {system.arch}"
+	respond "{file.motd.txt} {time.now.http} {time.now.year}"
+	respond "{http.request.header.User-Agent} {http.request.cookie.sid} {http.request.remote.host}"
+	respond "{http.request.uri.query.q} {http.request.tls.version} {http.request.tls.cipher_suite}"
+	respond "{http.vars.my_var} {http.regexp.name.1} {http.error.status_code} {http.error.message}"
+	respond "{re.name.1} {labels.0} {labels.1} {hostport} {remote} {remote_host} {remote_port} {scheme}"
+}
+
+# Directive ordering, route blocks and named routes
+ordered.example.com {
+	route /api/* {
+		uri strip_prefix /api
+		reverse_proxy localhost:9000
+	}
+	route {
+		header X-Order "first"
+		respond "second"
+	}
+	handle_path /assets/* {
+		root * /srv/assets
+		file_server {
+			etag_file_extensions .sha256
+			status 200
+			disable_canonical_uris
+			pass_thru
+			browse {
+				reveal_symlinks
+				sort name asc
+			}
+		}
+	}
+	&(shared_route) {
+		header X-Shared yes
+	}
+	invoke shared_route
+	redir /old /new permanent
+	redir /temp /elsewhere temporary
+	redir /code /somewhere 308
+	redir /html /page html
+}
+
+# Layer 4 style, logging and metrics options
+logs.example.com {
+	log access {
+		output file /var/log/caddy/access.log {
+			mode 0640
+			roll_gzip
+			roll_local_time
+		}
+		output net unixgram//run/caddy-log.sock {
+			dial_timeout 2s
+			soft_start
+		}
+		output discard
+		format filter {
+			wrap json
+			request>headers>Authorization delete
+			request>headers>Cookie replace REDACTED
+			request>remote_ip ip_mask {
+				ipv4 24
+				ipv6 56
+			}
+			request>uri query {
+				delete sensitive
+				replace token REDACTED
+				hash user
+			}
+		}
+		level DEBUG
+		sampling {
+			interval 1s
+			first 5
+			thereafter 10
+		}
+		no_hostname
+	}
+	log_skip /healthz
+	log_append user {http.auth.user.id}
+	metrics /metrics {
+		disable_openmetrics
+	}
+	tracing {
+		span "request"
+	}
+}

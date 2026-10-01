@@ -1,9 +1,10 @@
+--  Ada 2022 (ISO/IEC 8652:2023) — syntax showcase
 --  Warehouse inventory in Ada 2012: bounded stock tables, contracts, tasking,
 --  generics, exceptions and a text report.
 --  TODO: move the report formatting into its own child package.
 --  FIXME: Restock does not saturate at Capacity.
 
-pragma Ada_2012;
+pragma Ada_2022;
 pragma Warnings (Off, "unused");
 pragma Style_Checks (Off);
 
@@ -478,3 +479,124 @@ package body Warehouse.Types is
 begin
    null;
 end Warehouse.Types;
+
+--  ── Ada 2022 additions ──────────────────────────────────────────────
+with Ada.Containers.Vectors;
+with Ada.Containers.Indefinite_Holders;
+with Ada.Strings.Unbounded;
+with Ada.Text_IO;
+
+procedure Ada_2022_Features is
+   package Int_Vectors is new Ada.Containers.Vectors (Index_Type => Positive, Element_Type => Integer);
+   use Int_Vectors;
+
+   type Point is record
+      X, Y : Integer := 0;
+   end record;
+
+   type Matrix is array (1 .. 2, 1 .. 2) of Integer;
+
+   --  Container aggregates and bracket aggregates
+   V      : Vector := [1, 2, 3, 4];
+   Empty  : Vector := [];
+   Arr    : constant array (1 .. 3) of Integer := [1, 2, 3];
+   Filled : constant array (1 .. 3) of Integer := [others => 0];
+   Mat    : constant Matrix := [[1, 2], [3, 4]];
+   Names  : constant array (1 .. 2) of Ada.Strings.Unbounded.Unbounded_String :=
+     [Ada.Strings.Unbounded.To_Unbounded_String ("a"), Ada.Strings.Unbounded.To_Unbounded_String ("b")];
+
+   --  Iterated component associations
+   Squares : constant array (1 .. 5) of Integer := [for I in 1 .. 5 => I * I];
+   Evens   : constant array (1 .. 5) of Integer := [for I in 1 .. 5 => 2 * I];
+
+   --  Delta aggregates
+   P0 : constant Point := (X => 1, Y => 2);
+   P1 : constant Point := (P0 with delta X => 10);
+   M1 : constant Matrix := (Mat with delta (1, 1) => 99);
+
+   --  Aspects added or extended in Ada 2022
+   type Counter is range 0 .. 100
+     with Default_Value => 0, Integer_Literal => From_Universal, Preelaborable_Initialization;
+
+   function From_Universal (S : String) return Counter is (Counter'Value (S));
+
+   procedure Pure_Proc (X : Integer)
+     with Nonblocking, Global => null, Always_Terminates, Annotate => (Reviewed, "ok");
+
+   procedure Pure_Proc (X : Integer) is null;
+
+   type Obj is tagged null record
+     with Constant_Indexing => Get, Variable_Indexing => Ref, Default_Iterator => Iter, Iterator_Element => Integer;
+
+   Total   : Integer := 0;
+   Counter_Value : Integer := 0;
+begin
+   --  Target name symbol: @ stands for the left-hand side
+   Total := @ + 1;
+   Total := @ * 2 + @;
+   P0.X := 5 - @;
+   Counter_Value := Integer'Max (@, 1);
+
+   --  Declare expressions
+   Total := (declare Sq : constant Integer := Total * Total; begin Sq + 1);
+   if (declare T : constant Integer := Total; begin T > 10) then
+      null;
+   end if;
+
+   --  Attribute 'Reduce and 'Parallel_Reduce on value sequences
+   Total := [for I in 1 .. 10 => I]'Reduce ("+", 0);
+   Total := Squares'Reduce (Integer'Max, 0);
+   Total := Squares'Parallel_Reduce ("+", 0);
+   Total := V'Reduce ("+", 0);
+
+   --  Parallel blocks and loops
+   parallel do
+      Total := 1;
+   and
+      Counter_Value := 2;
+   end do;
+
+   parallel for I in 1 .. 10 loop
+      null;
+   end loop;
+
+   parallel (4) for I in 1 .. 10 loop
+      null;
+   end loop;
+
+   --  Iterator filters
+   for I in 1 .. 20 when I mod 3 = 0 loop
+      Total := @ + I;
+   end loop;
+   for E of V when E > 1 loop
+      null;
+   end loop;
+   for C in V.Iterate when Element (C) > 1 loop
+      null;
+   end loop;
+   for E of reverse V loop
+      null;
+   end loop;
+
+   --  'Image on any type, 'Img, user-defined Put_Image, attribute 'Object_Size
+   Ada.Text_IO.Put_Line (Point'Image (P0));
+   Ada.Text_IO.Put_Line (Integer'Image (Total) & Total'Img);
+   Ada.Text_IO.Put_Line (Vector'Image (V));
+   Ada.Text_IO.Put_Line (Integer'Image (Integer'Object_Size));
+
+   --  Case-pattern and conditional expressions with membership tests
+   Total := (case Total is
+               when 0 | 1 => 1,
+               when 2 .. 9 => 2,
+               when others => 3);
+   if Total in 1 .. 5 | 10 | 20 and then Total not in 6 .. 9 then
+      null;
+   end if;
+
+   --  Renaming inside a declare block
+   declare
+      Alias : Integer renames Total;
+   begin
+      Alias := Alias + 1;
+   end;
+end Ada_2022_Features;

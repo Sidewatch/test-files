@@ -1,6 +1,7 @@
 {
   # ── Comments ──
-  # Hjson: JSON for humans. Hash comment.
+  # Hjson 3.x (JSON for humans) — syntax showcase. Hash comment.
+  # A braceless root object is also legal Hjson but cannot be shown in a file that has braces.
   // Double-slash comment.
   /* Block comment
      spanning lines. TODO: add schema. */
@@ -226,5 +227,17 @@
   afterBlock: yes
 
   // Final members
+  # ── Remaining forms ──
+  standardJson: {"strict": [1, 2.5, true, false, null, "text"], "nested": {"k": "v"}}
+  quotelessInArray: [one two three, four, five six]
+  quotelessKeyInInline: {first key: no, second: yes}
+  emptyQuoted: ''
+  emptyDouble: ""
+  whitespaceString: "   "
+  multilineEmptyFirst:
+    '''
+
+    after an empty line
+    '''
   lastKey: last value
 }

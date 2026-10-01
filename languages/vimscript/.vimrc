@@ -1,3 +1,4 @@
+" Vim 9.1 (Vim script + Vim9 script) — syntax showcase
 " ── Comments ───────────────────────────────────────────────
 " ~/.vimrc — a complete Vim script showcase for a warehouse editing setup.
 " TODO: split into plugin files. FIXME: neovim differences.
@@ -439,6 +440,85 @@ let funcs = shellescape('x') . sin(1) . sort([]) . sqrt(4) . str2nr('1') . strid
 let funcs = type(1) . uniq([]) . values({}) . virtcol('.') . visualmode() . win_getid() . winnr() . writefile([], 'f') . xor(1, 2) . json_encode({}) . json_decode('{}')
 let funcs = timer_start(100, {-> 0}) . job_start(['ls']) . ch_open('localhost:80') . term_start('zsh') . popup_create('x', {}) . prop_add(1, 1, {'type': 't'}) . matchaddpos('Error', [[1]])
 let funcs = nvim_get_current_buf() . luaeval('1 + 1') . getenv('HOME') . setenv('X', 'y') . trim(' x ') . slice([1, 2], 1) . flatten([[1]]) . reduce([1], {a, b -> a + b}) . bufload(1)
+
+" ── Vim9 script: classes, enums, generics, modules ─────────
+" NOTE: `vim9script` must be the first command of a real file; this section is shown together with legacy script only for highlighting.
+vim9script
+# Vim9 script uses # for comments (the legacy " form does not apply here)
+import autoload 'warehouse/util.vim'
+import './helpers.vim' as helpers
+export const MAX_ITEMS: number = 100
+export var counter: number = 0
+export type Sku = string
+type ItemList = list<dict<any>>
+
+export enum Status
+  Pending,
+  Paid,
+  Cancelled
+endenum
+
+abstract class Shape
+  var name: string
+  static var count: number = 0
+  const kind: string = 'shape'
+  def new(this.name)
+    count += 1
+  enddef
+  abstract def Area(): float
+  def Describe(): string
+    return $'{this.name}: {this.Area()}'
+  enddef
+endclass
+
+class Circle extends Shape
+  var radius: float
+  def new(radius: float)
+    super.name = 'circle'
+    this.radius = radius
+  enddef
+  def Area(): float
+    return 3.14159 * this.radius * this.radius
+  enddef
+endclass
+
+interface Drawable
+  def Draw(): void
+endinterface
+
+class Canvas implements Drawable
+  public var width: number = 80
+  def Draw(): void
+    echo 'drawing'
+  enddef
+endclass
+
+def Map<T, U>(items: list<T>, Fn: func(T): U): list<U>
+  var out: list<U> = []
+  for item in items
+    add(out, Fn(item))
+  endfor
+  return out
+enddef
+
+def Lambdas(): void
+  var double = (x: number): number => x * 2
+  var sum = (a, b) => a + b
+  var shout = (s: string) => {
+    return toupper(s)
+  }
+  for [key, val] in items({a: 1, b: 2})
+    echo $'{key}={val}'
+  endfor
+  var pairs: list<tuple<string, number>> = []
+  defer delete('tmp.txt')
+  var maybe: any = null
+  var text = maybe ?? 'fallback'
+  var obj = Circle.new(2.0)
+  echo obj.Describe()
+  legacy echo 'legacy command'
+  vim9cmd echo 'vim9 command'
+enddef
 
 " ── Embedded scripting and misc ────────────────────────────
 lua << EOF

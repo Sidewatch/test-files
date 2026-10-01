@@ -1,3 +1,4 @@
+; LLVM IR 21 — syntax showcase (llvm-as is not installed; Apple clang's bundled parser was used for spot checks, the module as a whole is illustrative)
 ; ── LLVM IR: a warehouse stock library exercising the language ──
 ; Line comment. TODO: vectorise the sum loop. FIXME: tail-call the helper.
 ; ModuleID = 'warehouse.c'
@@ -444,3 +445,19 @@ uselistorder_bb @rare_fn, %bb2, { 1, 0 }
 !62 = !DIExpression(DW_OP_plus_uconst, 4, DW_OP_deref, DW_OP_LLVM_fragment, 0, 32)
 !64 = !{ptr @rare_fn, !"kernel", i32 1}
 !65 = !{i1 true, i8 7, half 1.0, float 2.0, double 3.0, <2 x i32> <i32 1, i32 2>, [1 x i8] zeroinitializer, ptr null}
+
+; ── LLVM 19 – 21 additions ──
+define void @recent(ptr initializes((0, 4)) %out, float nofpclass(nan inf) %f, ptr %p) memory(argmem: readwrite, inaccessiblemem: none) {
+  %rmw.usubcond = atomicrmw usub_cond ptr %p, i32 1 seq_cst
+  %rmw.usubsat = atomicrmw usub_sat ptr %p, i32 1 seq_cst
+  %cmp.samesign = icmp samesign ult i32 1, 2
+  %flags.nuw = add nuw i32 1, 2
+  %flags.or = or disjoint i32 1, 2
+  %flags.nneg = uitofp nneg i32 1 to float
+  %flags.trunc = trunc nsw i64 1 to i32
+  %cap = call ptr @identity(ptr captures(address, read_provenance) %p)
+  %scalable = call <vscale x 4 x i32> @llvm.stepvector.nxv4i32()
+  ret void
+}
+declare ptr @identity(ptr)
+declare <vscale x 4 x i32> @llvm.stepvector.nxv4i32()

@@ -1,3 +1,4 @@
+# crontab(5) — Vixie cron / cronie 1.7 syntax showcase (POSIX fields, @-strings, env assignments)
 # ── Comments ──
 # Crontab for the warehouse service account.
 # TODO: move the nightly jobs to a scheduler once the fleet grows.
@@ -85,3 +86,34 @@ MAILFROM=
 0 6 * * * /bin/sh -c 'echo "line one"; echo "line two"'
 0 7 * * * mysqldump --defaults-file=/etc/warehouse/my.cnf stock | gzip > /backup/stock-`date +\%u`.sql.gz
 0 8 * * * /opt/warehouse/bin/notify %subject%body line%
+
+# ── More environment assignments (cronie / Vixie) ──
+MAILTO=""
+MAILTO="ops@example.com, oncall@example.com"
+RANDOM_DELAY=10
+LOGNAME=warehouse
+USER = warehouse
+EMPTY=
+SPACED="value with   spaces"
+
+# ── Comment lines may contain anything: * * * * * not a job ──
+ # indented comment
+#0 0 * * * /opt/warehouse/bin/disabled-job
+
+# ── Debian-style prefix: do not log this job to syslog ──
+-*/5 * * * * /opt/warehouse/bin/quiet-poll
+
+# ── Mixed case names and list of names ──
+0 9 * Jan,Mar,May,Jul,Sep,Nov Mon,Wed,Fri /opt/warehouse/bin/odd-months
+0 9 * DEC SUN-SAT /opt/warehouse/bin/all-week
+
+# ── Day-of-month and day-of-week together (OR semantics) ──
+0 0 1,15 * Fri /opt/warehouse/bin/first-fifteenth-or-friday
+
+# ── Special strings in system crontab with a user field ──
+@reboot root /opt/warehouse/bin/system-start
+@hourly warehouse /opt/warehouse/bin/system-hourly
+@daily  root /usr/sbin/logrotate /etc/logrotate.conf
+
+# ── Heredoc-free multi-command lines ──
+0 2 * * * { /opt/warehouse/bin/step-one; /opt/warehouse/bin/step-two; } >> /var/log/warehouse/steps.log 2>&1

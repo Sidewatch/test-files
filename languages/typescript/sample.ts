@@ -1,4 +1,5 @@
 #!/usr/bin/env -S deno run
+// TypeScript 5.9 — syntax showcase
 // ── Comments ───────────────────────────────────────────────
 // Line comment. TODO: batch the stock updates. FIXME: rounding.
 /* Block comment
@@ -336,3 +337,47 @@ let [swapA, swapB] = [1, 2];
 [swapA, swapB] = [swapB, swapA];
 ({ a: swapA } = { a: 3 });
 throw new RangeError("done");
+
+// ── Completeness additions (TypeScript 5.9) ────────────────
+// Class expressions: anonymous and named
+const AnonymousClass = class { value = 1; };
+const NamedClassExpr = class Inner<T> extends Fluent { tag!: T; };
+const decoratedExpr = @logged class {};
+// Instantiation expressions (TS 4.7)
+const makeStringBox = identity<string>;
+const mapOfStrings = Map<string, number>;
+// Optional elements in tuple types
+type OptionalTuple = [string, number?, boolean?];
+type OptionalNamed = [name: string, age?: number];
+// Qualified (nested) type names
+let deepId: Warehouse.Inner.Id = 1;
+type NestedRef = Warehouse.Inner.Id | NodeJS.ProcessEnv | globalThis.Window;
+// Shorthand properties
+const shortA = 1, shortB = 2;
+const shorthand = { shortA, shortB };
+const { shortA: _sa, shortB: _sb } = shorthand;
+// Namespace aliases, global augmentation and UMD
+export import Alias = Warehouse.Inner;
+export as namespace WarehouseGlobal;
+// Type-only import/export forms
+import type DefaultOnly from "./types.js";
+import { type Item as ImportedItem, type Sku as ImportedSku } from "./types.js";
+export type { ImportedItem as default };
+// Assertion functions on this, static accessor, getters with decorators
+class Checked {
+  static accessor count = 0;
+  isReady(): this is { ready: true } { return true; }
+  assertReady(): asserts this is { ready: true } {}
+}
+// Enum member expressions and computed members
+enum Flags { None = 0, A = 1 << 0, B = 1 << 1, AB = A | B, Len = "abc".length }
+// Arrow generics and abstract constructors
+const generic2 = <T extends object>(x: T) => x;
+// Definite assignment and non-null chains
+let late!: string;
+const maybeChain = alice?.profile!.email!;
+// Erasable-syntax friendly forms: satisfies with as const
+const frozen = { a: 1, b: [1, 2] } as const satisfies Record<string, unknown>;
+// Not shown (invalid in modules/strict TypeScript or not TypeScript): `with` statements,
+// HTML-style comments, import assertions (`assert { type: "json" }`, replaced by `with`),
+// Flow-only syntax (`?T`, `{| |}`, `*`), and JSX text.

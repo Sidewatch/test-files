@@ -1,3 +1,4 @@
+-- T-SQL (SQL Server 2025, compatibility level 170) — syntax showcase
 -- ── Comments ──
 -- T-SQL (SQL Server): warehouse inventory. Detects as SQL; pick T-SQL in the language picker.
 /* Block comment
@@ -309,4 +310,114 @@ EXEC sp_help N'inv.Stock';
 DROP VIEW IF EXISTS inv.LowStock;
 DROP PROCEDURE IF EXISTS inv.usp_Reorder;
 WAITFOR DELAY '00:00:01';
-GO 2
+GO
+
+-- ── SQL Server 2022 / 2025 additions ──
+-- (Server-version-gated statements: they sit in separate batches so each can be read on its own.)
+SELECT value FROM GENERATE_SERIES(1, 10, 2);
+SELECT DATETRUNC(MONTH, SYSUTCDATETIME()) AS MonthStart,
+       DATE_BUCKET(WEEK, 2, CAST('2026-09-24' AS DATE)) AS Bucket,
+       GREATEST(1, 5, 3) AS Hi, LEAST(1, 5, 3) AS Lo,
+       LTRIM('  x') AS L, TRIM(BOTH 'x' FROM 'xxabcxx') AS T,
+       CURRENT_DATE AS Today, 'a' || 'b' AS Joined;
+SELECT * FROM inv.Stock WHERE Qty IS DISTINCT FROM Reserved OR Qty IS NOT DISTINCT FROM 0;
+SELECT value, ordinal FROM STRING_SPLIT('a,b,c', ',', 1);
+SELECT Sku, FIRST_VALUE(Qty) IGNORE NULLS OVER w AS FirstQty, LAST_VALUE(Qty) RESPECT NULLS OVER w AS LastQty
+FROM inv.Stock
+WINDOW w AS (PARTITION BY WarehouseId ORDER BY Sku ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING);
+SELECT APPROX_PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY Qty) AS Median, APPROX_COUNT_DISTINCT(Sku) AS Skus FROM inv.Stock;
+SELECT JSON_OBJECT('sku': 'ABC-1', 'qty': 5 NULL ON NULL) AS Obj,
+       JSON_ARRAY('a', 1, NULL ABSENT ON NULL) AS Arr,
+       ISJSON(N'{"a":1}') AS Valid, JSON_PATH_EXISTS(N'{"a":1}', '$.a') AS HasA,
+       JSON_QUERY(N'{"a":[1,2]}', '$.a') AS Frag;
+GO
+
+-- JSON data type, JSON index, aggregates (2025)
+DECLARE @doc JSON = N'{"sku":"ABC-1","tags":["a","b"]}';
+CREATE TABLE inv.Documents (Id INT PRIMARY KEY, Body JSON NOT NULL);
+CREATE JSON INDEX IX_Documents_Body ON inv.Documents (Body) FOR ('$.sku', '$.tags');
+SELECT JSON_OBJECTAGG(Sku : Qty) AS ByStock, JSON_ARRAYAGG(Sku ORDER BY Sku) AS Skus FROM inv.Stock;
+GO
+
+-- Vector type and functions (2025)
+CREATE TABLE inv.Embeddings (Id INT PRIMARY KEY, Sku NVARCHAR(20), Embedding VECTOR(3) NOT NULL);
+DECLARE @q VECTOR(3) = CAST('[0.1, 0.2, 0.3]' AS VECTOR(3));
+SELECT TOP (5) Sku, VECTOR_DISTANCE('cosine', Embedding, @q) AS Distance
+FROM inv.Embeddings ORDER BY Distance;
+SELECT VECTOR_DISTANCE('euclidean', @q, @q) AS E, VECTOR_DISTANCE('dot', @q, @q) AS D;
+GO
+
+-- Regular expressions (2025)
+SELECT Sku FROM inv.Stock WHERE REGEXP_LIKE(Sku, '^[A-Z]{3}-\d+$');
+SELECT REGEXP_REPLACE(Sku, '\d+', '#') AS Masked, REGEXP_SUBSTR(Sku, '\d+') AS Num, REGEXP_COUNT(Sku, '-') AS Dashes FROM inv.Stock;
+GO
+
+-- ── More statement forms ──
+CREATE DATABASE [Scratch] COLLATE Latin1_General_100_CI_AS_SC_UTF8;
+ALTER DATABASE [Scratch] SET RECOVERY SIMPLE, READ_COMMITTED_SNAPSHOT ON WITH ROLLBACK IMMEDIATE;
+ALTER DATABASE SCOPED CONFIGURATION SET MAXDOP = 4;
+GO
+CREATE TABLE inv.Hot (Id INT NOT NULL PRIMARY KEY NONCLUSTERED HASH WITH (BUCKET_COUNT = 1024), Label NVARCHAR(20))
+WITH (MEMORY_OPTIMIZED = ON, DURABILITY = SCHEMA_AND_DATA);
+CREATE TABLE inv.Ledger (Id INT, Amount MONEY) WITH (LEDGER = ON (APPEND_ONLY = ON));
+CREATE TABLE inv.Columnar (Id INT, Qty INT, INDEX cci CLUSTERED COLUMNSTORE);
+CREATE PARTITION FUNCTION pf_month (DATE) AS RANGE RIGHT FOR VALUES ('2026-01-01', '2026-02-01');
+CREATE PARTITION SCHEME ps_month AS PARTITION pf_month ALL TO ([PRIMARY]);
+CREATE STATISTICS st_qty ON inv.Stock (Qty) WITH FULLSCAN;
+CREATE XML SCHEMA COLLECTION inv.ConfigSchema AS N'<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>';
+CREATE ROLE [auditor] AUTHORIZATION dbo;
+CREATE APPLICATION ROLE [app_role] WITH PASSWORD = N'example-not-a-real-password';
+EXEC sp_addrolemember N'auditor', N'inventory_app';
+GO
+
+-- Bulk, remote, rowset functions
+BULK INSERT inv.Stock FROM '/var/opt/mssql/import/stock.csv' WITH (FORMAT = 'CSV', FIRSTROW = 2, FIELDTERMINATOR = ',', ROWTERMINATOR = '\n');
+SELECT * FROM OPENROWSET(BULK '/var/opt/mssql/import/stock.csv', SINGLE_CLOB) AS raw;
+SELECT * FROM OPENQUERY([LinkedServer], 'SELECT 1 AS One');
+EXEC ('SELECT 1') AT [LinkedServer];
+SELECT * FROM [LinkedServer].[remote].[dbo].[Table1];
+SELECT * FROM inv.Stock TABLESAMPLE (10 PERCENT) REPEATABLE (7);
+GO
+
+-- Joins, subqueries, predicates, variables
+SELECT a.Sku, b.Sku FROM inv.Stock a LEFT OUTER JOIN inv.Stock b ON a.Sku = b.Sku
+FULL OUTER JOIN inv.Stock c ON c.Sku = a.Sku CROSS JOIN inv.Warehouses w
+RIGHT JOIN inv.Stock d ON d.Sku = a.Sku OUTER APPLY (SELECT TOP 1 Sku FROM inv.Stock) AS e
+WHERE EXISTS (SELECT 1 FROM inv.Stock) AND a.Qty > ALL (SELECT Qty FROM inv.Stock WHERE Qty < 0)
+  AND a.Qty = ANY (SELECT Qty FROM inv.Stock) AND a.Sku LIKE 'AB[C-F]%' ESCAPE '\'
+  AND a.Qty BETWEEN 1 AND 9 AND a.Sku IN ('x', 'y') AND a.Sku NOT LIKE '%z_' AND a.Qty IS NOT NULL;
+SELECT NEXT VALUE FOR inv.OrderNumbers AS NextNumber, $PARTITION.pf_month('2026-01-15') AS Part;
+SELECT geography::Point(47.65100, -122.34900, 4326).ToString() AS Pt, CAST('/1/2/' AS hierarchyid).GetLevel() AS Lvl;
+SELECT Config.value('(/cfg/@v)[1]', 'INT') AS V, Config.exist('/cfg') AS E FROM inv.Warehouses;
+SELECT "Quoted Name" = 1, Alias = Qty, Qty AS [Bracketed Alias] FROM inv.Stock;
+DECLARE @t TABLE (Id INT);
+GO
+
+-- Labels, GOTO, savepoints, error handling, sessions
+DECLARE @n INT = 0;
+retry:
+SET @n += 1;
+IF @n < 3 GOTO retry;
+BEGIN TRANSACTION;
+SAVE TRANSACTION sp1;
+ROLLBACK TRANSACTION sp1;
+COMMIT;
+SET LOCK_TIMEOUT 5000;
+SET ROWCOUNT 0;
+SET IDENTITY_INSERT inv.Stock OFF;
+SELECT ERROR_NUMBER() AS Num, ERROR_LINE() AS Line, ERROR_PROCEDURE() AS Proc, XACT_STATE() AS Xs, @@TRANCOUNT AS Tc;
+EXEC sp_set_session_context @key = N'tenant', @value = 7;
+SELECT SESSION_CONTEXT(N'tenant') AS Tenant, SYSTEM_USER AS Sys, CURRENT_USER AS Cur, @@SPID AS Spid;
+GO
+CREATE OR ALTER PROCEDURE inv.usp_Native WITH NATIVE_COMPILATION, SCHEMABINDING AS
+BEGIN ATOMIC WITH (TRANSACTION ISOLATION LEVEL = SNAPSHOT, LANGUAGE = N'us_english')
+    SELECT 1 AS One;
+END;
+GO
+ALTER PROCEDURE inv.usp_Native AS SELECT 2 AS Two;
+GO
+DROP TABLE IF EXISTS inv.Documents, inv.Embeddings;
+DROP TYPE IF EXISTS inv.SkuList;
+DROP SEQUENCE IF EXISTS inv.OrderNumbers;
+DROP SYNONYM IF EXISTS dbo.Stock;
+GO

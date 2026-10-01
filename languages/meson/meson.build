@@ -1,4 +1,4 @@
-# Meson showcase: a C library, its executable, options and tests.
+# Meson 1.9 — syntax showcase: a C library, its executable, options and tests.
 # TODO: split the tests into their own subdir
 # FIXME: pin the sqlite version once the CI image is updated
 
@@ -263,3 +263,132 @@ foreach item : range(3)
   message('item @0@'.format(item))
 endforeach
 message('done', meson.project_name(), meson.project_license(), meson.backend(), meson.global_build_root(), meson.project_build_root())
+
+# ── Strings: every quoting form ──
+q1 = 'single'
+q2 = 'with \'escape\''
+q3 = '''triple
+quoted'''
+q4 = f'''formatted @q1@
+multi-line'''
+q5 = 'unicode escapes: \u00e9 \U0001F4E6 \N{LATIN SMALL LETTER E WITH ACUTE} \x41 \101'
+q6 = 'raw-ish: \d stays'
+q7 = '@0@ and @1@'.format('a', 'b')
+
+# ── Control flow: nested ternary, elif chains, loop forms ──
+kind = integer_dec < 0 ? 'neg' : (integer_dec == 0 ? 'zero' : 'pos')
+if kind == 'neg'
+  message('negative')
+elif kind == 'zero'
+  message('zero')
+elif kind == 'pos' and not falsy
+  message('positive')
+else
+  message('unreachable')
+endif
+foreach i : [1, 2, 3]
+  foreach j : range(2)
+    if i == j
+      continue
+    endif
+  endforeach
+endforeach
+foreach k, v : {'a': 1, 'b': 2}
+  message(k, v)
+endforeach
+
+# ── More compiler checks ──
+cc.links('int main(void) { return 0; }', name : 'link check')
+cc.run('int main(void) { return 0; }', name : 'run check')
+cc.check_header('stdint.h')
+cc.has_member('struct stat', 'st_size', prefix : '#include <sys/stat.h>')
+cc.has_type('uint64_t', prefix : '#include <stdint.h>')
+cc.compute_int('sizeof(int)', low : 1, high : 16)
+cc.alignment('double')
+cc.has_argument('-Wall')
+cc.get_supported_arguments(['-Wextra', '-Wpedantic'])
+cc.first_supported_argument(['-O3', '-O2'])
+cc.has_multi_arguments(['-Wall', '-Wextra'])
+cc.get_argument_syntax()
+cc.symbols_have_underscore_prefix()
+cc.preprocess('src/stock.c', output : '@BASENAME@.i')
+cc.get_supported_link_arguments(['-Wl,--as-needed'])
+cc.has_function_attribute('unused')
+cc.check_header('zlib.h', dependencies : zlib, required : false)
+cc.find_library('dl', required : false, static : false)
+cc.cmd_array()
+cc.get_linker_id()
+
+# ── Target keyword arguments ──
+exe2 = executable('inventory2', 'src/main.c',
+  win_subsystem : 'console',
+  pie : true,
+  export_dynamic : false,
+  implib : false,
+  build_rpath : '$ORIGIN',
+  install_rpath : '$ORIGIN/../lib',
+  extra_files : ['README.md'],
+  objects : objs,
+  name_suffix : 'bin',
+  build_by_default : true,
+  gui_app : false,
+  c_pch : 'pch/pch.h',
+  override_options : ['optimization=3', 'b_lto=true'])
+ct = custom_target('gen',
+  output : 'gen.h',
+  command : [find_program('python3'), '@INPUT@', '@OUTPUT@', '@DEPFILE@'],
+  input : 'gen.py',
+  depfile : 'gen.d',
+  depend_files : ['gen.cfg'],
+  depends : [exe],
+  console : true,
+  build_always_stale : false,
+  build_by_default : true,
+  feed : false,
+  install : true,
+  install_dir : get_option('includedir'),
+  install_mode : ['rw-r--r--', 'root', 'root'],
+  install_tag : 'devel')
+test('tap', exe, protocol : 'tap', priority : 10, workdir : meson.current_build_dir(), depends : [exe], is_parallel : false, verbose : true)
+test('exitcode', exe, protocol : 'exitcode', should_fail : true)
+test('gtest', exe, protocol : 'gtest')
+test('rust', exe, protocol : 'rust')
+declare_dependency(sources : gen, objects : objs, compile_args : ['-DX'], link_args : ['-lm'], variables : {'k': 'v'}, version : '1.0', include_directories : inc, link_whole : lib)
+dependency('openssl', version : ['>=1.1', '<4'], required : false, default_options : ['x=1'], allow_fallback : true, not_found_message : 'OpenSSL missing', disabler : true)
+
+# ── More modules and meson methods ──
+keyval = import('keyval')
+kv = keyval.load('config.ini')
+sourceset = import('sourceset')
+ss = sourceset.source_set()
+ss.add(when : zlib, if_true : files('z.c'), if_false : files('noz.c'))
+qt6 = import('qt6')
+gnome = import('gnome')
+simd = import('simd')
+pkg2 = import('pkgconfig')
+rust2 = import('rust')
+meson.get_external_property('key', 'fallback', native : false)
+meson.can_run_host_binaries()
+meson.project_license_files()
+meson.has_exe_wrapper()
+meson.install_dependency_manifest('deps.txt')
+meson.add_postconf_script('scripts/post.py')
+meson.get_compiler('c', native : true)
+meson.get_cross_property('x', 'y')
+meson.is_unity()
+meson.current_build_dir()
+meson.global_source_root()
+meson.project_source_root()
+meson.build_options()
+structured_sources(['a.rs'], {'sub': ['b.rs']})
+
+# ── meson.options syntax (a separate file named meson.options; shown here for highlighting only) ──
+if false
+  option('feature_x', type : 'feature', value : 'auto', description : 'Enable X')
+  option('mode', type : 'combo', choices : ['fast', 'safe'], value : 'safe', yield : true)
+  option('jobs', type : 'integer', min : 1, max : 64, value : 4, deprecated : true)
+  option('verbose', type : 'boolean', value : false)
+  option('plugins', type : 'array', choices : ['a', 'b'], value : ['a'])
+  option('prefix2', type : 'string', value : '/opt', description : 'Install prefix')
+  option('old', type : 'string', deprecated : {'true': 'new_true', 'false': 'new_false'})
+endif

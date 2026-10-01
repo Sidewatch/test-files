@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <?xml-stylesheet type="text/xsl" href="plist.xsl"?>
-<!-- Property list showcase: every value type, nested containers and entitlement keys. -->
+<!-- XML property list, DTD 1.0 (Apple platforms 2026) — syntax showcase: every value type, nested containers and entitlement keys. -->
 <plist version="1.0">
 <dict>
 	<!-- Entitlements for a sandboxed app that talks to the network and reads user-picked files -->
@@ -160,6 +160,171 @@
 	</array>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2026 Acme Warehouse Ltd. 日本語 العربية 📦</string>
+	<!-- Further entitlement keys -->
+	<key>com.apple.developer.kernel.increased-memory-limit</key>
+	<true/>
+	<key>com.apple.developer.healthkit</key>
+	<true/>
+	<key>com.apple.developer.healthkit.access</key>
+	<array>
+		<string>health-records</string>
+	</array>
+	<key>com.apple.developer.applesignin</key>
+	<array>
+		<string>Default</string>
+	</array>
+	<key>com.apple.developer.game-center</key>
+	<true/>
+	<key>com.apple.developer.weatherkit</key>
+	<true/>
+	<key>com.apple.developer.siri</key>
+	<true/>
+	<key>com.apple.developer.usernotifications.time-sensitive</key>
+	<true/>
+	<key>com.apple.developer.devicecheck.appattest-environment</key>
+	<string>production</string>
+	<key>com.apple.developer.networking.networkextension</key>
+	<array>
+		<string>packet-tunnel-provider</string>
+		<string>content-filter-provider</string>
+	</array>
+	<key>com.apple.developer.system-extension.install</key>
+	<true/>
+	<key>com.apple.developer.endpoint-security.client</key>
+	<true/>
+	<key>com.apple.developer.in-app-payments</key>
+	<array>
+		<string>merchant.com.example.inventory</string>
+	</array>
+	<key>com.apple.developer.ubiquity-kvstore-identifier</key>
+	<string>$(TeamIdentifierPrefix)$(CFBundleIdentifier)</string>
+	<key>com.apple.security.cs.disable-library-validation</key>
+	<true/>
+	<key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+	<false/>
+	<key>com.apple.security.cs.debugger</key>
+	<false/>
+	<key>com.apple.security.automation.apple-events</key>
+	<true/>
+	<key>com.apple.security.scripting-targets</key>
+	<dict>
+		<key>com.apple.finder</key>
+		<array>
+			<string>com.apple.finder.Finder</string>
+		</array>
+	</dict>
+	<key>com.apple.security.files.bookmarks.app-scope</key>
+	<true/>
+	<key>com.apple.security.print</key>
+	<true/>
+	<key>com.apple.security.assets.pictures.read-write</key>
+	<true/>
+	<key>com.apple.security.usb</key>
+	<true/>
+	<key>com.apple.security.device.bluetooth</key>
+	<true/>
+	<key>com.apple.security.personal-information.addressbook</key>
+	<false/>
+	<key>com.apple.security.inherit</key>
+	<false/>
+
+	<!-- Info.plist style keys -->
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.productivity</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Scans barcodes on pallets.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Records voice notes.</string>
+	<key>NSSupportsAutomaticTermination</key>
+	<true/>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Stock List</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.example.inventory.stock</string>
+			</array>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+		</dict>
+	</array>
+	<key>NSServices</key>
+	<array>
+		<dict>
+			<key>NSMenuItem</key>
+			<dict>
+				<key>default</key>
+				<string>Add to Inventory</string>
+			</dict>
+			<key>NSMessage</key>
+			<string>addToInventory</string>
+			<key>NSSendTypes</key>
+			<array>
+				<string>NSStringPboardType</string>
+			</array>
+		</dict>
+	</array>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<true/>
+		<key>UISceneConfigurations</key>
+		<dict/>
+	</dict>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>arm64</string>
+	</array>
+
+	<!-- Value-type edge cases -->
+	<key>HexInteger</key>
+	<integer>0x1F</integer>
+	<key>LargeInteger</key>
+	<integer>9223372036854775807</integer>
+	<key>RealNaN</key>
+	<real>nan</real>
+	<key>RealInfinity</key>
+	<real>+infinity</real>
+	<key>RealNegativeInfinity</key>
+	<real>-infinity</real>
+	<key>DateWithOffsetDay</key>
+	<date>2026-01-01T00:00:00Z</date>
+	<key>KeyedArchiverUID</key>
+	<dict>
+		<key>CF$UID</key>
+		<integer>1</integer>
+	</dict>
+	<key>CDATAKey</key>
+	<string><![CDATA[<tag attr="1"> & ]]></string>
+	<key>Base64Wrapped</key>
+	<data>
+	SGVsbG8gd29ybGQsIHRoaXMgaXMgYSBsb25nZXIgYmFzZTY0IHN0cmluZyB0aGF0IGlzIHdyYXBwZWQgYWNyb3NzIHR3byBsaW5lcw==
+	AAECAwQFBgcICQoLDA0ODw==
+	</data>
+	<key>EmptyData</key>
+	<data></data>
+	<key>EmptyReal</key>
+	<real>0</real>
+	<key>BoolsAsStrings</key>
+	<array>
+		<string>YES</string>
+		<string>NO</string>
+	</array>
+	<!-- A comment between entries -->
 	<key>Whitespace</key>
 	<string>
 		leading and trailing whitespace is kept

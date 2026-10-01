@@ -1,3 +1,4 @@
+# gitattributes (Git 2.5x) — syntax showcase
 # ── Comments ──
 # Git attributes: line endings, diff drivers, merge strategies, linguist hints.
 # Each line is a pattern followed by one or more attributes.
@@ -175,3 +176,21 @@ node_modules/           -diff
 **/.git                 export-ignore
 docs/**/*.md            text eol=lf
 **/*.generated.*        linguist-generated
+
+# ── Further forms: auto text with explicit eol, nested macros, attribute lists ──
+*.auto-crlf             text=auto eol=crlf
+*.explicit-text         text=true
+*.explicit-notext       text=false
+*.driver-chain          diff=custom merge=custom filter=custom
+[attr]lfs-asset         filter=lfs diff=lfs merge=lfs -text
+[attr]third-party       vendored linguist-detectable=false
+/assets/**              lfs-asset
+/deps/**                third-party
+*.templated             export-subst ident
+.gitkeep                -export-ignore
+*.bak                   export-ignore -diff -merge
+*.rendered              -text -diff linguist-generated=true
+*.ws-all                whitespace=blank-at-eol,blank-at-eof,space-before-tab,indent-with-non-tab,tab-in-indent,cr-at-eol,tabwidth=4
+*.ws-minus              whitespace=-trailing-space
+*.markers               conflict-marker-size=7
+**/vendor/**/*.min.*    linguist-vendored linguist-generated

@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Perl showcase: parse an orders CSV, total the paid ones, print a report.
+# Perl 5.42 — syntax showcase: parse an orders CSV, total the paid ones, print a report.
 # TODO: read the path from @ARGV
 # FIXME: split on commas ignores quoted fields
 use strict;
@@ -381,6 +381,102 @@ use strict 'refs';
 format_demo() if 0;
 sub format_demo { write }
 __PACKAGE__->can('describe');
+
+# ── Perl 5.36 - 5.42: signatures, builtin::, defer, multi-var foreach, class feature ──
+use v5.36;
+use builtin qw(true false is_bool weaken unweaken blessed refaddr reftype ceil floor trim indexed created_as_number created_as_string stringify);
+no warnings qw(experimental::builtin experimental::defer experimental::for_list experimental::class experimental::keyword_any experimental::keyword_all);
+use feature qw(defer try class keyword_any keyword_all module_true apostrophe_as_package_separator);
+
+sub sig_defaults ($x, $y //= 10, $z ||= 20, @rest) { return $x + $y + $z + @rest }
+sub sig_unnamed ($, $second, %opts) { return $second }
+sub sig_slurpy_ignore ($first, @) { return $first }
+my $lexical_anon = sub ($n, $m = $n * 2) { $n + $m };
+
+for my ($key, $value) (%hash) { say "$key => $value" }
+for my ($i, $item) (indexed @array) { say "$i: $item" }
+for my ($a1, $b1, $c1) (1 .. 9) { say $a1 + $b1 + $c1 }
+
+{
+    defer { say 'runs at scope exit' }
+    say 'body';
+}
+
+use builtin 'inf';
+my $trimmed = trim("  padded  ");
+my $is_true = is_bool(true) && true && !false;
+my ($ceiled, $floored) = (ceil(1.2), floor(1.8));
+my $stringified = stringify(42);
+
+# logical xor (5.40), chained comparisons, string-bitwise operators
+my $lxor = $scalar ^^ $count;
+my $chain_cmp = 1 < $scalar <= 100;
+my $str_and = "ab" &. "cd";
+my $str_or = "ab" |. "cd";
+my $str_xor = "ab" ^. "cd";
+my $str_not = ~."ab";
+
+# any / all keywords (5.42)
+my $has_big = any { $_ > 10 } @array;
+my $all_small = all { $_ < 100 } @array;
+
+# try / catch / finally (stable in 5.40)
+sub safely ($code) {
+    try { return $code->() }
+    catch ($err) { warn "caught: $err"; return }
+    finally { say 'finalised' }
+}
+
+# class feature (5.38+), :reader (5.40), :writer (5.42), __CLASS__ (5.40), lexical methods (5.42)
+class Point {
+    field $x :param :reader = 0;
+    field $y :param :reader :writer = 0;
+    field @history;
+    field %meta;
+    field $id :reader = __CLASS__->next_id;
+    field $label :param(name) //= 'origin';
+    field $created = time;
+
+    my $counter = 0;
+    sub next_id ($class) { return ++$counter }
+
+    ADJUST {
+        push @history, [ $x, $y ];
+    }
+
+    method coords { return ($x, $y) }
+    method move ($dx, $dy) { $x += $dx; $y += $dy; push @history, [ $x, $y ]; return $self }
+    method label { return $label }
+    method history_count { return scalar @history }
+    my method secret { return "hidden $x" }
+    method reveal { return $self->&secret }
+    method clone_with (%args) { return __CLASS__->new(x => $x, y => $y, %args) }
+}
+
+class Point3D :isa(Point) {
+    field $z :param :reader = 0;
+    method coords { return ($self->SUPER::coords, $z) }
+}
+
+class Counter 1.02 { field $n = 0; method bump { ++$n } }
+
+my $pt = Point->new(x => 1, y => 2, name => 'a');
+$pt->move(1, 1)->move(2, 2);
+say join ',', $pt->coords;
+say $pt->x, $pt->y;
+$pt->set_y(10);
+my $pt3 = Point3D->new(x => 1, y => 2, z => 3);
+
+# misc modern syntax
+my $pf = $aref->@[0, 1];
+my %kv_slice = $href->%{qw(name qty)};
+my @idx_slice = $aref->%[0, 1];
+my $last = $aref->$#*;
+my $code_result = $cref->&*;
+my $interp_postfix = "values: $aref->@* and $href->%{name}";
+say "unicode: \N{GREEK SMALL LETTER ALPHA} \N{U+263A}";
+printf "%s %s\n", __PACKAGE__, __CLASS__ // 'none';
+my $v = $^V; my $v2 = $];
 
 my $revenue = sum0 map { $_->{total} } grep { $_->{status} eq 'paid' } @orders;
 printf "%d orders, revenue %.2f, largest #%d\n", scalar @orders, $revenue,

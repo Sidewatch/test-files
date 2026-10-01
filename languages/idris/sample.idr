@@ -1,3 +1,4 @@
+-- Idris 2 0.8 — syntax showcase
 -- ── Comments ──
 -- Idris 2: dependent types, totality, interfaces and effects for a warehouse model.
 {- Block comment {- nested block comment -} still inside.
@@ -518,4 +519,83 @@ mainIO = do
 
 main : IO ()
 main = printLn (head example, sumVec (append example example))
+
+-- ── Quantities, snoc lists, operator sections, projections ──
+erased : (0 n : Nat) -> (1 v : Vec n Nat) -> Nat
+erased _ v = 0
+
+snoc : SnocList Nat
+snoc = [<1, 2, 3]
+
+snocCons : SnocList Nat
+snocCons = Lin :< 1 :< 2
+
+sections : List Nat
+sections = map (+ 1) [1, 2] ++ map (`div` 2) [4, 6] ++ map (2 *) [1, 2] ++ map (\x => x - 1) [3]
+
+projection : List String
+projection = map (.name) [MkConfig "a" 1, MkConfig "b" 2]
+
+namedArgs : Nat
+namedArgs = namedImplicit {a = Nat} {n = 1} [0]
+
+-- ── Pragmas: foreign, export, deprecate, transform, logging ──
+%foreign "C:strlen,libc" "scheme:string-length" "javascript:lambda:s => s.length"
+prim__strlen : String -> Int
+
+%export "C:my_add"
+myAdd : Int -> Int -> Int
+myAdd = (+)
+
+%deprecate
+oldFunction : Nat -> Nat
+oldFunction = id
+
+%noinline
+neverInline : Nat -> Nat
+neverInline = S
+
+%logging "elab" 5
+%search_timeout 1000
+%default covering
+%default total
+
+-- ── Autobind, records with parameters, interface parameters, data with options ──
+record Wrapper (a : Type) where
+  constructor MkWrapper
+  unwrap : a
+  count : Nat
+
+data Result : Type -> Type -> Type where
+  Ok : (value : a) -> Result e a
+  Err : (error : e) -> Result e a
+
+interface Show a => Pretty a where
+  pretty : a -> String
+  pretty = show
+
+[viaShow] Pretty Nat where
+
+implementation Pretty Bool where
+  pretty True = "yes"
+  pretty False = "no"
+
+-- ── List comprehension with multiple generators, if-then-else in do, rewrite and with ──
+triples : List (Nat, Nat, Nat)
+triples = [(a, b, c) | c <- [1 .. 20], b <- [1 .. c], a <- [1 .. b], a * a + b * b == c * c]
+
+unlessDo : IO ()
+unlessDo = do
+  let x = 5
+  if x > 3
+     then putStrLn "big"
+     else putStrLn "small"
+  unless (x > 10) $ putStrLn "not huge"
+
+withProof : (xs : List Nat) -> String
+withProof xs with (length xs) proof eq
+  withProof xs | Z = "empty"
+  withProof xs | (S _) = "non-empty"
+
 -- Non-ASCII: café 日本語 ☕
+

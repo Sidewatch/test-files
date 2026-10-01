@@ -1,3 +1,4 @@
+// CUE 0.14 — syntax showcase
 // ── Comments ──
 // Line comment. TODO: split into packages. FIXME: tighten the regexes.
 // CUE has only line comments; doc comments precede the field they describe.
@@ -11,6 +12,18 @@ import (
 	"regexp"
 	"strings"
 	str "strconv"
+	"tool/exec"
+	"tool/cli"
+	"tool/file"
+	"tool/http"
+	"text/template"
+	"encoding/yaml"
+	"encoding/base64"
+	"crypto/sha256"
+	"net"
+	"path"
+	"struct"
+	"uuid"
 )
 
 // ── Literals ──
@@ -202,19 +215,7 @@ listOfStructs: [for i, v in ["x", "y"] {idx: i, val: v}]
 nestedFor: [for a in [1, 2] for b in [3, 4] {a * b}]
 guarded: [for x in [1, 2, 3] if x != 2 let y = x * 10 {y}]
 
-// Packages, builtins, tools
-import "tool/exec"
-import "tool/cli"
-import "tool/file"
-import "tool/http"
-import "text/template"
-import "encoding/yaml"
-import "encoding/base64"
-import "crypto/sha256"
-import "net"
-import "path"
-import "struct"
-import "uuid"
+// Tools and builtins (their imports are in the import block above)
 
 command: build: {
 	compile: exec.Run & {
@@ -266,3 +267,53 @@ numbers: {
 		block
 		'''
 }
+
+// ── Pattern constraints, ellipsis and shorthand ──
+patterns: {
+	[string]:    int
+	[=~"^x-"]:   >=0
+	[Key=~"^k"]: len(Key)
+	"x-one": 1
+	k1:      2
+}
+chained: a: b: c: 1
+listTail: [1, 2, ...int]
+listOpen: [...string]
+listTyped: [int, string, ...]
+structOpen: {a: int, ...}
+required: {name!: string, nick?: string}
+refs: {
+	self:    patterns.k1
+	indexed: patterns["k1"]
+	inList:  listTail[0]
+	sliced:  listTail[0:2]
+}
+
+// ── Aliases and let ──
+Alias = {inner: 1}
+useAlias:   Alias.inner
+fieldAlias: F={val: 1, copy: F.val}
+let local = 10
+letUse: local * 2
+
+// ── Basic types and bounds ──
+types: {
+	n: number
+	i: int
+	f: float
+	s: string
+	b: bool
+	y: bytes
+	t: null | _
+	u: uint8 & 255
+	v: int32
+	w: >=0.0 & <=1.0
+	z: *1 | int
+}
+
+// ── Hidden names and closed definitions ──
+__private:  1
+_hiddenUse: __private + 1
+#Closed: {a: int}
+closedUse:   #Closed & {a: 1}
+embedScalar: {#Closed, b: 2}

@@ -1,3 +1,4 @@
+<!--- CFML (Adobe ColdFusion 2025 / Lucee 6 / BoxLang-compatible) — syntax showcase --->
 <!--- Warehouse order summary page: reads the cart, totals it, renders HTML. --->
 <!---
     A multi-line CFML comment.
@@ -366,3 +367,173 @@ writeDump(var = resp, label = "response");
 <cfbreak><cfcontinue>
 <cfreturn x>
 <!--- TODO: replace cfhttp with a shared HTTP client component. --->
+
+<!--- ── Modern CFML: script components, closures, member functions ── --->
+<cfscript>
+import models.Order;
+import com.example.*;
+
+/**
+ * Javadoc-style component documentation.
+ * @hint Handles stock queries
+ * @author Acme Logistics
+ */
+component accessors="true" output="false" extends="models.Base" implements="IStock,IAudit" {
+
+    property name="dsn" type="string" default="shop";
+    property name="cache" type="struct" setter="false";
+    property string sku default="A-100";
+    property numeric qty default=0 getter=true setter=true;
+
+    static {
+        static.instances = 0;
+    }
+
+    final string function name() { return "stock"; }
+
+    /** @hint Looks up one SKU */
+    public struct function find(required string sku, numeric qty = 0, boolean strict = false) hint="Find a SKU" returnformat="json" {
+        var result = {};
+        local.query = queryExecute(
+            "SELECT * FROM stock WHERE sku = :sku",
+            { sku: { value: arguments.sku, cfsqltype: "cf_sql_varchar" } },
+            { datasource: variables.dsn, returntype: "array" }
+        );
+        return local.query.len() ? local.query[1] : result;
+    }
+
+    public function map(required array items, required function callback) {
+        return items.map(callback);
+    }
+
+    private any function secret() { return super.secret(); }
+    package function pkg() {}
+    remote string function api() returnformat="plain" { return "ok"; }
+}
+
+// Arrow functions, closures, and member functions on every type
+square = (n) => n * n;
+adder = (a, b) => { return a + b; };
+compose = (f, g) => (x) => f(g(x));
+counter = function() { var c = 0; return function() { return ++c; }; }();
+items = [3, 1, 2];
+sorted = items.sort("numeric", "asc");
+evens = items.filter((n) => n % 2 == 0);
+total = items.reduce((acc, n) => acc + n, 0);
+items.each((n, i) => writeOutput("#i#:#n# "));
+names = "alpha,beta,gamma".listToArray();
+joined = names.toList("|");
+upper = "text".ucase().trim().left(2);
+size = {a: 1, b: 2}.count();
+keys = {a: 1}.keyArray();
+exists = {a: 1}.keyExists("a");
+rows = queryNew("id,name", "integer,varchar", [[1, "a"], [2, "b"]]);
+rows.each((row) => writeOutput(row.name));
+mapped = rows.map((row) => row.id * 2);
+found = items.find((n) => n > 1);
+every = items.every((n) => n > 0);
+some = items.some((n) => n > 2);
+flat = [[1, 2], [3]].flatten ?: "n/a";
+first = items.first();
+last = items.last();
+sliced = items.slice(1, 2);
+reversed = items.reverse();
+sumValue = items.sum();
+avgValue = items.avg();
+maxValue = items.max();
+parsed = deserializeJSON('{"a":[1,2,3]}');
+printed = serializeJSON(parsed, "struct");
+d = now().dateFormat("yyyy-mm-dd");
+chain = "  Mixed Case  ".trim().lcase().replace("mixed", "MIXED");
+
+// Named, positional and spread-like argument styles
+r1 = numberFormat(value = 1234.5, mask = "9,999.00");
+r2 = numberFormat(1234.5, "9,999.00");
+r3 = structNew("ordered");
+r4 = new models.Order(id = 1, sku = "A-100");
+r5 = createObject("component", "models.Order").init(1);
+r6 = createObject("java", "java.util.HashMap").init();
+r7 = invoke(r4, "total", { currency: "USD" });
+r8 = evaluate("1 + 2");
+args = { id = 1, sku = "A-100" };
+r9 = new models.Order(argumentCollection = args);
+
+// Tag-in-script syntax
+cfhttp(url = "https://example.com/api", method = "POST", result = "apiResponse", timeout = 10) {
+    cfhttpparam(type = "header", name = "Accept", value = "application/json");
+    cfhttpparam(type = "body", value = serializeJSON({ sku: "A-100" }));
+}
+cfquery(name = "q", datasource = "shop") {
+    writeOutput("SELECT 1 AS one");
+}
+cfmail(to = "buyer@example.com", from = "ops@example.com", subject = "Shipped", type = "html") {
+    writeOutput("<p>Shipped</p>");
+}
+cflog(text = "tag-in-script", type = "information", file = "orders");
+cfparam(name = "url.page", default = 1);
+cfsetting(requesttimeout = 60, showdebugoutput = false);
+cfheader(name = "X-Powered-By", value = "CFML");
+cfcontent(type = "application/json", reset = true);
+cfcookie(name = "seen", value = "1", expires = "never");
+cfflush();
+cfdump(var = r4, expand = false);
+cftimer(label = "timed block", type = "debug") {
+    sleep(10);
+}
+
+// Error handling forms
+try {
+    throw(type = "Custom.Error", message = "Failed", detail = "More detail", errorCode = "E100");
+} catch (Custom.Error e) {
+    writeOutput("custom: #e.message#");
+} catch (database e) {
+    writeOutput("db: #e.sqlState#");
+} catch (any e) {
+    rethrow;
+} finally {
+    writeOutput("always");
+}
+
+// Scopes and null handling
+scopes = [url, form, cgi, cookie, session, application, request, server, variables, arguments, local, this, client];
+value = url.missing ?: "default";
+safe = r4?.customer?.name ?: "anonymous";
+isNullValue = isNull(r4.unknown);
+nullable = javaCast("null", 0);
+exists2 = isDefined("url.x") && structKeyExists(form, "y");
+
+// Literals: numbers, strings, dates, structs, arrays, queries
+hex = 0x1F; sci = 6.02e23; neg = -42; dec = .5;
+dq = "He said ""hi"" and ##hash## and #value#";
+sq = 'It''s fine';
+multi = "line one
+line two";
+struct1 = { "quoted key": 1, plain: 2, 'single': 3, nested: { deep: [1, { x: 2 }] } };
+struct2 = [ a: 1, b: 2 ];
+arr1 = [ 1, 2, 3, [ 4, 5 ], { k: "v" } ];
+date1 = createDateTime(2025, 6, 15, 12, 0, 0);
+ts1 = { ts '2025-06-15 12:00:00' };
+</cfscript>
+
+<!--- ── Additional tags ───────────────────────────────────────────── --->
+<cftimer label="template" type="inline"><cfoutput>#now()#</cfoutput></cftimer>
+<cfimage action="resize" source="#expandPath('./in.png')#" destination="#expandPath('./out.png')#" width="200" height="200" overwrite="true">
+<cfspreadsheet action="read" src="#expandPath('./data.xlsx')#" query="sheet" headerrow="1">
+<cfpdf action="merge" source="a.pdf,b.pdf" destination="merged.pdf" overwrite="true">
+<cfdocument format="pdf" filename="report.pdf" overwrite="true"><cfoutput>Report</cfoutput></cfdocument>
+<cfchart format="png" chartwidth="400" chartheight="300"><cfchartseries type="bar"><cfchartdata item="A" value="1"></cfchartseries></cfchart>
+<cfexecute name="/bin/echo" arguments="hello" variable="out" timeout="5" />
+<cfwebsocket name="ws" onmessage="handle" />
+<cfloop file="#expandPath('./big.txt')#" index="line" characters="1024" />
+<cfloop from="10" to="1" step="-3" index="down"><cfoutput>#down# </cfoutput></cfloop>
+<cftransaction action="begin" isolation="serializable"><cftransaction action="commit" /></cftransaction>
+<cfset result = queryExecute("SELECT 1")>
+<cfset local.items = []>
+<cfset "dynamic#1#" = "dynamic variable name">
+<cfset this.name = "app">
+<cfset this.sessionManagement = true>
+<cfset this.mappings["/lib"] = expandPath("./lib")>
+<cfset this.datasource = "shop">
+<cfset this.javaSettings = { loadPaths: ["./jars"], reloadOnChange: true }>
+<cfset this.restSettings = { cfclocation: "./api", skipCFCWithError: true }>
+<cfif NOT isNull(result) AND result.recordCount GT 0>found<cfelseif false>never<cfelse>none</cfif>

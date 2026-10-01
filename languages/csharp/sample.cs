@@ -1,3 +1,5 @@
+#!/usr/bin/env dotnet
+// C# 14 (.NET 10) — syntax showcase
 // ── Comments ──
 // Line comment. TODO: partition by warehouse. FIXME: rounding.
 /* Block comment
@@ -13,6 +15,7 @@
 // ── Preprocessor ──
 #define WAREHOUSE_DEBUG
 #undef LEGACY
+#nullable enable annotations
 #nullable enable
 #pragma warning disable CS0168
 #pragma warning restore CS0168
@@ -25,9 +28,11 @@
 #endif
 #endregion
 #line 200 "inventory.cs"
+#line hidden
 #line default
 
 // ── Usings ──
+extern alias Legacy;
 global using System.IO;
 using System;
 using System.Collections.Generic;
@@ -36,9 +41,15 @@ using System.Text;
 using System.Threading.Tasks;
 using static System.Math;
 using Json = System.Text.Json.JsonSerializer;
+using Point3 = (int X, int Y, int Z);
 
 [assembly: System.Reflection.AssemblyVersion("1.0.0.0")]
 [module: System.Runtime.CompilerServices.SkipLocalsInit]
+#if WAREHOUSE_DEBUG
+[Obsolete("debug only")]
+#endif
+[Serializable]
+public class Conditional { [param: NonSerialized] public void M([param: Optional] int x) { } [property: NonSerialized] public int P { get; set; } [typevar: Foo] public void G<T>() { } }
 
 namespace Acme.Warehouse;
 
@@ -300,6 +311,7 @@ second line";
 }
 
 // ── Further constructs ──
+// A block-scoped namespace cannot coexist with the file-scoped one above (CS8955); kept for completeness.
 namespace Acme.Warehouse.Extras
 {
     using Alias = System.Collections.Generic.List<(int Id, string Name)>;
@@ -361,7 +373,7 @@ namespace Acme.Warehouse.Extras
             int* p = &value;
             *p += 1;
             int[] arr = { 1, 2, 3 };
-            fixed (int* q = arr) { q[0] = *(q + 1); }
+            fixed (int* q = arr) { q[0] = q[1] + *q; }
             Span<int> span = stackalloc int[4];
             var size = sizeof(Money);
             void* raw = (void*)p;
@@ -470,6 +482,131 @@ namespace Acme.Warehouse.Extras
         public int Computed => Prop * 2;
         public Generic() { }
         ~Generic() { }
+    }
+
+    // ── C# 14 / 13 / 12 additions ──
+    public static class Ext14
+    {
+        extension(string source)
+        {
+            public bool IsBlank => string.IsNullOrWhiteSpace(source);
+            public string Twice() => source + source;
+            public static string operator *(string text, int times) => string.Concat(Enumerable.Repeat(text, times));
+        }
+
+        extension<T>(IEnumerable<T> source) where T : notnull
+        {
+            public bool AnyItems => source.Any();
+            public IEnumerable<T> Doubled() => source.Concat(source);
+        }
+    }
+
+    public partial class Partials
+    {
+        public partial Partials(int n);
+        public partial int Size { get; set; }
+        public partial event EventHandler Moved;
+    }
+
+    public partial class Partials
+    {
+        public partial Partials(int n) { }
+        public partial int Size { get => field; set => field = value < 0 ? 0 : value; }
+        public partial event EventHandler Moved { add { } remove { } }
+
+        public string Title { get; set => field = value.Trim(); } = "";
+        public static void NullConditionalAssign(Partials? p, int[]? a)
+        {
+            p?.Size = 5;
+            p?.Size += 1;
+            a?[0] = 1;
+        }
+    }
+
+    public delegate bool TryParser(string text, out int result);
+
+    public class Modern(string name, int slots) : IDisposable
+    {
+        private readonly System.Threading.Lock _gate = new();
+        public string Name => name;
+        public void Dispose() { lock (_gate) { } }
+        public static void Params(params ReadOnlySpan<int> values) { }
+        public static void Params2(params IEnumerable<string> values) { }
+        public static void Allows<T>(T value) where T : allows ref struct { } // allows ref struct: C# 13
+        [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
+        public static void Prefer(int[] a) { }
+        public static void Lambdas()
+        {
+            TryParser parse = (text, out result) => int.TryParse(text, out result);
+            var defaults = (int a = 1, params int[] rest) => a;
+            Func<ref int, int> byRef = (ref int x) => x;
+            var tuple3 = new Point3(1, 2, 3);
+            var nameOfOpen = nameof(List<>);
+            var esc = "\e[0m";
+        }
+    }
+
+    [System.Runtime.CompilerServices.InlineArray(4)]
+    public struct Buffer4 { private int _element0; }
+
+    // ── Compiler-era corners ──
+    public unsafe class Corners
+    {
+        public static void Run(TypedReference tr, string[] names)
+        {
+            ;
+            int local = 3;
+            _ = int.TryParse("7", out var parsed);
+            _ = int.TryParse("8", out int typed);
+            var made = __makeref(local);
+            Type t = __reftype(made);
+            int back = __refvalue(made, int);
+            unsafe { int* p = &local; (*p)++; var sx = new Point3(); }
+            fixed (char* c = "abc") { }
+            int[] sized = new int[3];
+            int[] filled = new int[] { 1, 2, 3 };
+            int[,] grid = new int[2, 2];
+            int[][] jagged = new int[2][];
+            var implicitStack = stackalloc[] { 1, 2, 3 };
+            var legacy = new Legacy::Old.Thing();
+            var root = global::System.Math.PI;
+            object o = 5;
+            if (o is var anything) { }
+            if (o is (int or long) and not 0) { }
+            if (o is (string)) { }
+            var (a, (b, c2)) = (1, (2, 3));
+            var (x, _) = (1, 2);
+            var nested = (a: 1, b: (c: 2, d: 3));
+            var pq = new Point3 { X = 1 };
+            Point3* ptr = null;
+            ptr->X = 1;
+            int rem = a % 2;
+            double half = a / 2.0;
+            bool le = a <= b;
+            int shr = a >> 1;
+            uint ushr = 8u; ushr >>>= 1;
+            var q = from n in names
+                    orderby n ascending, n.Length descending
+                    join m in names on n equals m into grouped
+                    select grouped;
+            delegate*<int, int> managedPtr = null;
+            delegate* managed<int, int> managedPtr2 = null;
+            delegate* unmanaged<int, int> unmanagedPtr = null;
+            delegate* unmanaged[Cdecl]<int, int> cdecl = null;
+            delegate* unmanaged[Stdcall]<int, int> stdcall = null;
+            delegate* unmanaged[Fastcall]<int, int> fastcall = null;
+            delegate* unmanaged[Thiscall]<int, int> thiscall = null;
+            delegate* unmanaged[Cdecl, SuppressGCTransition]<int, void> multi = null;
+        }
+        public static void Scoped(scoped ref int x, scoped Span<int> span, scoped in int y) { }
+        public static ref int Ref(scoped ref int a) => ref a;
+    }
+
+    public class ExplicitImpl : IAuditable
+    {
+        string IAuditable.Id => "explicit";
+        void IAuditable.Audit() { }
+        static IAuditable IAuditable.Create() => new ExplicitImpl();
     }
 
     public enum Bits : long { A = 1L << 0, B = 1L << 40, Mask = ~0L }

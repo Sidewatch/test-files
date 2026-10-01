@@ -1,4 +1,5 @@
-<#ftl encoding="UTF-8" strip_whitespace=true output_format="HTML" auto_esc=true>
+<#-- FreeMarker 2.3.34 — syntax showcase -->
+<#ftl encoding="UTF-8" strip_whitespace=true strip_text=false output_format="HTML" auto_esc=true ns_prefixes={"d": "http://example.com/data"} attributes={"title": "Order email", "version": 2}>
 <#-- ── Comments ── -->
 <#-- FreeMarker: an order confirmation email for the warehouse system. -->
 <#--
@@ -271,13 +272,13 @@ ${.now?iso_local} ${.template_name} ${.custom_attribute_name!""}
 <#assign b1 = "Text"?lower_case + "t"?capitalize + "Text"?uncap_first + "a"?left_pad(5) + "a"?right_pad(5, "-")>
 <#assign b2 = "text"?contains("e")?c + "text"?ends_with("t")?c + "text"?remove_beginning("t") + "text"?remove_ending("t") + "x"?ensure_starts_with("/") + "x"?ensure_ends_with("/")>
 <#assign b3 = "a1b2"?matches("[a-z]\\d")?c + "a1b2"?replace("\\d", "#", "r") + "  a  b "?squeeze_spaces + "a b c"?word_list?size + "x\ny"?chop_linebreak>
-<#assign b4 = "<b>"?html + "<b>"?xhtml + "<b>"?xml + "a b"?url + "a/b"?url_path + "it's"?js_string + "it's"?json_string + "x"?js_json + "x"?cn>
+<#assign b4 = "<b>"?html + "<b>"?xhtml + "<b>"?xml + "a b"?url + "a/b"?url_path + "it's"?js_string + "it's"?json_string + "x"?cn>
 <#assign b5 = "text"?substring(1) + "text"?left_pad(6) + "text"?last_index_of("t") + "text"?string + "text"?truncate(2) + "text"?truncate_c(2) + "text"?truncate_w(2)>
 <#assign b6 = "5"?number + "true"?boolean?c + "2026-01-01"?date("yyyy-MM-dd") + "10:00"?time("HH:mm") + "2026-01-01 10:00"?datetime("yyyy-MM-dd HH:mm")>
 <#assign t1 = x?is_string?c + x?is_sequence?c + x?is_hash?c + x?is_hash_ex?c + x?is_boolean?c + x?is_date?c + x?is_date_like?c + x?is_directive?c + x?is_macro?c + x?is_method?c + x?is_node?c + x?is_enumerable?c + x?is_indexable?c + x?is_collection?c + x?is_collection_ex?c + x?is_transform?c>
 <#assign t2 = x?is_first?c + x?is_last?c + x?item_parity + x?item_parity_cap + x?item_cycle("a", "b") + x?counter + x?index + x?has_next?c + x?has_content?c>
 <#assign s1 = seq?size + seq?first + seq?last + seq?seq_index_of(1) + seq?seq_last_index_of(1) + seq?sort_by("name")?size + seq?min + seq?max + seq?sum + seq?reverse?size + seq?take_while(i -> i < 3)?size + seq?drop_while(i -> i < 3)?size + seq?join(",") + seq?chunk(2)?size + seq?seq_contains(1)?c + seq?sort?size>
-<#assign s2 = seq?filter(i -> i > 1)?size + seq?map(i -> i * 2)?size + seq?sequence?size + seq?then(1, 2) + seq?size_hash>
+<#assign s2 = seq?filter(i -> i > 1)?size + seq?map(i -> i * 2)?size + seq?sequence?size + seq?then(1, 2)>
 <#assign h1 = dims?keys?size + dims?values?size + dims?api.size() + dims?size + dims?has_content?c + dims?is_hash?c>
 <#assign n3 = 7?abs + 7?c + 7?string + 7?string.number + 7?string.percent + 7?string["0.0"] + 7?int + 7?long + 7?double + 7?float + 7?floor + 7?round + 7?ceiling + 7?number_to_date?string + 7.5?is_infinite?c + 7.5?is_nan?c>
 <#assign d2 = .now?date_if_unknown + .now?time_if_unknown + .now?datetime_if_unknown + .now?unix_time + .now?iso("UTC") + .now?iso_utc_ms + .now?iso_nz + .now?string.iso>
@@ -303,3 +304,38 @@ ${"Dollar: $\{x}"}
 -->
 
 <#-- Non-ASCII: ¡Gracias! 谢谢 ありがとう Спасибо -->
+
+<#-- ── 2.3.3x additions: includes, with_args, markup output, more built-ins ── -->
+<#include "optional.ftl" ignore_missing=true>
+<#include "dynamic/" + order.type + ".ftl">
+<#assign wa1 = m.money?with_args({"currency": "EUR"})>
+<#assign wa2 = m.money?with_args_last([100, "GBP"])>
+<@wa1 amount=5 />
+<#assign abc1 = 1?lower_abc + 28?upper_abc>
+<#assign ks = "a/b/c"?keep_before("/") + "a/b/c"?keep_after("/") + "a/b/c"?keep_before_last("/") + "a/b/c"?keep_after_last("/")>
+<#assign cases = "abc"?c_lower_case + "abc"?c_upper_case>
+<#assign tpath = "x.ftl"?absolute_template_name + .template_name?absolute_template_name("../y.ftl")>
+<#assign markup = "<b>x</b>"?no_esc?is_markup_output?c + x?is_unknown_date_like?c + 100?number_to_time?string + 100?number_to_datetime?string>
+<#assign opt = .get_optional_template("maybe.ftl")>
+<#if opt.exists><@opt.include /></#if>
+<#assign lazy = (items?filter(i -> i.active)?map(i -> i.name))![]>
+<#assign nullSafe = (a.b.c)!"x" + (a.b.c)?has_content?c + a.b.c???c>
+<#assign methodRef = tags?join>
+
+<#-- ── Deprecated constructs still accepted (labelled deprecated) ── -->
+<#-- deprecated: <#foreach>, <#call>, <#comment>, the "= " comparison, <#transform>, ?exists/?if_exists -->
+<#foreach item in tags>${item}</#foreach>
+<#call early>
+<#comment>This block is dropped from the output; deprecated in favour of ordinary comments.</#comment>
+<#assign legacyExists = customer.nick?exists?c + customer.nick?if_exists + customer.nick?default("n/a")>
+<#transform html_escape>deprecated transform</#transform>
+
+<#-- ── Square-bracket syntax (alternative to angle brackets; a template uses one or the other) ── -->
+<#-- The line below is a standalone template fragment written with [ ] tags; shown as plain text here:
+[#ftl]
+[#assign x = 1]
+[#if x == 1]one[#else]other[/#if]
+[#list items as item]${item}[#sep], [/#sep][/#list]
+[@m.money amount=3 /]
+[=x]   [=x?string("0.0")]
+-->
