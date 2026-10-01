@@ -1,0 +1,324 @@
+# ── Comments ──
+# Schema and operations for the orders API. TODO: split into modules.
+
+"""
+Schema description using a block string.
+Supports **markdown**, "quotes" and \""" escaped triple quotes.
+"""
+schema @link(url: "https://specs.example.com/federation/v2.3", import: ["@key", "@shareable"]) {
+  query: Query
+  mutation: Mutation
+  subscription: Subscription
+}
+
+# ── Scalars and directives ──
+"An ISO-8601 timestamp."
+scalar DateTime @specifiedBy(url: "https://example.com/datetime")
+scalar JSON
+scalar Money
+
+"Marks a field as requiring a role."
+directive @auth(requires: Role = ADMIN, scopes: [String!] = ["read", "write"]) repeatable on OBJECT | FIELD_DEFINITION | INTERFACE
+directive @cacheControl(maxAge: Int, scope: CacheScope) on FIELD_DEFINITION | OBJECT
+directive @example(
+  "inline description"
+  a: Int = 0
+  b: Float = 1.5e3
+) on QUERY | MUTATION | SUBSCRIPTION | FIELD | FRAGMENT_DEFINITION | FRAGMENT_SPREAD | INLINE_FRAGMENT | VARIABLE_DEFINITION
+
+# ── Enums ──
+enum Status {
+  PENDING
+  PAID
+  SHIPPED
+  "Order was cancelled."
+  CANCELLED @deprecated(reason: "use VOIDED")
+  VOIDED
+}
+
+enum Role { ADMIN, STAFF, GUEST }
+enum CacheScope { PUBLIC PRIVATE }
+
+# ── Interfaces ──
+interface Node {
+  id: ID!
+}
+
+interface Timestamped implements Node {
+  id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime
+}
+
+# ── Object types ──
+type Order implements Node & Timestamped @key(fields: "id") {
+  id: ID!
+  number: Int!
+  status: Status!
+  total: Float!
+  "Line items in the order."
+  items(first: Int = 20, after: String, orderBy: [ItemOrder!] = [{ field: SKU, direction: ASC }]): [LineItem!]!
+  customer: Customer @auth(requires: STAFF)
+  placedAt: DateTime!
+  createdAt: DateTime!
+  updatedAt: DateTime
+  metadata: JSON
+  notes: [String]
+  matrix: [[Int!]!]
+  legacyCode: String @deprecated
+}
+
+type LineItem { sku: String!, quantity: Int!, unitPrice: Money!, tags: [String!] }
+
+type Customer {
+  id: ID!
+  name: String!
+  email: String!
+  address: Address
+}
+
+type Address {
+  line1: String!
+  line2: String
+  city: String!
+  postcode: String!
+}
+
+type OrderEdge { node: Order!, cursor: String! }
+type PageInfo { hasNextPage: Boolean!, endCursor: String }
+type OrderConnection { edges: [OrderEdge!]!, pageInfo: PageInfo!, totalCount: Int! }
+
+# ── Unions ──
+union SearchResult = Order | Customer | LineItem
+union Empty
+union Leading =
+  | Order
+  | Customer
+
+# ── Inputs ──
+input OrderFilter {
+  status: Status
+  placedAfter: DateTime
+  minTotal: Float = 0.0
+  tags: [String!] = []
+  nested: NestedFilter = { enabled: true, depth: 3, label: "x\tyé", nothing: null }
+}
+
+input NestedFilter { enabled: Boolean!, depth: Int, label: String, nothing: String }
+input ItemOrder { field: ItemField!, direction: Direction! = ASC }
+enum ItemField { SKU, QUANTITY }
+enum Direction { ASC DESC }
+
+# ── Root operation types ──
+type Query {
+  order(id: ID!): Order
+  orders(filter: OrderFilter, first: Int = 50, after: String): OrderConnection!
+  search(text: String!, limit: Int = 10): [SearchResult!]!
+  node(id: ID!): Node
+  me: Customer @auth
+}
+
+type Mutation {
+  cancelOrder(id: ID!, reason: String): Order! @deprecated(reason: "use voidOrder")
+  voidOrder(id: ID!, reason: String = "customer request"): Order!
+  addItem(order: ID!, sku: String!, quantity: Int! = 1, price: Money): LineItem!
+}
+
+type Subscription {
+  orderUpdated(id: ID!): Order!
+}
+
+# ── Extensions ──
+extend schema @link(url: "https://specs.example.com/tag/v0.3", import: ["@tag"])
+extend type Query { health: String! }
+extend type Order @key(fields: "number") { warehouse: String }
+extend interface Node { __typename: String! }
+extend union SearchResult = Address
+extend enum Status { RETURNED }
+extend input OrderFilter { customer: ID }
+extend scalar JSON @example
+
+# ── Operations: queries ──
+query RecentOrders($after: DateTime!, $first: Int = 10, $status: Status = PAID, $ids: [ID!]!) @cacheControl(maxAge: 30) {
+  orders(filter: { placedAfter: $after, status: $status }, first: $first) {
+    totalCount
+    pageInfo { hasNextPage endCursor }
+    edges {
+      cursor
+      node { ...OrderRow }
+    }
+  }
+  byAlias: order(id: "42") { id, number }
+  other: order(id: 43) @include(if: true) { id }
+  skipped: order(id: 44) @skip(if: false) { id }
+  search(text: "widget \"deluxe\" é") {
+    __typename
+    ... on Order { number status }
+    ... on Customer { name email }
+    ... @include(if: $first) { __typename }
+  }
+  nodes: node(id: $ids) { id }
+}
+
+# Named and anonymous-style operations
+query Health { health }
+
+query Me { me { name } }
+
+# ── Mutations ──
+mutation Cancel($id: ID!, $reason: String) {
+  voidOrder(id: $id, reason: $reason) {
+    id
+    status
+  }
+  addItem(order: "1", sku: "A-1", quantity: 3, price: 12.50) { sku }
+}
+
+# ── Subscriptions ──
+subscription Watch($id: ID!) {
+  orderUpdated(id: $id) { ...OrderRow }
+}
+
+# ── Fragments ──
+fragment OrderRow on Order {
+  number
+  status
+  total
+  items(first: 5, orderBy: [{ field: QUANTITY, direction: DESC }]) { sku quantity unitPrice }
+}
+
+fragment CustomerBits on Customer {
+  name
+  address @include(if: true) { city postcode }
+}
+
+# ── Value literals ──
+query Literals {
+  field(
+    int: -42
+    float: 3.14
+    exp: 6.02e23
+    negExp: -1.5E-3
+    string: "text with \\ \/ \b \f \n \r \t é \u{1F600}"
+    block: """
+      Block string
+        keeps indentation
+    """
+    bool: true
+    off: false
+    nothing: null
+    enumValue: PENDING
+    list: [1, 2, [3, 4], { a: 1 }]
+    object: { nested: { deep: [true, false, null] } }
+    variable: $someVar
+  )
+}
+
+# ── Remaining syntax: descriptions on everything, repeatable, interfaces on interfaces ──
+"Description on a type with a \"quoted\" word"
+type Described {
+  "Field description"
+  field(
+    "Argument description"
+    arg: Int = 1 @deprecated(reason: "no longer used")
+  ): String
+  """
+  Block description
+  across lines
+  """
+  other: Int
+}
+
+"Description on an input"
+input DescribedInput {
+  "Input field"
+  f: Int = 5
+}
+
+"Union description"
+union DescribedUnion @example = | A | B
+type A { a: Int }
+type B { b: Int }
+
+"Interface description"
+interface Described2 implements Node & Timestamped {
+  id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime
+}
+
+# ── Directive locations: all of them ──
+directive @everywhere on
+  | QUERY
+  | MUTATION
+  | SUBSCRIPTION
+  | FIELD
+  | FRAGMENT_DEFINITION
+  | FRAGMENT_SPREAD
+  | INLINE_FRAGMENT
+  | VARIABLE_DEFINITION
+  | SCHEMA
+  | SCALAR
+  | OBJECT
+  | FIELD_DEFINITION
+  | ARGUMENT_DEFINITION
+  | INTERFACE
+  | UNION
+  | ENUM
+  | ENUM_VALUE
+  | INPUT_OBJECT
+  | INPUT_FIELD_DEFINITION
+
+# ── Variable directives and defaults of every literal kind ──
+query Variables(
+  $a: Int = 1 @example
+  $b: [Int!]! = [1, 2, 3]
+  $c: InputType = { f: 1, g: [true, false, null], h: { i: "j" }, k: ENUM_VALUE, l: 1.5e3 }
+  $d: String = "default"
+  $e: Boolean = false
+  $f: ID
+) @example {
+  field(a: $a, b: $b, c: $c)
+}
+
+# ── Selections: aliases, nested inline fragments, directives on fragments ──
+query Selections {
+  a: field1
+  b: field2(arg: 1)
+  c: field3 { ... on A { a } ... on B { b } }
+  ...NamedFragment @include(if: true)
+  ... @skip(if: false) { d }
+  ... on Query { e }
+  __typename
+  __schema { types { name kind } }
+  __type(name: "Order") { fields { name type { name } } }
+}
+
+fragment NamedFragment on Query @example { z }
+
+# ── Strings with all escapes, unicode and block-string edge cases ──
+query Strings {
+  field(
+    s1: ""
+    s2: "\" \\ \/ \b \f \n \r \t"
+    s3: "\u00e9 \u{1F600} unicode: café 日本語 ☕"
+    s4: """"""
+    s5: """one line"""
+    s6: """
+      First line
+        indented
+      Third line with "quotes" and \""" escaped triple quote
+    """
+  )
+}
+
+# ── Comments in odd places ──
+query # comment after keyword
+  Commented # comment after name
+  ( # inside variables
+    $x: Int # trailing
+  ) # after variables
+{ # after brace
+  field # after field
+  # standalone
+}

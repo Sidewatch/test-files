@@ -1,0 +1,12 @@
+sku,name,quantity,unit_price,category,location,received,in_stock,notes
+A-100,"Claw hammer, 16 oz",42,12.50,Tools,"Aisle 3, Bin 7",2026-01-15,true,
+A-101,Bolt M8 x 40,1200,0.08,Fasteners,Aisle 5,2026-01-16,true,"Sold by the ""gross"""
+A-102,Safety glasses,87,4.25,Safety,Aisle 1,2026-02-01,true,Anti-fog coating
+"A-103","Pallet jack
+manual",3,310.00,Bulk,Dock,2026-02-03,false,"Needs servicing; see ticket #4412"
+A-104,Café table (Ø 60 cm),12,89.9,Furniture,Aisle 9,2026-02-10,true,日本語 note 📦
+A-105,,0,,,,,,
+A-106,"  padded  ",-5,1e3,Tools,Aisle 3,,false,=1+1
+A-107,Tape 50m,250,-0.5,Supplies,Aisle 2,2026-03-01 08:30:00,true,"null"
+A-108,Drill bit 6mm,0x1F,3.14159,Tools,"",2026-03-02T09:15:00Z,TRUE,'single quoted'
+A-109,Backslash \ path,7,1_000,Misc,C:\stock\bin,N/A,NaN,

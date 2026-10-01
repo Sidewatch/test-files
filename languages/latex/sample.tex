@@ -1,0 +1,306 @@
+% !TEX program = pdflatex
+% !TEX root = sample.tex
+% ── Comments ──
+% Line comment. TODO: add the regional appendix. FIXME: figure placement.
+\documentclass[11pt,a4paper,twoside]{article}
+
+% ── Preamble: packages and options ──
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=teal]{hyperref}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{tikz}
+\usepackage{siunitx}
+\usepackage[backend=biber,style=numeric]{biblatex}
+\addbibresource{references.bib}
+\usetikzlibrary{arrows.meta,positioning}
+
+% ── Custom commands, environments, theorems ──
+\newcommand{\sku}[1]{\texttt{#1}}
+\newcommand{\qty}[2][units]{#2\,\mathrm{#1}}
+\renewcommand{\arraystretch}{1.2}
+\providecommand{\todo}[1]{\textcolor{red}{TODO: #1}}
+\DeclareMathOperator{\stock}{stock}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\def\warehouse{North Warehouse}
+\let\oldsection\section
+\newenvironment{callout}[1]
+  {\par\noindent\textbf{#1.}\itshape}
+  {\par}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newcounter{pallet}
+\setcounter{pallet}{0}
+\makeatletter
+\def\@maketitlehook{}
+\makeatother
+\lstset{language=Python,basicstyle=\ttfamily\small,numbers=left,frame=single}
+\sisetup{group-separator={,}}
+
+\title{Warehouse Inventory Report\thanks{Fictional data for \texttt{example.com}.}}
+\author{Acme Logistics \and Stock Control Team}
+\date{\today}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\listoffigures
+
+\begin{abstract}
+This report summarises stock levels, reorder points and the cost of holding inventory.
+It exercises most of the syntax of the language.
+\end{abstract}
+
+% ── Sectioning ──
+\section{Introduction}\label{sec:intro}
+\subsection{Scope}
+\subsubsection{Limits}
+\paragraph{Note.} Starred forms omit numbers.
+\section*{Unnumbered}
+See Section~\ref{sec:intro} and page~\pageref{sec:intro}, also~\cite{knuth1984,lamport1994}.
+\textcite{knuth1984} and \autocite{lamport1994}.
+Footnote\footnote{A footnote with \emph{emphasis}.} and a margin\marginpar{Margin note}.
+
+% ── Text formatting and special characters ──
+\textbf{Bold}, \textit{italic}, \texttt{monospace}, \textsc{Small Caps}, \underline{underlined},
+\emph{emphasised}, {\bfseries group bold}, {\small small}, {\Large Large}, \textcolor{red}{red},
+\textsuperscript{sup}, \textsubscript{sub}. Special characters: \& \% \$ \# \_ \{ \} \textbackslash\
+\textasciitilde\ \textasciicircum. Accents: \'e \`a \^o \"u \~n \c{c} \v{s} \ss{} \ae{} \o{}.
+Dashes: en -- em --- minus $-$. Quotes: ``double'' and `single'. Ellipsis: \ldots{} \dots
+Non-breaking~space, thin\,space, \quad quad\qquad qqquad, \hspace{1cm} \vspace{2mm} \\[3pt]
+\newline \linebreak \pagebreak \newpage \noindent \centering \raggedright \par
+Unicode: Zürich → 東京 ✓ — inventory \sku{WIDGET-100} costs \qty[kg]{2.5}.
+\verb|inline \verb text| and \verb+another+. \url{https://example.com/stock} \href{https://example.com}{link}.
+\SI{12.5}{\kilogram} \num{1234567.89} \si{\metre\per\second}
+
+% ── Lists ──
+\begin{itemize}
+  \item First \emph{item}
+  \item Second item
+    \begin{enumerate}[label=\alph*)]
+      \item Nested enumerated
+      \item Another
+    \end{enumerate}
+  \item[$\star$] Custom bullet
+\end{itemize}
+\begin{enumerate}
+  \item Numbered \label{item:one}
+  \item Also numbered
+\end{enumerate}
+\begin{description}
+  \item[SKU] Stock keeping unit
+  \item[Bin] Physical location
+\end{description}
+
+% ── Math ──
+Inline math $E = mc^2$, \(a^2 + b^2 = c^2\), and display math:
+\[
+  \sum_{i=1}^{n} q_i p_i = \int_0^\infty e^{-x}\,dx \approx 1, \qquad
+  \lim_{n \to \infty} \left( 1 + \frac{1}{n} \right)^n = e
+\]
+$$ \alpha + \beta = \gamma \neq \delta \leq \epsilon \geq \zeta \in \mathbb{R} \subset \mathbb{C} $$
+\begin{equation}\label{eq:eoq}
+  Q^* = \sqrt{\frac{2DS}{H}}, \quad \hat{x} = \bar{y} + \vec{z} + \dot{w} + \tilde{v}
+\end{equation}
+\begin{align}
+  f(x) &= \begin{cases} x^2 & \text{if } x \ge 0 \\ -x & \text{otherwise} \end{cases} \\
+  A &= \begin{pmatrix} 1 & 2 \\ 3 & 4 \end{pmatrix}, \quad \det A = \begin{vmatrix} 1 & 2 \\ 3 & 4 \end{vmatrix} \nonumber
+\end{align}
+\begin{align*}
+  \argmin_{q} \stock(q) &= \operatorname{round}\bigl(\sqrt{2}\bigr) \\
+  \mathbf{v} \cdot \mathbf{w} &= \sum\nolimits_k v_k w_k \otimes \mathcal{L} \partial \nabla \forall \exists
+\end{align*}
+See equation~\eqref{eq:eoq}.
+
+\begin{theorem}[Wilson]\label{thm:eoq}
+The economic order quantity minimises total cost.
+\end{theorem}
+\begin{proof}
+Differentiate and set to zero. \qedhere
+\end{proof}
+\begin{definition}A \emph{bin} is a storage location.\end{definition}
+
+% ── Tables and figures ──
+\begin{table}[htbp]
+  \centering
+  \caption{Stock levels}\label{tab:stock}
+  \begin{tabular}{@{}lrr@{}}
+    \toprule
+    \textbf{SKU} & \textbf{Quantity} & \textbf{Price (\pounds)} \\
+    \midrule
+    WIDGET-100 & 250 & 2.50 \\
+    GADGET-200 & 0 & 14.99 \\
+    \multicolumn{2}{l}{Total} & \cmidrule(lr){1-2} \hline 17.49 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.6\textwidth]{figures/stock-levels.pdf}
+  \caption{Levels over time.}\label{fig:levels}
+\end{figure}
+
+\begin{tikzpicture}[node distance=2cm, >=Stealth]
+  \node[draw, rounded corners] (a) {Receive};
+  \node[draw, right=of a] (b) {Store};
+  \draw[->, thick, red] (a) -- (b);
+  \draw (0,0) circle (1pt) -- (1,1) .. controls (2,2) .. (3,0);
+\end{tikzpicture}
+
+% ── Verbatim and code ──
+\begin{verbatim}
+raw text: \not{interpreted} % nor this comment
+\end{verbatim}
+\begin{lstlisting}[language=Python,caption={Reorder check}]
+def needs_reorder(qty, point=25):
+    return qty < point
+\end{lstlisting}
+\lstinline|x = 1|
+
+% ── Conditionals, counters, lengths ──
+\newif\ifdraft
+\drafttrue
+\ifdraft \todo{remove draft mark} \else Final \fi
+\stepcounter{pallet}\arabic{pallet} \roman{pallet} \Alph{pallet}
+\setlength{\parindent}{0pt}
+\addtolength{\textwidth}{1cm}
+\renewcommand\thesection{\arabic{section}}
+\expandafter\def\csname foo\endcsname{bar}
+\input{appendix}
+\include{chapter2}
+
+% ── Rare constructs: macros and programming ──
+\newcommand*{\starred}[1]{\textbf{#1}}
+\newcommand{\twoopt}[3][default]{#1,#2,#3}
+\NewDocumentCommand{\xparse}{ s o m O{x} }{#3 #4}
+\RenewDocumentCommand{\xparse}{ m }{#1}
+\DeclareDocumentCommand{\decl}{ m }{#1}
+\NewDocumentEnvironment{xenv}{ m }{\begin{center}#1}{\end{center}}
+\newrobustcmd{\robust}{R}
+\DeclareRobustCommand{\declrobust}{D}
+\renewenvironment{center2}{\begin{center}}{\end{center}}
+\newlength{\mylen}\setlength{\mylen}{1.5em}\addtolength{\mylen}{2pt}
+\newsavebox{\mybox}\sbox{\mybox}{box}\usebox{\mybox}
+\newboolean{flag}\setboolean{flag}{true}
+\ifthenelse{\boolean{flag}}{yes}{no}
+\@ifnextchar[{\opt}{\noopt}
+\makeatletter\def\my@internal{x}\let\my@let\relax\edef\my@edef{\my@internal}\gdef\g{G}\xdef\x{X}\makeatother
+\catcode`\@=11 \catcode`\~=13 \catcode`\%=14
+\csname my\string name\endcsname \expandafter\let\csname a\endcsname\relax
+\ExplSyntaxOn
+\cs_new:Npn \my_func:n #1 { \tl_set:Nn \l_tmpa_tl {#1} }
+\int_new:N \g_my_int \int_gset:Nn \g_my_int { 1 + 2 }
+\prg_new_conditional:Npnn \my_if:n #1 { p , T , F , TF } { \prg_return_true: }
+\ExplSyntaxOff
+\if\relax\detokenize{x}\relax \else \fi
+\ifx\a\b\else\fi \ifnum1<2 \fi \ifdim1pt<2pt \fi \ifcase1 a\or b\else c\fi \ifodd1 \fi \iftrue \fi \iffalse hidden\fi
+\newif\iffoo \footrue \foofalse
+\foreach \i in {1,...,3} { \i }
+\count255=10 \dimen0=1pt \skip0=1pt plus 1pt minus 1pt \toks0={x} \advance\count255 by 1 \multiply\dimen0 by 2
+\def\sep#1#2.{[#1|#2]} \def\opt[#1]#2{#1#2}
+\let\foo\bar \relax \noexpand\x \the\count255 \number\count255 \romannumeral 12 \string\x \meaning\x \jobname
+\input{file} \include{chap} \includeonly{chap} \InputIfFileExists{x}{}{} \IfFileExists{x}{y}{z} \usepackage{pkg} \RequirePackage{pkg}
+\ProvidesPackage{mypkg}[2026/01/31 v1.0 My package] \ProvidesClass{myclass}[2026/01/31] \NeedsTeXFormat{LaTeX2e}
+\DeclareOption{draft}{\drafttrue} \DeclareOption*{\PassOptionsToClass{\CurrentOption}{article}} \ProcessOptions\relax \ExecuteOptions{a4paper}
+\PackageError{pkg}{Error}{Help} \PackageWarning{pkg}{Warn} \ClassError{c}{E}{H} \GenericError{}{}{}{} \typeout{message}
+\AtBeginDocument{\relax} \AtEndDocument{\relax} \AtBeginEnvironment{quote}{\small} \AfterEndEnvironment{quote}{\par}
+\RequirePackageWithOptions{pkg} \LoadClass[11pt]{article} \LoadClassWithOptions{article}
+
+% ── Rare constructs: text, boxes and layout ──
+\begin{center}Centred\end{center}\begin{flushleft}L\end{flushleft}\begin{flushright}R\end{flushright}
+\begin{quote}Quote\end{quote}\begin{quotation}Quotation\end{quotation}\begin{verse}Line\\ Line\end{verse}
+\begin{minipage}[t]{0.5\textwidth}Mini\end{minipage}\parbox[c][2cm][s]{3cm}{Parbox}
+\fbox{Framed}\framebox[3cm][c]{F}\mbox{Unbreakable}\makebox[2cm][r]{R}\raisebox{2pt}[1pt][1pt]{R}\colorbox{yellow}{Y}\fcolorbox{red}{white}{F}
+\rule{2cm}{0.4pt}\rule[1pt]{1cm}{1pt}\hrulefill\dotfill\hfill\vfill\hss\strut\phantom{x}\hphantom{x}\vphantom{x}
+\hspace*{1cm}\vspace*{1cm}\hskip 1em plus 1fil\vskip 1ex\bigskip\medskip\smallskip\par\indent\noindent
+\footnotemark\footnotetext{Text}\footnotemark[2]\thanks{Thanks}\endnote{End}\marginpar[left]{right}
+\textcolor[rgb]{1,0,0}{rgb}\color{blue}\definecolor{mycolor}{HTML}{FF8800}\colorlet{light}{mycolor!20!white}\pagecolor{white}
+\tiny\scriptsize\footnotesize\small\normalsize\large\Large\LARGE\huge\Huge
+\rmfamily\sffamily\ttfamily\mdseries\bfseries\upshape\itshape\slshape\scshape\em\normalfont
+\textrm{r}\textsf{s}\textmd{m}\textup{u}\textsl{sl}\textnormal{n}\mathrm{r}\mathsf{s}\mathtt{t}\mathit{i}\mathbf{b}\mathbb{B}\mathcal{C}\mathfrak{F}\mathscr{S}\boldsymbol{\alpha}\bm{\beta}
+\pagestyle{fancy}\thispagestyle{empty}\fancyhead[L]{Left}\fancyfoot[C]{\thepage}\pagenumbering{roman}\clearpage\cleardoublepage\FloatBarrier
+\twocolumn[\section{Two}]\onecolumn\begin{multicols}{2}Cols\end{multicols}\columnbreak
+\begin{landscape}Wide\end{landscape}\newgeometry{margin=1cm}\restoregeometry
+\textbackslash\textbar\textless\textgreater\textquoteleft\textquoteright\textquotedblleft\textquotedblright\textbullet\textendash\textemdash\textellipsis
+\copyright\pounds\euro\texttrademark\textregistered\S\P\dag\ddag\oe\OE\aa\AA\l\L\i\j\TeX\LaTeX\LaTeXe
+\" \' \` \^ \~ \= \. \u{a} \v{a} \H{a} \c{a} \k{a} \r{a} \b{a} \d{a} \t{aa}
+\ \, \; \: \! \@ \- \/ \\ \\* \\[2mm] ~ -- --- `` '' << >> !` ?`
+
+% ── Rare constructs: math ──
+\begin{gather}a=b\\c=d\end{gather}
+\begin{gather*}a=b\end{gather*}
+\begin{multline}very long \\ equation\end{multline}
+\begin{flalign}a&=b&c&=d\end{flalign}
+\begin{alignat}{2}a&=b&\quad c&=d\end{alignat}
+\begin{eqnarray}a&=&b\end{eqnarray}
+\begin{subequations}\begin{align}a&=b\label{eq:a}\\c&=d\tag{custom}\end{align}\end{subequations}
+\begin{equation}\begin{split}a&=b\\&=c\end{split}\end{equation}
+\begin{equation*}\begin{aligned}x&=1\\y&=2\end{aligned}\qquad\begin{gathered}p\\q\end{gathered}\end{equation*}
+\[\begin{array}{|c|ll|}\hline a&b&c\\\hline 1&2&3\\\hline\end{array}\]
+\[\begin{matrix}1&2\\3&4\end{matrix}\begin{bmatrix}1\\2\end{bmatrix}\begin{Bmatrix}a\end{Bmatrix}\begin{Vmatrix}1\end{Vmatrix}\begin{smallmatrix}1&2\end{smallmatrix}\]
+\[\left(\frac{a}{b}\right)\left[\dfrac{a}{b}\right]\left\{\tfrac{a}{b}\right\}\left|x\right|\left\|x\right\|\left\langle x\right\rangle\left\lfloor x\right\rfloor\left\lceil x\right\rceil\left.\frac{a}{b}\right|_{x=0}\]
+\[\bigl(\Bigl(\biggl(\Biggl(x\Biggr)\biggr)\Bigr)\bigr)\bigg|\Big|\big|\]
+\[\sum_{i=1}^n\prod_{j}\coprod\bigcup\bigcap\bigoplus\bigotimes\bigvee\bigwedge\int\iint\iiint\oint\lim\limsup\liminf\max\min\sup\inf\det\gcd\Pr\arg\deg\dim\ker\hom\exp\ln\log\sin\cos\tan\cot\sec\csc\arcsin\sinh\cosh\tanh\]
+\[\alpha\beta\gamma\delta\epsilon\varepsilon\zeta\eta\theta\vartheta\iota\kappa\lambda\mu\nu\xi\pi\varpi\rho\varrho\sigma\varsigma\tau\upsilon\phi\varphi\chi\psi\omega\Gamma\Delta\Theta\Lambda\Xi\Pi\Sigma\Upsilon\Phi\Psi\Omega\]
+\[\pm\mp\times\div\cdot\ast\star\circ\bullet\oplus\ominus\otimes\oslash\odot\cap\cup\sqcap\sqcup\vee\wedge\setminus\wr\amalg\]
+\[\leq\geq\ll\gg\neq\equiv\sim\simeq\approx\cong\propto\subset\supset\subseteq\supseteq\in\ni\notin\perp\parallel\mid\nmid\vdash\models\]
+\[\leftarrow\rightarrow\leftrightarrow\Leftarrow\Rightarrow\Leftrightarrow\mapsto\hookrightarrow\uparrow\downarrow\nearrow\searrow\longrightarrow\Longrightarrow\iff\implies\to\gets\]
+\[\forall\exists\nexists\neg\lnot\emptyset\varnothing\infty\partial\nabla\angle\triangle\square\hbar\ell\Re\Im\aleph\wp\prime\top\bot\]
+\[\hat{x}\check{x}\breve{x}\acute{x}\grave{x}\tilde{x}\bar{x}\vec{x}\dot{x}\ddot{x}\widehat{xy}\widetilde{xy}\overline{xy}\underline{xy}\overbrace{xy}^{n}\underbrace{xy}_{m}\overrightarrow{AB}\]
+\[\sqrt[3]{x}\binom{n}{k}\dbinom{n}{k}\genfrac{(}{)}{0pt}{}{n}{k}\stackrel{!}{=}\overset{a}{=}\underset{b}{=}\xrightarrow[below]{above}\substack{i<n\\j<m}\mathop{\mathrm{op}}\limits_{x}\]
+\[x^{2}_{i}{}^{a}_{b}\quad x'\quad x''\quad f^{\prime}\quad\text{text in math}\quad\mbox{mbox}\quad\textrm{rm}\quad\operatorname{op}\quad\operatorname*{op}\]
+\[\displaystyle\textstyle\scriptstyle\scriptscriptstyle\mathstrut\mathbin{b}\mathrel{r}\mathord{o}\mathopen{(}\mathclose{)}\mathpunct{,}\mathinner{i}\]
+\[\ldots\cdots\vdots\ddots\dots\dotsb\dotsc\dotsm\dotsi\quad\qquad\,\:\;\!\ \hspace{1em}\phantom{x}\]
+\(\mathbb{R}^n\)\(\mathcal{O}(n\log n)\)\(\bigl|x\bigr|\)\(\SI{5}{\metre}\)\ensuremath{\alpha}
+$a$ $$b$$ \begin{math}c\end{math} \begin{displaymath}d\end{displaymath} \(e\) \[f\] $\text{\textbf{bold}}$ $x\;y\,z$ $a\!b$
+
+% ── Rare constructs: tables, floats, lists, references ──
+\begin{longtable}{|l|r|}\caption{Long}\\\hline A&B\\\hline\endfirsthead\hline C&D\\\hline\endhead\hline\endfoot\hline\endlastfoot E&F\\\end{longtable}
+\begin{tabularx}{\textwidth}{|X|c|}\hline\multirow{2}{*}{R}&\multicolumn{1}{|c|}{C}\\\cline{1-1}\cline{2-2}x&y\tabularnewline\hline\end{tabularx}
+\begin{tabular}{p{2cm}|m{2cm}|b{2cm}|>{\bfseries}c|<{\ttfamily}l|@{\hspace{1em}}r!{\vrule}c}\hline\end{tabular}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lr}a&b\\\end{tabular*}
+\begin{table*}[!htbp]\centering\caption[Short]{Long}\begin{subtable}{.5\textwidth}\end{subtable}\end{table*}
+\begin{figure}[H]\centering\subfloat[Sub]{\includegraphics[scale=.5,angle=90,trim=1 2 3 4,clip]{a.png}}\caption*{Uncaptioned}\end{figure}
+\begin{wrapfigure}{r}{0.3\textwidth}\end{wrapfigure}
+\begin{enumerate}[label=(\roman*),start=3,itemsep=0pt]\item A\item[\textbullet] B\end{enumerate}
+\begin{itemize}\setlength\itemsep{0pt}\item<2-> Overlay\end{itemize}
+\begin{thebibliography}{99}\bibitem{key}Author. \emph{Title}. Publisher, 2020.\bibitem[Label]{key2}Other.\end{thebibliography}
+\cite[p.~5]{key}\citep{key}\citet{key}\parencite{key}\footcite{key}\nocite{*}\fullcite{key}\citeauthor{key}\citeyear{key}
+\ref{a}\pageref{a}\eqref{a}\autoref{a}\cref{a}\Cref{a}\nameref{a}\vref{a}\hyperref[a]{text}\hypertarget{t}{x}\hyperlink{t}{y}\label{l}
+\index{term}\index{a!b}\index{c@d|textbf}\printindex\glossary{name=x,description=y}\gls{x}\acrshort{x}\nomenclature{a}{b}
+\section[Short]{Long}\chapter{Ch}\part{Part}\subparagraph{Sub}\addcontentsline{toc}{section}{Entry}\addtocontents{toc}{\protect\newpage}
+\tableofcontents\listoftables\listoflistings\appendix\frontmatter\mainmatter\backmatter\maketitle\titlepage
+\texorpdfstring{$\alpha$}{alpha}\protect\cite{x}\unskip\ignorespaces\nolinebreak\nopagebreak\samepage\raggedleft\justifying\sloppy\fussy\hyphenation{ware-house}\-
+\lstinputlisting[language=C,firstline=2]{code.c}\lstdefinelanguage{x}{keywords={a,b}}\begin{minted}[linenos]{python}
+def f(): pass
+\end{minted}
+\mintinline{python}{x = 1}\inputminted{c}{x.c}\verb*|with  spaces|\verb!bang!\Verb|fancy|\begin{Verbatim}[frame=single]
+raw % text \ { } 
+\end{Verbatim}
+\begin{filecontents*}{refs.bib}
+@book{key, title={T}}
+\end{filecontents*}
+\begin{comment}
+Ignored block with \undefined{macro} % and "quotes"
+\end{comment}
+\iffalse
+Also ignored \fi-balanced text
+\fi
+\begin{tikzpicture}\foreach \x in {0,1,2}{\draw[blue,dashed,->,line width=1pt] (\x,0) -- ++(0,1) node[above,midway]{$\x$};}\fill[red!50] (0,0) rectangle (1,1);\path[use as bounding box] (0,0);\coordinate (A) at (0,0);\draw (A) to[out=45,in=135] (1,1) arc (0:90:1) -| (2,2) cos (3,0) sin (4,1) parabola (5,0) grid (6,6);\end{tikzpicture}
+\begin{frame}[fragile]{Title}\pause\only<2>{A}\onslide<3->{B}\begin{block}{Block}\end{block}\end{frame}
+
+\bibliographystyle{plain}
+\printbibliography
+\appendix
+\section{Appendix}
+Contact: \href{mailto:ops@example.com}{ops@example.com}, 192.0.2.10.
+\end{document}

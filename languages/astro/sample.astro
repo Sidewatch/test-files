@@ -1,0 +1,242 @@
+---
+// Frontmatter is TypeScript. It runs on the server at build time.
+// TODO: paginate the stock table.
+import type { CollectionEntry } from 'astro:content';
+import { getCollection, getEntry } from 'astro:content';
+import { formatDate } from '@/utils/dates';
+import Layout from '../layouts/Layout.astro';
+import StockRow from '../components/StockRow.astro';
+import Counter from '../components/Counter.tsx';
+import * as helpers from '../utils/helpers';
+import warehouseData from '../data/warehouse.json';
+import '../styles/global.css';
+
+/** Props accepted by this page. */
+interface Props {
+  item: CollectionEntry<'stock'>;
+  featured?: boolean;
+  tags?: readonly string[];
+}
+
+type Level = 'low' | 'ok' | 'high';
+enum Zone { Cold = 1, Ambient, Hot }
+
+export const prerender = true;
+
+export async function getStaticPaths() {
+  const items = await getCollection('stock', ({ data }) => !data.draft);
+  return items.map((item) => ({ params: { slug: item.slug }, props: { item } }));
+}
+
+const { item, featured = false, tags = [] } = Astro.props;
+const { data } = item;
+const { Content, headings } = await item.render();
+
+const REORDER_POINT = 25;
+const ratio: number = 1_000.5e-1 + 0xFF + 0b101 + 0o17 + 10n as unknown as number;
+const dateLabel = formatDate(data.date, 'short');
+const level: Level = data.qty < REORDER_POINT ? 'low' : 'ok';
+const label = `${data.sku}: ${data.qty > 0 ? `${data.qty} left` : 'sold out'}`;
+const pattern = /^[A-Z]-\d{3}$/giu;
+const maybe = data.supplier?.name ?? 'unknown';
+const items = [...tags, 'extra'].filter(Boolean).map((t, i) => `${i}:${t}`);
+const lookup = new Map<string, number>([['a', 1]]);
+const user = Astro.cookies.get('session')?.value;
+const url = new URL(Astro.request.url);
+const response = await fetch(`https://api.example.com/stock/${data.sku}`);
+const json = (await response.json()) as { qty: number };
+
+if (!user && Astro.url.pathname.startsWith('/admin')) {
+  return Astro.redirect('/login');
+}
+
+Astro.response.headers.set('Cache-Control', 'public, max-age=3600');
+---
+
+<!-- An HTML comment in the template -->
+<Layout title={`${data.title} · Stock`} description="Warehouse stock overview">
+  <slot name="head" slot="head" />
+
+  <article class:list={['card', { featured, low: level === 'low' }, tags]} data-sku={data.sku} {...Astro.props.attrs}>
+    <header>
+      <h1 set:html={data.title} />
+      <time datetime={data.date.toISOString()}>{dateLabel}</time>
+    </header>
+
+    {data.image ? (
+      <img src={`/stock/${data.image}`} alt="" loading="lazy" width={640} height={480} />
+    ) : (
+      <div class="card__placeholder" aria-hidden="true" />
+    )}
+
+    {featured && <p class="badge">Featured</p>}
+
+    <ul>
+      {items.map((entry) => (
+        <li>{entry} — {entry.length > 3 ? 'long' : 'short'}</li>
+      ))}
+    </ul>
+
+    {level === 'low' && (
+      <>
+        <strong>Reorder now</strong>
+        <StockRow sku={data.sku} qty={data.qty} client:visible />
+      </>
+    )}
+
+    <Counter client:load initial={0} />
+    <Counter client:idle />
+    <Counter client:only="react" />
+    <Counter client:media="(max-width: 600px)" />
+
+    <Fragment set:html={'<em>raw html</em>'} />
+    <Content />
+    <slot />
+    <slot name="footer">Default footer text</slot>
+  </article>
+
+  <p set:text={maybe}>placeholder</p>
+  <a href="/stock" is:inline data-astro-prefetch>Back</a>
+</Layout>
+
+<script>
+  // A bare <script> is bundled TypeScript.
+  const cards = document.querySelectorAll<HTMLElement>('.card');
+  cards.forEach((card, index: number) => {
+    card.style.setProperty('--delay', `${index * 40}ms`);
+    card.addEventListener('click', async (event: MouseEvent) => {
+      event.preventDefault();
+      const res = await fetch('/api/stock');
+      console.log(await res.json());
+    });
+  });
+</script>
+
+<script is:inline define:vars={{ reorder: REORDER_POINT }}>
+  // is:inline leaves this as plain JavaScript with injected variables.
+  console.log('reorder point', reorder);
+</script>
+
+<script type="application/ld+json">
+  { "@context": "https://schema.org", "@type": "Product", "sku": "A-100" }
+</script>
+
+<style>
+  /* Scoped by default. `in` inside color-mix() is not a JS keyword. */
+  :root { --accent: #7c3aed; --gap: 1rem; }
+
+  .card {
+    display: grid;
+    gap: var(--gap);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    color: var(--accent);
+    border-radius: 12px;
+    transition: background 200ms ease-in-out;
+  }
+  .card.featured::before { content: "★"; }
+  .card:hover > h1 { text-decoration: underline; }
+  .card__placeholder {
+    aspect-ratio: 16 / 9;
+    background: rgba(168, 85, 247, 0.12);
+    color: #c084fc;
+    width: calc(100% - 2rem);
+  }
+  @media (max-width: 700px) {
+    .card { border-radius: 8px; }
+  }
+  @keyframes pulse { from { opacity: 0.5; } to { opacity: 1; } }
+</style>
+
+<style is:global lang="scss">
+  $accent: #7c3aed;
+  body { margin: 0; .card { border: 1px solid darken($accent, 10%); } }
+</style>
+
+<style define:vars={{ level }}>
+  .badge { color: var(--level); }
+</style>
+
+<!-- ── Further constructs ────────────────────────────────────────── -->
+<!DOCTYPE html>
+<div
+  id="extras"
+  class="a b"
+  style="color: red; --x: 1"
+  hidden
+  data-json='{"k": [1, 2, 3]}'
+  aria-label="Extras"
+  onclick="console.log('inline handler')"
+  {...Astro.props}
+  {data}
+  set:html={`<p>${label}</p>`}
+  transition:name="extras"
+  transition:animate="slide"
+  transition:persist
+>
+  <!-- Expressions in text and attributes -->
+  {label} {1 + 2} {`template ${label}`} {items.length > 0 && <span>has items</span>}
+  {items.length > 0 ? <ul>{items.map((i) => <li>{i}</li>)}</ul> : <p>empty</p>}
+  {async () => { await Promise.resolve(); }}
+  {Object.entries(data).map(([key, value]) => (
+    <dt>{key}</dt><dd>{String(value)}</dd>
+  ))}
+  {/* A JSX-style comment inside an expression */}
+  {
+    // line comment inside an expression
+    label.toUpperCase()
+  }
+
+  <!-- Component forms -->
+  <Layout.Header title="Dotted component" />
+  <Fragment slot="named">Fragment with slot</Fragment>
+  <></>
+  <Counter client:load>
+    <span slot="icon">★</span>
+    Default slot content
+  </Counter>
+  <Component prop:with:colons="x" />
+  <Component {...spread} extra />
+  <svg viewBox="0 0 10 10"><path d="M0 0L10 10" fill="none" stroke="currentColor" /></svg>
+  <math><mi>x</mi></math>
+  <input type="text" disabled value={label} />
+  <img src="a.png" alt="" /><br /><hr>
+  <script type="module" src="/main.ts"></script>
+  <script define:vars={{ label }}>console.log(label);</script>
+  <script is:inline type="text/partytown">var x = 1;</script>
+  <style is:inline>.x { color: red }</style>
+  <slot name="extras-slot" />
+  <template><p>Inert template content</p></template>
+  <textarea>Raw text {not parsed}</textarea>
+  <pre>  Preformatted
+    text  </pre>
+  &lt;entities&gt; &amp; &copy; &#169; &#x1F600;
+</div>
+
+<style lang="less">
+  @accent: #7c3aed;
+  .less { color: darken(@accent, 10%); &:hover { color: @accent; } }
+</style>
+
+<style lang="stylus">
+accent = #7c3aed
+.stylus
+  color accent
+</style>
+
+<style>
+  @import url('https://fonts.example.com/css?family=Inter');
+  @font-face { font-family: "Inter"; src: url("/inter.woff2") format("woff2"); }
+  @layer base, components;
+  @layer components { .btn { padding: 0.5rem 1rem; } }
+  @container (min-width: 400px) { .card { display: flex; } }
+  @supports (display: grid) and (not (display: inline-grid)) { .grid { display: grid; } }
+  :is(h1, h2):where(.a, .b)::after { content: "\2192"; }
+  .card:not(.featured):nth-child(2n + 1) > a[href^="https"]::before { color: hsl(120deg 50% 50% / 0.5); }
+  .card { inset: 0; translate: 10px 20px; width: min(100%, 60ch); background: linear-gradient(to right, #fff 0%, #000 100%) !important; }
+  .nested { & .child { color: red; } &:hover { color: blue; } }
+  html { scroll-behavior: smooth; --gap: calc(1rem * 2); font: italic bold 12px/30px Georgia, serif; }
+</style>
+
+---
+// A second frontmatter-looking fence in the body is just content in Astro.
+---

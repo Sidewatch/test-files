@@ -1,0 +1,140 @@
+Manifest-Version: 1.0
+Created-By: 21.0.4 (Eclipse Adoptium)
+Build-Jdk-Spec: 21
+Main-Class: com.example.warehouse.Application
+Class-Path: lib/postgresql-42.7.4.jar lib/spring-boot-3.3.4.jar
+  lib/jackson-databind-2.17.2.jar lib/slf4j-api-2.0.16.jar
+  lib/a-very-long-dependency-name-that-needs-continuation-lines-1.0.0.ja
+ r
+Launcher-Agent-Class: com.example.warehouse.agent.Agent
+Add-Opens: java.base/java.lang java.base/java.util
+Add-Exports: java.base/sun.nio.ch
+Enable-Native-Access: ALL-UNNAMED
+Multi-Release: true
+Automatic-Module-Name: com.example.warehouse
+Sealed: true
+Permissions: all-permissions
+Codebase: https://example.com/warehouse/
+Application-Name: Warehouse Inventory
+Application-Library-Allowable-Codebase: *.example.com
+Caller-Allowable-Codebase: *.example.com
+Trusted-Library: true
+Implementation-Title: warehouse-inventory
+Implementation-Version: 2.4.0
+Implementation-Vendor: Example Ltd
+Implementation-Vendor-Id: com.example
+Specification-Title: Warehouse API
+Specification-Version: 2.4
+Specification-Vendor: Example Ltd
+Bundle-ManifestVersion: 2
+Bundle-SymbolicName: com.example.warehouse;singleton:=true
+Bundle-Name: Warehouse Inventory
+Bundle-Version: 2.4.0.qualifier
+Bundle-Vendor: Example Ltd
+Bundle-RequiredExecutionEnvironment: JavaSE-21
+Bundle-ActivationPolicy: lazy
+Export-Package: com.example.warehouse.api;version="2.4.0",
+ com.example.warehouse.model;version="2.4.0";
+ uses:="com.example.warehouse.api"
+Import-Package: org.osgi.framework;version="[1.8,2.0)",
+ javax.sql;resolution:=optional
+Require-Bundle: org.eclipse.core.runtime;bundle-version="3.20.0"
+Unicode-Description: Zürich → 東京 ✓
+Empty-Value: 
+Signature-Version: 1.0
+Premain-Class: com.example.warehouse.agent.PreMain
+Agent-Class: com.example.warehouse.agent.Agent
+Can-Redefine-Classes: true
+Can-Retransform-Classes: true
+Can-Set-Native-Method-Prefix: false
+Boot-Class-Path: lib/agent-boot.jar
+Entry-Point: com.example.warehouse.Application
+Trusted-Only: true
+Extension-List: ext1 ext2
+ext1-Extension-Name: com.example.ext1
+ext1-Specification-Version: 1.2
+ext1-Implementation-Version: 1.2.3
+ext1-Implementation-Vendor-Id: com.example
+ext1-Implementation-URL: https://example.com/ext1.jar
+Required-Extensions: javax.sql
+Implementation-URL: https://example.com/warehouse
+Profile: compact1
+Class-Path: .
+  ./conf/
+  file:///opt/warehouse/lib/extra.jar
+Bundle-ClassPath: .,lib/helper.jar
+Bundle-Description: Warehouse inventory bundle with a very long
+  description that needs several continuation lines to fit within
+  the seventy-two byte limit of the format
+Bundle-DocURL: https://example.com/docs
+Bundle-Category: inventory,warehouse
+Bundle-Copyright: Example Ltd
+Bundle-License: Apache-2.0;link="https://www.apache.org/licenses/LICENSE
+ -2.0"
+Bundle-Localization: OSGI-INF/l10n/bundle
+Bundle-NativeCode: native/macos/libstock.dylib;osname=MacOSX;processor=a
+ arch64,
+ *
+Bundle-ActivationPolicy: lazy;exclude:="com.example.internal"
+Bundle-Activator: com.example.warehouse.Activator
+Bundle-ContactAddress: ops@example.com
+Bundle-UpdateLocation: https://example.com/update
+DynamicImport-Package: *
+Fragment-Host: com.example.host;bundle-version="[1.0,2.0)"
+Provide-Capability: osgi.service;objectClass:List<String>="com.example.S
+ tock"
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=21))"
+Service-Component: OSGI-INF/*.xml
+Eclipse-BuddyPolicy: registered
+Eclipse-LazyStart: true
+Export-Service: com.example.Stock
+Import-Package: org.slf4j;version="[2.0,3)";resolution:=optional,com.exa
+ mple.util;version="1.0.0"
+Originally-Created-By: 1.8.0_402 (Oracle Corporation)
+Built-By: build-agent
+Build-Jdk: 21.0.4
+Tool: Bnd-7.0.0
+Specification-Title: Warehouse API
+X-Custom-Header: custom value with: colons, commas; semicolons "quotes" 
+ and 'apostrophes'
+x-lowercase-header: lower
+Z-Header_With_Underscore-And-Dash123: ok
+
+Name: com/example/warehouse/api/
+Sealed: false
+Specification-Title: Warehouse Public API
+Implementation-Version: 2.4.0
+
+Name: lib/postgresql-42.7.4.jar
+Magic: custom
+SHA-256-Digest: ZXhhbXBsZS1ub3QtYS1yZWFsLWRpZ2VzdA==
+
+Name: com/example/warehouse/Application.class
+Java-Bean: true
+Content-Type: application/java
+
+Name: com/example/warehouse/internal/
+Sealed: true
+Implementation-Title: internal
+Extension-Name: ext1
+SHA-256-Digest: ZXhhbXBsZS1ub3QtYS1yZWFsLWRpZ2VzdA==
+SHA1-Digest: ZXhhbXBsZS1ub3QtcmVhbA==
+MD5-Digest: ZXhhbXBsZS1ub3QtcmVhbA==
+
+Name: lib/a-very-long-entry-name-that-must-be-wrapped-across-lines-becau
+ se
+ -it-exceeds-the-limit.jar
+SHA-512-Digest: ZXhhbXBsZS1ub3QtYS1yZWFsLWRpZ2VzdA==
+Digest-Algorithms: SHA-256 SHA-512
+
+Name: images/logo.png
+Content-Type: image/png
+Java-Bean: false
+Magic: image
+
+Name: https://example.com/remote/resource
+Specification-Version: 1.0
+
+Name: META-INF/services/com.example.Stock
+Content-Type: text/plain; charset=UTF-8
+

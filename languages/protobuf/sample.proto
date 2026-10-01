@@ -1,0 +1,211 @@
+// ── Comments ──
+// Protocol Buffers showcase: a warehouse inventory API.
+// TODO: add field masks. FIXME: deprecate v1 endpoints.
+
+/* A block comment
+   over several lines. */
+
+/**
+ * A doc-style block comment attached to the syntax statement.
+ */
+syntax = "proto2";
+
+// ── Package, options and imports ──
+package example.inventory.v1;
+
+option go_package = "github.com/example/inventory/gen/inventory/v1;inventoryv1";
+option java_package = "com.example.inventory.v1";
+option java_multiple_files = true;
+option java_outer_classname = "InventoryProto";
+option optimize_for = SPEED;
+option cc_enable_arenas = true;
+option objc_class_prefix = "INV";
+option csharp_namespace = "Example.Inventory.V1";
+option deprecated = false;
+option (my_file_option) = "custom";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/descriptor.proto";
+import public "example/inventory/v1/common.proto";
+import weak "example/inventory/v1/legacy.proto";
+
+// ── Custom options (extensions of descriptor types) ──
+extend google.protobuf.FileOptions {
+  optional string my_file_option = 50000;
+}
+extend google.protobuf.MessageOptions {
+  optional bool audited = 50001;
+}
+extend google.protobuf.FieldOptions {
+  optional string unit = 50002;
+}
+
+// ── Enums ──
+enum Status {
+  option allow_alias = true;
+  STATUS_UNSPECIFIED = 0;
+  STATUS_PENDING = 1;
+  STATUS_PAID = 2;
+  STATUS_CANCELLED = 3 [deprecated = true];
+  STATUS_VOID = 3;
+  reserved 10 to 20, 30;
+  reserved "STATUS_OLD", "STATUS_LEGACY";
+}
+
+// ── Messages: scalar types ──
+message Scalars {
+  optional double d = 1;
+  optional float f = 2;
+  optional int32 i32 = 3;
+  optional int64 i64 = 4;
+  optional uint32 u32 = 5;
+  optional uint64 u64 = 6;
+  optional sint32 s32 = 7;
+  optional sint64 s64 = 8;
+  optional fixed32 fx32 = 9;
+  optional fixed64 fx64 = 10;
+  optional sfixed32 sf32 = 11;
+  optional sfixed64 sf64 = 12;
+  optional bool flag = 13;
+  optional string text = 14;
+  optional bytes blob = 15;
+}
+
+// ── Messages: fields, nesting, oneof, maps, reserved ──
+message LineItem {
+  optional string sku = 1;
+  optional int32 quantity = 2 [(unit) = "pcs"];
+  optional double unit_price = 3 [deprecated = true, json_name = "unitPrice"];
+  optional string note = 4;
+}
+
+message Order {
+  option (audited) = true;
+  option deprecated = false;
+
+  optional string id = 1;
+  optional int64 number = 2;
+  optional Status status = 3;
+  repeated LineItem items = 4 [packed = false];
+  optional google.protobuf.Timestamp placed_at = 5;
+  map<string, string> tags = 6;
+  map<int32, LineItem> by_position = 7;
+  oneof payment {
+    string card_token = 8;
+    string invoice_ref = 9;
+    Invoice invoice = 10 [lazy = true];
+  }
+  reserved 11, 12, 15 to 19;
+  reserved "legacy_total", "old_status";
+  optional google.protobuf.Duration eta = 21;
+  optional google.protobuf.Any metadata = 22;
+  repeated int32 ids = 23 [packed = true];
+
+  message Invoice {
+    optional string reference = 1;
+    optional double amount = 2;
+    enum Terms {
+      TERMS_UNSPECIFIED = 0;
+      NET_30 = 1;
+      NET_60 = 2;
+    }
+    optional Terms terms = 3;
+  }
+
+  enum Priority {
+    LOW = 0;
+    HIGH = 1;
+  }
+  optional Priority priority = 24;
+  optional .example.inventory.v1.Order.Invoice qualified = 25;
+}
+
+// ── proto2: required, defaults, groups, extension ranges ──
+message Legacy {
+  required string code = 1;
+  optional int32 retries = 2 [default = 3];
+  optional double scale = 3 [default = 1.5e-3];
+  optional double ceiling = 4 [default = inf];
+  optional double floor = 5 [default = -inf];
+  optional double unknown = 6 [default = nan];
+  optional int32 mask = 7 [default = 0x7F];
+  optional int32 mode = 8 [default = 0755];
+  optional int32 offset = 9 [default = -1];
+  optional bool enabled = 10 [default = true];
+  optional string label = 11 [default = "n/a\n"];
+  optional Status state = 12 [default = STATUS_PENDING];
+  optional bytes raw = 13 [default = "\x00\xff"];
+  optional group Result = 14 {
+    required string url = 15;
+    optional string title = 16;
+  }
+  repeated group Hit = 17 {
+    required int64 id = 18;
+  }
+  extensions 100 to 199;
+  extensions 200, 300 to max [declaration = { number: 400 full_name: ".example.ext" type: "string" }];
+}
+
+extend Legacy {
+  optional string extra = 100;
+  repeated int32 extras = 101 [packed = true];
+}
+
+message Wrapper {
+  extend Legacy {
+    optional Wrapper nested_ext = 102;
+  }
+  option message_set_wire_format = false;
+}
+
+// ── Services: unary, server, client and bidirectional streaming ──
+service Orders {
+  option deprecated = false;
+
+  rpc GetOrder(GetOrderRequest) returns (Order);
+  rpc ListOrders(ListOrdersRequest) returns (stream Order);
+  rpc Upload(stream LineItem) returns (google.protobuf.Empty);
+  rpc Chat(stream Order) returns (stream Order) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+  rpc Delete(DeleteRequest) returns (google.protobuf.Empty) {}
+}
+
+message GetOrderRequest { required string id = 1; }
+message DeleteRequest { required string id = 1; optional google.protobuf.FieldMask mask = 2; }
+message ListOrdersRequest {
+  optional Status status = 1;
+  optional int32 page_size = 2 [deprecated = true];
+  optional string page_token = 3;
+  optional string note = 4 [json_name = "the \"note\"\n\t\x41\101\u00e9", (unit) = 'single quoted'];
+  optional google.protobuf.Struct filter = 12;
+  optional double scale = 5;
+  optional int32 hex_flags = 8;
+}
+
+// ── Aggregate option values (text-format literal) ──
+message Settings {
+  optional string name = 1;
+  repeated int32 values = 2;
+  message Nested { optional bool flag = 1; }
+  optional Nested nested = 3;
+}
+
+extend google.protobuf.MessageOptions {
+  optional Settings complex_option = 50003;
+}
+
+message Aggregate {
+  option (audited) = true;
+  option (complex_option) = {
+    name: "inventory"
+    values: [1, 2, 3]
+    nested { flag: true }
+    # text-format comment
+  };
+}

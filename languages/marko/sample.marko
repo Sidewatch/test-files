@@ -1,0 +1,278 @@
+// ── Marko: an inventory page exercising the template language ──
+/* Block comment */
+<!-- HTML comment -->
+// TODO: split into components. FIXME: handle empty state.
+
+// ── Imports and static JS ──
+import money from "./money.js";
+import { sortBy } from "lodash";
+export interface Input {
+  orders: Array<{ number: number; total: number; paid: boolean; status: string }>;
+  user: { name: string };
+  title?: string;
+}
+
+static const LOW_STOCK = 10;
+static function label(order) {
+  return `#${order.number} (${order.status})`;
+}
+
+// ── Class component ──
+class {
+  declare state: { query: string; selected: number | null; count: number };
+
+  onCreate(input, out) {
+    this.state = { query: "", selected: null, count: 0 };
+  }
+  onInput(input) {
+    this.state.count = input.orders.length;
+  }
+  onMount() {
+    console.log("mounted", this.getEl("root"));
+  }
+  onUpdate() {}
+  onDestroy() {}
+  filter(event) {
+    this.state.query = event.target.value;
+  }
+  select(number, event, el) {
+    this.state.selected = number;
+    this.emit("select", { number });
+  }
+}
+
+// ── Scriptlet lines and blocks ──
+$ const visible = input.orders.filter((o) => String(o.number).includes(state.query));
+$ const total = visible.reduce((sum, o) => sum + o.total, 0);
+$ {
+  const unpaid = visible.filter((o) => !o.paid);
+  const formatter = new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" });
+}
+
+// ── Style blocks ──
+style {
+  .orders { font-family: system-ui, sans-serif; }
+  .orders .low { color: #b00020; }
+  .selected { background: rgba(45, 108, 223, .15); }
+}
+style.less {
+  @brand: #2d6cdf;
+  .badge { color: @brand; &:hover { color: darken(@brand, 10%); } }
+}
+
+// ── Markup ──
+<div.orders#root key="root" class=["orders", { empty: visible.length === 0 }] data-count=state.count>
+  <h1>Orders for ${input.user.name} &mdash; ${input.title || "Stock"}</h1>
+  <h2>$!{"<b>unescaped html</b>"}</h2>
+
+  <input placeholder="Filter…" value=state.query on-input("filter") on-keydown(e => e.key === "Escape" && (state.query = "")) autofocus/>
+  <button.primary on-click("select", 1) disabled=(state.count === 0)>Select first</button>
+  <button on-click(() => { state.query = ""; })>Clear</button>
+  <a href="/orders?q=${state.query}" target="_blank" rel="noopener">Permalink</a>
+
+  <!-- Conditionals -->
+  <if(visible.length === 0)>
+    <p class="muted">No orders match.</p>
+  </if>
+  <else-if(visible.length > 100)>
+    <p>Too many results</p>
+  </else-if>
+  <else>
+    <table>
+      <thead><tr><th>#</th><th>Total</th><th>Status</th></tr></thead>
+      <tbody>
+        <for|order, index| of=visible by=(o) => o.number>
+          <tr class={ paid: order.paid, latest: index === 0, low: order.total < LOW_STOCK }
+              style={ color: order.paid ? "green" : "inherit", "font-weight": 600 }
+              on-click("select", order.number)>
+            <td>${label(order)}</td>
+            <td>${money(order.total)}</td>
+            <td><status-badge status=order.status ...input.badgeAttrs/></td>
+          </tr>
+        </for>
+      </tbody>
+    </table>
+  </else>
+
+  // Other loops and constructs
+  <for|key, value| in=input.meta><span>${key}=${value}</span></for>
+  <for|i| from=0 to=10 step=2><i>${i}</i></for>
+  <for|n| until=(state.count)><b>${n}</b></for>
+  <while(state.count < 3)><span>tick</span></while>
+  <const/greeting=`Hello ${input.user.name}`/>
+  <let/counter=0/>
+  <effect() { document.title = greeting; }/>
+  <id/uid/>
+  <lifecycle onMount() { console.log("lifecycle mounted"); }/>
+  <return=total/>
+
+  // Dynamic tags and attributes
+  <${input.tagName || "section"} class="dynamic">
+    <@header>Custom header</@header>
+    <@footer class="foot">Footer text</@footer>
+  </>
+  <include(input.renderBody)/>
+  <${input.renderBody}/>
+  <await(fetchStock())>
+    <@then|stock|>Stock ready: ${stock.length}</@then>
+    <@catch|err|>Failed: ${err.message}</@catch>
+    <@placeholder>Loading…</@placeholder>
+  </await>
+  <await|data|(fetchStock()) client-reorder timeout=5000>${data}</await>
+  <macro|{ sku, qty }| name="stock-line"><li>${sku}: ${qty}</li></macro>
+  <stock-line sku="A-100" qty=5/>
+  <html-comment>kept in output</html-comment>
+  <script>
+    window.warehouse = { version: "2.4.0" };
+  </script>
+  <script type="module">import("./lazy.js");</script>
+  <style>.inline-style { margin: 0; }</style>
+  <textarea>${input.notes}</textarea>
+  <pre>Zürich → 東京 ✓ ${"✓"} &lt;escaped&gt; &copy; 2026</pre>
+  <svg:rect width=10 height=10 xlink:href="#a"/>
+  <custom-element attr-name=1 other-attr="two" third=`three ${1 + 2}` fourth=[1, 2, 3] fifth={ a: 1 } sixth=(1 + 1) seventh=true eighth=false ninth=null/>
+  <input type="checkbox" checked/>
+  <img src="logo.png" alt=""/>
+  <br/>
+  <div if(state.query) class="conditional-attr">only when filtered</div>
+  <div else>otherwise</div>
+  <div for|item| of=input.items>${item}</div>
+  <div no-update key=(() => "k")()>static</div>
+  <div/>
+  <div/ x=1/>
+</div>
+
+// ── Rare constructs ──
+export const meta = { title: "Rare" };
+static const SIZES = [10, 20, 30];
+static { console.log("static block"); }
+
+<section#rare.a.b.c class="d" key="rare-key" no-update body-only-if(state.query) data-x:no-update="y">
+  <!-- html comment preserved -->
+  <html-comment>explicit html comment tag</html-comment>
+  <html-script>console.log("script in html-script")</html-script>
+  <html-style>.x { color: red }</html-style>
+
+  // attribute forms
+  <button
+    type="button"
+    class=["btn", { active: state.query }, null, false, "last"]
+    style={ color: "red", "--custom": 1 }
+    onClick() { console.log("method attribute", event) }
+    on-click("handler", 1, 2)
+    on-keydown(function (e) { e.preventDefault() })
+    on-focus=input.onFocus
+    once-click("once")
+    aria-label=`label ${state.query}`
+    disabled
+    data-a=1
+    data-b=1+1
+    data-c=(1 + 2)
+    data-d="string"
+    data-e='single'
+    data-f=true
+    data-g=null
+    data-h=undefined
+    data-i=[1, 2, 3]
+    data-j={ a: 1 }
+    data-k=function () {}
+    data-l=() => {}
+    data-m=await promise
+    data-n=a?.b ?? c
+    data-o=x as string
+    data-p=<div/>
+    ...input.attrs
+    ...{ a: 1, b: 2 }
+  >Click</button>
+
+  <input/value onChange(e) { value = e.target.value }>
+  <input value:=state.query/>
+  <input value:bind=state.query/>
+  <custom-tag/{ a, b: renamed }=input.object/>
+  <custom-tag/first/second/>
+  <foo(1, "two", { three: 3 })/>
+  <foo|x, y|(1)>${x}${y}</foo>
+  <@thing>first</@thing>
+  <@thing|param|>${param}</@thing>
+  <@thing[i]|{ a, b }| class="x">${a}${b}</@thing>
+  <@thing[]>repeat</@thing>
+
+  // control flow variants
+  <if(a) && b>if</if>
+  <else-if(c)>else-if</else-if>
+  <else>else</else>
+  <if=state.flag>attribute-argument form</if>
+  <for|item, index, all| of=input.items>${item}${index}</for>
+  <for|k, v| in=input.object>${k}=${v}</for>
+  <for|i| from=0 to=10 step=2>${i}</for>
+  <for|i| until=5>${i}</for>
+  <for|item| of=input.items by="id">${item.id}</for>
+  <for|item| of=input.items by=(i) => i.key>${item.id}</for>
+  <for|item| of=input.items><if(item.hidden)>hidden</if></for>
+  <while(state.count < 3)><span>${state.count++}</span></while>
+  <await(promise) client-reorder timeout=3000 name="deferred" show-after="other">
+    <@placeholder>loading</@placeholder>
+    <@then|result|>${result}</@then>
+    <@catch|err|>${err.message}</@catch>
+  </await>
+  <await|result|(promise)>${result}</await>
+  <try>
+    <@body>risky</@body>
+    <@catch|err|>${err}</@catch>
+    <@placeholder>wait</@placeholder>
+  </try>
+  <define/helper|{ x }|><b>${x}</b></define>
+  <${helper} x=1/>
+  <macro|{ name }, renderBody| name="local-macro"><i>${name}</i><${renderBody}/></macro>
+  <local-macro name="m"/>
+
+  // state and utilities
+  <let/count=0/>
+  <let/obj={ a: 1 }/>
+  <const/{ a, b }=input.pair/>
+  <const/[first, ...rest]=input.list/>
+  <set count=count + 1/>
+  <effect() { console.log(count) }/>
+  <effect|{ cleanup }|() { return cleanup }/>
+  <lifecycle onMount() {} onUpdate() {} onDestroy() {} onCatch(err) {} onInput(input) {}/>
+  <attrs/{ class: cls, ...rest }/>
+  <id/myId/>
+  <log value=count/>
+  <debug value=count/>
+  <return=count/>
+  <script>window.x = 1</script>
+  <script src="/x.js" async></script>
+  <style>:root { --x: 1 }</style>
+  <style.scss>$c: red; .a { .b { color: $c } }</style>
+  <style.less>@c: red; .a { color: @c }</style>
+  <style.css>.plain {}</style>
+  <style>{ .braced { color: red } }</style>
+  <style scoped>.s {}</style>
+
+  // text and expressions
+  ${"expression"} ${1 + 1} ${state.items.map((i) => i * 2).join(", ")} ${`template ${nested}`} ${/regex/.test("x")} ${a ? b : c} ${await promise} ${{ a: 1 }.a}
+  $!{"<b>unescaped</b>"}
+  $ const inline = 1;
+  $ {
+    const block = 2;
+    console.log(inline + block);
+  }
+  $ if (cond) { out.write("<b>raw write</b>"); }
+  \${escaped dollar} \<escaped-lt> &amp; &lt; &copy; &#169;
+  <div -- concise text content with ${expr} and <b>inline html</b> --/>
+  <p>
+    -- Text after double-dash is literal: <not-a-tag> ${interpolated}
+  </p>
+  <pre>   preserved   whitespace   </pre>
+  <textarea>${state.query}</textarea>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"><path d="M0 0"/></svg>
+  <math><mi>x</mi></math>
+  <!doctype html>
+  <![CDATA[ raw <cdata> ${not interpolated} ]]>
+  <for|n| of=SIZES><li>${n}</li></for>
+  <unknown-tag-with-dashes a-b=1 c.d=2/>
+  <div.a.b#c.d/>
+  <${input.tag}.dynamic-class#id/>
+  <${"literal-string"}/>
+  <${someComponent} ...input/>
+</section>

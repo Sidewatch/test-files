@@ -1,0 +1,228 @@
+---
+title: Warehouse inventory handbook
+description: "Install the CLI, run reports and embed live stock charts."
+tags: [inventory, reports, "cli"]
+draft: false
+stock:
+  reorderPoint: 25
+  warehouses:
+    - north
+    - south
+---
+
+{/* An MDX comment: this never renders. */}
+
+import { Callout, Tabs, Tab } from "@/components/callout";
+import Chart from "./revenue-chart.jsx";
+import * as Units from "../lib/units";
+import data, { rows as stockRows, total as stockTotal } from "./stock.json";
+
+export const year = new Date().getFullYear();
+export const meta = { author: "Warehouse team", version: 2 };
+
+export function Badge({ children, tone = "info" }) {
+  return <span className={`badge badge-${tone}`}>{children}</span>;
+}
+
+export const LowStock = ({ sku, left }) => (
+  <Callout kind="warning">
+    SKU <code>{sku}</code> has only {left} unit{left === 1 ? "" : "s"} left.
+  </Callout>
+);
+
+# Getting started
+
+Setext heading level one
+========================
+
+Setext heading level two
+------------------------
+
+## Heading level two
+
+### Heading level three
+
+#### Heading level four
+
+##### Heading level five
+
+###### Heading level six
+
+Paragraph with *emphasis*, _emphasis_, **strong**, __strong__, ***both***, ~~strikethrough~~,
+`inline code`, a hard break at the end of this line\
+and an [inline link](https://example.com/docs "Docs title"), a [reference link][ref],
+a bare autolink <https://example.com>, and an image ![Pallet](./pallet.png "A pallet").
+
+[ref]: https://example.com/reference "Reference"
+
+Footnotes work too.[^1] So do HTML entities: &copy; &amp; &#169; &#x1F4E6;
+
+[^1]: The footnote body, with `code`.
+
+> A block quote.
+>
+> > A nested quote with **strong** text.
+
+- Unordered item
+  - Nested item
+    - Deeper item
+* Star bullet
++ Plus bullet
+
+1. Authenticate with `inventory login`.
+2. Run `inventory report --week previous`.
+   1. Nested ordered item
+   2. Another one
+3. Open the link it prints.
+
+- [x] Done task
+- [ ] Open task
+
+| SKU    | Name         | Qty | Price   |
+| ------ | :----------- | :-: | ------: |
+| A-100  | Widget       |  12 |   £4.50 |
+| B-200  | Gadget       |   0 |  £19.00 |
+
+---
+
+***
+
+___
+
+```bash
+npm install -g @example/inventory-cli
+```
+
+```js title="report.js" {2,4}
+const report = await fetch("/api/report");
+console.log(`rows: ${(await report.json()).length}`);
+```
+
+~~~python
+print("tilde fence")
+~~~
+
+    An indented code block.
+
+<Callout kind="warning">
+  The CLI needs **Node 20** or newer. Run `node --version` to check.
+</Callout>
+
+<Tabs defaultValue="npm">
+  <Tab value="npm" label="npm">
+
+```bash
+npm i @example/inventory-cli
+```
+
+  </Tab>
+  <Tab value="pnpm" label="pnpm">`pnpm add @example/inventory-cli`</Tab>
+</Tabs>
+
+## Live data
+
+Revenue for {year} so far, in {meta.author}'s words: {stockRows.length > 0 ? "active" : "idle"}.
+
+<Chart period="ytd" currency="GBP" series={[1, 2.5, 3e2, 0xff]} options={{ smooth: true, label: "Revenue" }} onSelect={(sku) => console.log(sku)} {...meta} />
+
+<Badge tone="success">in stock</Badge> and <Badge>{Units.format(12, "kg")}</Badge>
+
+<LowStock sku="A-100" left={1} />
+
+<div className="grid" style={{ display: "grid", gap: "1rem" }}>
+  {stockRows.map((row) => (
+    <p key={row.sku}>{row.sku}: {row.qty ?? "n/a"}</p>
+  ))}
+</div>
+
+<>
+  A fragment with <b>bold</b>.
+</>
+
+<!-- an HTML comment -->
+
+Inline <kbd>Ctrl</kbd>+<kbd>K</kbd> and a self-closing <br /> tag.
+
+export default ({ children }) => <main className="page">{children}</main>;
+
+## More JSX and ESM forms
+
+export const config = { runtime: "edge", regions: ["lhr1", "iad1"], nested: { deep: [1, 2, 3] } };
+export const { alpha, beta: renamed, ...others } = meta;
+export { Badge as default2, LowStock };
+export * from "./reexport";
+export * as ns from "./namespace";
+
+import type { Props } from "./types";
+import json from "./data.json" with { type: "json" };
+
+export async function load(id: number): Promise<string> {
+  const res = await fetch(`/api/items/${id}?q=${encodeURIComponent("a b")}`);
+  return (await res.json()) as string;
+}
+
+export const Table = ({ rows = [] }: { rows?: Array<{ sku: string; qty: number }> }) => {
+  const total = rows.reduce((sum, r) => sum + r.qty, 0);
+  /* a JS comment */
+  // another JS comment
+  return (
+    <table className="stock" data-total={total} aria-label='Stock "table"'>
+      {/* a JSX comment */}
+      <tbody>
+        {rows.length === 0 && <tr><td colSpan={2}>Nothing</td></tr>}
+        {rows.map(({ sku, qty }, i) => (
+          <tr key={sku} className={i % 2 ? "odd" : "even"}>
+            <td>{sku}</td>
+            <td>{qty > 0 ? qty : <em>none</em>}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+};
+
+<Table rows={[{ sku: "A-100", qty: 12 }, { sku: "B-200", qty: 0 }]} />
+
+<Tabs.Root defaultValue="one">
+  <Tabs.Item value="one" disabled>First</Tabs.Item>
+  <svg:rect width="10" height="10" xlink:href="#a" />
+</Tabs.Root>
+
+<Chart
+  title="Stock"
+  data={data}
+  formatter={(v) => `${v.toFixed(2)} units`}
+  enabled
+  ratio={1_000.5e-3}
+  big={10n}
+  regex={/ab+c/gi}
+  nothing={null}
+  missing={undefined}
+  {...{ extra: true }}
+/>
+
+Inline expression: {1 + 2}, {`template ${year}`}, {"string"}, {[1, 2].join("-")}.
+
+<details>
+<summary>HTML block with *markdown*</summary>
+
+Content inside **details**, with a [link](https://example.com).
+
+</details>
+
+| Left | Center | Right |
+|:-----|:------:|------:|
+| `a`  | **b**  | [c](#d) |
+
+Term<br/>
+: Definition-style text (rendered as a paragraph).
+
+Hard break with two trailing spaces  
+next line. Escapes: \* \_ \# \` \[ \] \< \{ \}.
+
+![Alt text][img]
+
+[img]: ./pallet.png "Pallet"
+[^note]: Another footnote.
+
+<https://example.com/auto> and www.example.com and user@example.com.

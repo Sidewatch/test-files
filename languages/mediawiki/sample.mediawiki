@@ -1,0 +1,227 @@
+__TOC__
+__NOEDITSECTION__
+{{DISPLAYTITLE:Inventory service}}
+{{Infobox service
+| name      = Inventory service
+| owner     = Warehouse team
+| status    = {{{status|stable}}}
+| version   = 1.4.0
+}}
+<!-- A single-line HTML comment. -->
+<!--
+  A multi-line
+  HTML comment.
+-->
+= Heading level one =
+== Inventory service ==
+The '''inventory service''' keeps stock levels for every ''warehouse'' and answers reorder questions.
+It can be '''''bold italic''''', <b>HTML bold</b>, <i>HTML italic</i>, <u>underlined</u>,
+<s>struck</s>, <del>deleted</del>, <ins>inserted</ins>, H<sub>2</sub>O and x<sup>2</sup>.
+
+=== Endpoints ===
+==== Level four ====
+===== Level five =====
+====== Level six ======
+* <code>GET /orders</code> — the orders, newest first
+* <code>POST /orders</code> — place an order
+** returns <code>201 Created</code>
+*** nested a third level
+* <code>GET /healthz</code>
+
+# First step
+# Second step
+## Sub-step
+### Sub-sub-step
+# Third step
+
+; Term : Definition of the term
+; Another term
+: First definition
+:: Indented deeper
+: Second definition
+
+: A simple indented line
+:: Deeper
+
+ Preformatted text starts with a space
+ and continues here.
+
+<pre>
+Preformatted block: '''no markup''' is parsed here.
+</pre>
+
+<nowiki>[[Not a link]] and '''not bold'''</nowiki>
+
+----
+
+=== Configuration ===
+{| class="wikitable sortable" style="width:60%; text-align:left;"
+|+ Settings table
+! scope="col" | Key !! scope="col" | Default !! Notes
+|-
+| <code>REORDER_POINT</code> || 25 || per SKU
+|-
+| <code>LOG_LEVEL</code> || style="color:red;" | info || debug, info, warn
+|-
+| rowspan="2" | Limits
+| colspan="2" | {{formatnum:1234567}}
+|-
+| [[Special:Search|Search]] || {{#if: {{{x|}}} | yes | no }}
+|}
+
+=== Links ===
+See also [[Deployment guide]], [[Deployment guide|the guide]], [[Deployment guide#Rollback|a section]],
+[[:Category:Services]], [[File:Pallet.png|thumb|200px|right|A pallet]], [[Image:Rack.jpg]],
+[[Help:Contents]] and [https://example.com/docs the external docs], [https://example.com bare numbered],
+https://example.com/plain, ISBN 978-3-16-148410-0, RFC 2616, PMID 12345678, mailto:ops@example.com.
+
+=== Templates and magic words ===
+{{Stub}}
+{{Cite web |url=https://example.com |title=Spec |accessdate=1 January 2025}}
+{{#invoke:Inventory|count|warehouse=north}}
+{{#switch: {{{type|}}} | a = Alpha | b = Beta | #default = Other }}
+{{PAGENAME}} {{NAMESPACE}} {{CURRENTYEAR}} {{lc:UPPER}} {{uc:lower}} {{padleft:7|3|0}}
+{{subst:Welcome}}
+{{{1}}} {{{named|default}}}
+~~~ ~~~~ ~~~~~
+#REDIRECT [[Inventory service]]
+
+=== Footnotes and references ===
+Stock is counted nightly.<ref name="count">Nightly job, see [[Cron]].</ref> Again.<ref name="count" />
+Group note.<ref group="note">A grouped note.</ref>
+
+<references />
+<references group="note" />
+
+=== Special tags ===
+<syntaxhighlight lang="bash" line highlight="2">
+curl -s https://api.example.com/orders | jq '.[0]'
+echo "done"
+</syntaxhighlight>
+
+<source lang="python">
+print("legacy source tag")
+</source>
+
+<math>E = mc^2 \sum_{i=1}^{n} x_i</math>
+
+<gallery caption="Warehouse">
+File:Pallet.png|A pallet
+File:Rack.jpg|A rack
+</gallery>
+
+<poem>
+Roses are red
+  Boxes are stacked
+</poem>
+
+<includeonly>Only when transcluded.</includeonly>
+<noinclude>Only on the page itself. [[Category:Templates]]</noinclude>
+<onlyinclude>Selected part.</onlyinclude>
+
+<div style="border:1px solid #ccc; padding:4px;" class="note">A styled div.</div>
+<span id="anchor">anchor</span><br />
+&nbsp;&copy;&mdash;&#169;
+
+=== More magic words and parser functions ===
+__NOTOC__ __FORCETOC__ __NOINDEX__ __INDEX__ __NEWSECTIONLINK__ __HIDDENCAT__ __NOGALLERY__ __STATICREDIRECT__
+{{#ifeq: {{{a|}}} | b | same | different }}
+{{#ifexist: Page name | exists | missing }}
+{{#ifexpr: 2 > 1 | yes | no }}
+{{#expr: (1 + 2) * 3 / 4 mod 2 round 1 }}
+{{#time: Y-m-d H:i:s | now }}
+{{#titleparts: A/B/C | 2 }}
+{{#tag:ref|Tag-built reference|name=t}}
+{{#language: de}} {{#special: Search}} {{#rel2abs: ../x }} {{#urldecode: a%20b }}
+{{ucfirst:word}} {{lcfirst:Word}} {{urlencode:a b}} {{anchorencode:A B}} {{ns:Help}} {{localurl:Page|a=b}}
+{{fullurl:Page}} {{filepath:File.png}} {{plural:2|item|items}} {{grammar:gen|Word}} {{gender:User|m|f|n}}
+{{CURRENTMONTHNAME}} {{CURRENTDAY}} {{CURRENTTIME}} {{SITENAME}} {{SERVER}} {{NUMBEROFARTICLES}} {{REVISIONID}}
+{{!}} {{=}} {{(}} {{)}} {{((}} {{))}}
+{{safesubst:Template|a|b=c}} {{msgnw:Template}} {{raw:Template}} {{:Main page transclusion}}
+{{Template:Namespaced|1=positional|named=value|{{nested|deep}}}}
+{{{param|{{{fallback|default}}}}}}
+{{#invoke:Module|func|arg1|key=val}}
+{{#property:P31}} {{#statements:P31}}
+
+=== More HTML and extension tags ===
+<br> <br/> <hr> <hr />
+<blockquote cite="x">A block quote.</blockquote>
+<center>Centered</center> <small>small</small> <big>big</big> <tt>tt</tt> <code>code</code> <kbd>kbd</kbd> <samp>samp</samp> <var>var</var>
+<abbr title="Abbreviation">abbr</abbr> <cite>cite</cite> <dfn>dfn</dfn> <strike>strike</strike> <em>em</em> <strong>strong</strong> <font color="red">font</font>
+<ruby>漢<rp>(</rp><rt>kan</rt><rp>)</rp></ruby> <bdi>text</bdi> <bdo dir="rtl">text</bdo> <data value="1">one</data> <time datetime="2025-01-01">New Year</time> <mark>mark</mark> <wbr>
+<h1>HTML h1</h1><h2>HTML h2</h2><p>paragraph</p>
+<ul><li>one</li><li>two</li></ul>
+<ol><li>one</li></ol>
+<dl><dt>term</dt><dd>def</dd></dl>
+<table class="wikitable"><caption>cap</caption><tr><th>H</th><td>D</td></tr></table>
+<nowiki />
+<templatedata>{"description": "Template data", "params": {}}</templatedata>
+<imagemap>
+Image:Pallet.png|200px
+rect 0 0 100 100 [[Main Page]]
+desc bottom-left
+</imagemap>
+<timeline>
+ImageSize = width:200 height:100
+</timeline>
+<charinsert>– — ‹ ›</charinsert>
+<hiero>A1-B1</hiero>
+<score lang="lilypond">\relative c' { c d e f }</score>
+<chem>H2O</chem>
+<indicator name="x">Indicator</indicator>
+<translate>Translatable <tvar name="1">$1</tvar></translate>
+<languages />
+<section begin="part" />Part<section end="part" />
+<inputbox>
+type=search
+</inputbox>
+<categorytree>Services</categorytree>
+<pagelist>Page1|Page2</pagelist>
+<mapframe latitude="51.5" longitude="-0.12" zoom="10" width="200" height="100" />
+
+=== More links ===
+[[Media:Pallet.png]] [[Media:Doc.pdf|a pdf]] [[Special:RecentChanges]] [[Special:Whatlinkshere/Page]]
+[[User:Example]] [[User talk:Example]] [[Talk:Page]] [[Project:About]] [[Template:Stub]] [[:File:Pallet.png]]
+[[w:en:Wikipedia article|interwiki]] [[commons:Category:Pallets]] [[wikt:word]]
+[//example.com protocol-relative] [ftp://example.com/file ftp] [irc://irc.example.com/chan irc] [news:group news]
+[https://example.com/a_(b) parens] [[Page|]] [[Page (disambig)|]] [[#Section|local]] [[/Subpage]] [[../Parent]]
+[[File:Pallet.png|frameless|upright=1.5|border|left|alt=Alt text|link=Main Page|Caption with [[link]]]]
+[[File:Clip.ogv|thumb|none|Video caption]]
+[[Image:A.png|100x50px|baseline]]
+
+=== Tables with every attribute ===
+{| border="1" cellpadding="5" cellspacing="0" style="margin:auto;" class="wikitable mw-collapsible mw-collapsed"
+|- style="background:#eee;" id="r1"
+! scope="row" rowspan="2" style="width:10em;" | Header
+| align="right" | Right || data-sort-value="1" | one
+|- valign="top"
+| colspan="2" align="center" | Spanning cell
+|-
+|
+* a list
+* in a cell
+|
+{| class="wikitable"
+| nested table
+|}
+|}
+
+=== Signatures, redirects, and others ===
+~~~~ and ~~~ and ~~~~~
+#REDIRECT[[Target page#Section]]
+#redirect [[Other]]
+'''Bold''' ''italic'' '''''both''''' '''bold with ''nested italic'' inside'''
+&lt;escaped&gt; &#38; &#x26; &euro;
+<span lang="de" dir="ltr" style="font-size:90%">span</span>
+:::: deep indent
+;; weird definition : mix
+* list item with <br/> break
+#* mixed bullet
+*# mixed numbered
+#: indented under numbered
+*: indented under bullet
+
+[[Category:Services]]
+[[Category:Inventory|Sort key]]
+[[de:Lagerdienst]]
+[[fr:Service d'inventaire]]

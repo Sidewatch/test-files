@@ -1,0 +1,21 @@
+// TypeScript reads this file as JSONC: comments and trailing commas are allowed.
+{
+  /* Compiler settings for the inventory service. */
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true, // every strict flag at once
+    "noUncheckedIndexedAccess": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "paths": {
+      "@inventory/*": ["src/*"],
+    },
+    "lib": ["ES2022", "DOM"],
+    "sourceMap": true,
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"],
+  "references": [{ "path": "./packages/shared" }],
+}

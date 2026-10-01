@@ -1,0 +1,394 @@
+\input texinfo   @c -*-texinfo-*-
+@c %**start of header
+@setfilename inventory.info
+@settitle Inventory Service Manual
+@documentencoding UTF-8
+@documentlanguage en
+@paragraphindent 2
+@firstparagraphindent insert
+@exampleindent 4
+@finalout
+@setchapternewpage odd
+@syncodeindex fn cp
+@synindex vr cp
+@clear DRAFT
+@set VERSION 1.4.0
+@set UPDATED 2026
+@set COMPANY Acme Warehousing
+@dircategory Network applications
+@direntry
+* Inventory: (inventory).   Warehouse stock service.
+@end direntry
+@c %**end of header
+
+@c ── Comments ──
+@c A Texinfo comment runs to the end of the line.
+@comment The long form of the comment command.
+@c TODO: document the plugin API
+@c FIXME: the index misses the config keys
+
+@copying
+This manual documents Inventory Service @value{VERSION}.
+
+Copyright @copyright{} @value{UPDATED} @value{COMPANY}.
+
+@quotation
+Permission is granted to copy, distribute and/or modify this document.
+@end quotation
+@end copying
+
+@titlepage
+@title Inventory Service
+@subtitle Version @value{VERSION}
+@author The Documentation Team
+@page
+@vskip 0pt plus 1filll
+@insertcopying
+@end titlepage
+
+@contents
+@shortcontents
+
+@ifnottex
+@node Top
+@top Inventory Service
+
+@insertcopying
+@end ifnottex
+
+@menu
+* Overview::        What the service does.
+* Endpoints::       What the API answers.
+* Configuration::   Keys and defaults.
+* Markup::          Every inline command.
+* Blocks::          Examples, lists and tables.
+* Conditionals::    Output-specific text.
+* Index::           Concept index.
+
+@detailmenu
+ --- The Detailed Node Listing ---
+
+Overview
+
+* Purpose::         Why it exists.
+@end detailmenu
+@end menu
+
+@c ───────────────────────────────────────────
+@node Overview
+@chapter Overview
+@cindex overview
+@cindex inventory service
+
+The @strong{inventory service} keeps stock levels for every @emph{warehouse}
+and answers reorder questions. See @ref{Endpoints} and @xref{Configuration}.
+Also @pxref{Markup}, or @inforef{Top, , inventory}, or
+@uref{https://example.com/docs, the documentation}.
+
+@menu
+* Purpose::
+@end menu
+
+@node Purpose
+@section Purpose
+@subsection Audience
+@subsubsection Operators
+@cindex operators
+
+Operators run the service; developers extend it.
+
+@unnumbered Unnumbered chapter
+@appendix Appendix title
+@appendixsec Appendix section
+@heading Unnumbered heading
+@majorheading Major heading
+@chapheading Chapter heading
+@subheading Subheading
+@subsubheading Subsubheading
+
+@c ───────────────────────────────────────────
+@node Endpoints
+@chapter Endpoints
+@findex GET /orders
+
+@table @code
+@item GET /orders
+The orders, newest first.
+@item POST /orders
+Place an order; returns @code{201 Created}.
+@itemx PUT /orders
+Replace an order.
+@end table
+
+@vtable @var
+@item limit
+Maximum number of rows.
+@end vtable
+
+@ftable @samp
+@item healthz
+Liveness check.
+@end ftable
+
+@example
+curl -s https://api.example.com/orders | jq '.[0]'
+@end example
+
+@smallexample
+curl -X POST https://api.example.com/orders -d @{"sku": "ABC-1"@}
+@end smallexample
+
+@lisp
+(defun stock-level (sku) (gethash sku *ledger*))
+@end lisp
+
+@verbatim
+Verbatim text keeps @ braces { } and everything else exactly.
+    Indentation too.
+@end verbatim
+
+@display
+A display block, no fill and no indent change.
+@end display
+
+@format
+A format block, without the indentation of display.
+@end format
+
+@flushleft
+Flush left text.
+@end flushleft
+
+@flushright
+Flush right text.
+@end flushright
+
+@center Centered line
+
+@c ───────────────────────────────────────────
+@node Configuration
+@chapter Configuration
+@cindex configuration
+
+@multitable @columnfractions .3 .2 .5
+@headitem Key @tab Default @tab Notes
+@item @code{REORDER_POINT} @tab 25 @tab Per SKU.
+@item @code{LOG_LEVEL}     @tab info @tab debug, info, warn.
+@end multitable
+
+@multitable {Longest key name} {default} {notes}
+@item Alpha @tab one @tab two
+@end multitable
+
+@defvr {User Option} reorder-point
+The stock level below which a reorder is raised.
+@end defvr
+
+@defvar threshold
+A variable definition.
+@end defvar
+
+@deffn Command stock-report sku &optional verbose
+Print the stock report for @var{sku}.
+@end deffn
+
+@deffn {Interactive Command} inventory-reload
+Reload the configuration.
+@end deffn
+
+@defun lookup-sku sku
+Return the stock line for @var{sku}.
+@end defun
+
+@defmac with-ledger ledger &rest body
+Evaluate @var{body} with @var{ledger} open.
+@end defmac
+
+@deftypefn {Library Function} int stock_level (const char *@var{sku})
+Return the level.
+@end deftypefn
+
+@deftypevr {Library Variable} int stock_errno
+The last error number.
+@end deftypevr
+
+@deftp {Data type} stock_t
+The stock record type.
+@end deftp
+
+@defspec when-low sku body
+Special form.
+@end defspec
+
+@defopt reorder-hook
+An option.
+@end defopt
+
+@c ───────────────────────────────────────────
+@node Markup
+@chapter Markup
+@cindex markup
+
+Inline commands: @code{code}, @samp{sample}, @file{/etc/inventory.conf},
+@command{inventory}, @option{--port}, @env{LOG_LEVEL}, @kbd{C-x C-f},
+@key{RET}, @var{metavariable}, @dfn{definition}, @cite{Title},
+@abbr{SKU, stock keeping unit}, @acronym{API, application programming interface},
+@email{stock@@example.com}, @url{https://example.com}, @indicateurl{https://example.com},
+@math{x^2 + y^2}, @sc{small caps}, @r{roman}, @i{italic}, @b{bold}, @t{typewriter},
+@w{non breaking}, @verb{|literal text|}, @asis, @sansserif{sans}, @slanted{slanted}.
+
+Special characters: @@ at, @{ open brace, @} close brace, @comma{} comma,
+@dots{} dots, @enddots{} end dots, @bullet{} bullet, @minus{} minus,
+@tex TeX @end tex, @LaTeX{}, @TeX{}, @today{}, @equiv{}, @result{} result,
+@error{} error, @expansion{} expansion, @print{} print, @point{} point,
+@aa{} @AA{} @ae{} @AE{} @oe{} @OE{} @o{} @O{} @ss{} @l{} @L{},
+@'e @`e @^e @"e @~n @,{c} @=a @.z @tie{} @euro{} @pounds{} @textdegree{}.
+
+Spacing and breaks: @*
+line break, @sp 2
+@noindent
+no indent paragraph, @refill @exdent exdented line.
+@tab @hyphenation{in-ven-to-ry}
+@/ allowed break, @- hyphen point, @: and @. @? @! sentence end markers.
+
+Footnote@footnote{A footnote body with @code{markup}.} and an image:
+@image{logo, 2in, , Alt text, .png}
+
+Index entries: @cindex concept
+@findex function
+@vindex variable
+@kindex key
+@pindex program
+@tindex type
+@printindex cp
+
+@c ───────────────────────────────────────────
+@node Blocks
+@chapter Blocks
+
+@itemize @bullet
+@item First item.
+@item Second item with a nested list:
+@enumerate
+@item Nested one.
+@item Nested two.
+@end enumerate
+@item Third item.
+@end itemize
+
+@enumerate A
+@item Letter list.
+@item Another.
+@end enumerate
+
+@enumerate 3
+@item Starts at three.
+@end enumerate
+
+@itemize @minus
+@item Minus-marked.
+@end itemize
+
+@quotation Warning
+Take care when deleting stock.
+@end quotation
+
+@cartouche
+@noindent
+Boxed note.
+@end cartouche
+
+@indentblock
+An indented block.
+@end indentblock
+
+@float Figure,fig:flow
+@image{flow}
+@caption{Order flow.}
+@shortcaption{Flow}
+@end float
+
+@listoffloats Figure
+
+@group
+Kept together on one page.
+@end group
+
+@need 1000
+@page
+@exdent Text exdented.
+
+@c ───────────────────────────────────────────
+@node Conditionals
+@chapter Conditionals
+
+@ifinfo
+Shown only in Info output.
+@end ifinfo
+
+@ifhtml
+Shown only in HTML output.
+@end ifhtml
+
+@iftex
+Shown only in TeX output.
+@end iftex
+
+@ifnothtml
+Not HTML.
+@end ifnothtml
+
+@ifset VERSION
+Version is set: @value{VERSION}.
+@end ifset
+
+@ifclear DRAFT
+Not a draft.
+@end ifclear
+
+@ifdocbook
+Docbook.
+@end ifdocbook
+
+@ifplaintext
+Plain text.
+@end ifplaintext
+
+@html
+<p class="note">Raw <b>HTML</b> passes through.</p>
+@end html
+
+@tex
+$$ \sum_{i=1}^{n} q_i $$
+@end tex
+
+@docbook
+<para>Raw Docbook.</para>
+@end docbook
+
+@macro stockline{sku, qty}
+@item \sku\ @tab \qty\
+@end macro
+
+@alias lbl=code
+@definfoenclose hilite,<<,>>
+@set-- escapes
+@c @include other.texi
+@clickstyle @result
+@fonttextsize 11
+@kbdinputstyle code
+@frenchspacing on
+@allowcodebreaks false
+@headings double
+@everyheading Inventory @| @thischapter @| @thispage
+@evenfooting @thisfile @| @| @today
+@oddheading @| @thistitle @|
+@summarycontents
+
+@c ───────────────────────────────────────────
+@node Index
+@unnumbered Index
+@printindex cp
+@printindex fn
+
+@bye

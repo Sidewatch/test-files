@@ -1,0 +1,233 @@
+###. Comment block: not rendered. Textile showcase for the inventory service.
+###. TODO: add the supplier appendix
+###. FIXME: footnote numbering restarts per section
+
+h1. Inventory service
+
+h2. Headings of every level
+
+h3. Level three
+
+h4. Level four
+
+h5. Level five
+
+h6. Level six
+
+h1(#anchor-id). Heading with an id
+
+h2(highlight). Heading with a class
+
+h3{color:#336699}. Heading with a style
+
+h4[fr]. Heading with a language
+
+h2>. Right-aligned heading
+
+h2<. Left-aligned heading
+
+h2=. Centered heading
+
+h2<>. Justified heading
+
+h2(class#id){color:red}[en]. Heading with class, id, style and language
+
+h2. Paragraphs and inline formatting
+
+p. A plain paragraph with an explicit @p.@ signature.
+
+A paragraph without a signature. The *inventory service* keeps stock levels for every _warehouse_ and answers reorder questions.
+
+p(lead). A paragraph with a class.
+
+p{text-align:justify}. A paragraph with a style.
+
+p>. Right-aligned paragraph.
+
+p<. Left-aligned paragraph.
+
+p=. Centered paragraph.
+
+p<>. Justified paragraph.
+
+p(indent). A paragraph with left padding: p(( and right padding p)).
+
+p((. Padded left by one em.
+
+p)). Padded right by one em.
+
+p. Strong: *bold*, **bold without semantics**. Emphasis: _italic_, __italic without semantics__. Both: *_bold italic_*.
+Citation: ??The Pragmatic Programmer??. Deleted: -removed text-. Inserted: +added text+.
+Superscript: E=mc^2^. Subscript: H~2~O. Code: @inventory --port 8080@. Span: %(highlight)marked span%.
+Class and id inline: _(note#n1)emphasised with class and id_. Style inline: *{color:red}red bold*.
+Language inline: _[de]ein Lager_. Acronym: SKU(Stock Keeping Unit). Trademark (TM), registered (R), copyright (C).
+Quotes: "straight double" and 'straight single' and it's. Dashes: en -- dash, em --- dash. Ellipsis...
+Dimensions: 3 x 4, 10 x 20 x 30. Fractions: (1/2) (1/4) (3/4). Arrows: -> and <-.
+Line break with a trailing newline
+inside a paragraph, and an explicit one with a backslash\
+continuation.
+Nonbreaking space: A&nbsp;B. Entities: &amp; &lt; &gt; &copy; &#169; &#x2713;.
+Notextile inline: ==*not formatted*== and <notextile>_nor this_</notextile>.
+
+h2. Lists
+
+* Unordered item one
+* Unordered item two
+** Nested unordered
+*** Third level
+** Nested again
+* Back to the top
+
+# Ordered item one
+# Ordered item two
+## Nested ordered
+### Third level
+## Nested again
+# Back to the top
+
+# Mixed list
+#* Unordered under ordered
+#* Second
+# Ordered again
+
+#(class). Ordered with a class
+# Second
+
+# First
+#_ Restart numbering marker
+#3 Start at three
+# Next
+
+- term := Definition of the term
+- another term := Another definition
+that continues on a second line =:
+- last term := Final definition
+
+* @GET /orders@ -- the orders, newest first
+* @POST /orders@ -- place an order
+** returns @201 Created@
+* @GET /healthz@
+
+h2. Links and images
+
+"the deployment guide":https://example.com/docs/deploy
+"link with a title(Deployment guide)":https://example.com/docs/deploy
+"internal anchor":#anchor-id
+"relative link":/orders/1
+"email":mailto:stock@example.com
+"quoted link with class(note)":https://example.com
+[link in brackets]"bracketed":https://example.com[/link]
+Bare URL: https://example.com/path?x=1&y=2
+Link alias: "alias":example-alias
+
+[example-alias]https://example.com/aliased
+
+!logo.png!
+!logo.png(Example logo)!
+!logo.png(Alt text)!:https://example.com
+!{width:100px;height:50px}logo.png!
+!<logo.png! left-floated
+!>logo.png! right-floated
+!=logo.png! centered
+!(class#id)logo.png!
+!https://example.com/remote.png!
+!logo.png!:https://example.com/linked
+
+h2. Footnotes and references
+
+A statement needing a source[1]. Another note[2].
+
+fn1. First footnote body.
+
+fn2(note). Second footnote with a class.
+
+fn3^. Footnote without a back link.
+
+h2. Block quotes and code
+
+bq. Cancelled orders are excluded from revenue totals.
+
+bq(note). A quote with a class.
+
+bq.:https://example.com/source A quote with a citation URL.
+
+bq.. A multi-paragraph quote
+
+continues into this second paragraph.
+
+p. Normal paragraph resumes.
+
+bc. curl -s https://api.example.com/orders | jq '.[0]'
+
+bc(shell). curl -s https://api.example.com/orders
+
+bc.. A multi-paragraph code block
+
+keeps blank lines inside it.
+
+    indentation is preserved.
+
+p. After the code block.
+
+pre. Preformatted text
+  keeps   whitespace
+and line breaks.
+
+pre.. Multi-paragraph preformatted
+
+second paragraph.
+
+notextile. <div class="raw">Raw <b>HTML</b> is passed through untouched.</div>
+
+notextile.. <div>
+Multi-paragraph
+
+raw HTML.
+</div>
+
+p. Inline HTML is allowed: <span class="x">span</span> and <em>em</em>.
+
+<div class="html-block">
+A raw HTML block, not wrapped in a paragraph.
+</div>
+
+h2. Tables
+
+|_. Key |_. Default |_. Notes |
+| @REORDER_POINT@ | 25 | per SKU |
+| @LOG_LEVEL@ | info | debug, info, warn |
+
+table(striped){border:1px solid #ccc}.
+|_. Header A |_. Header B |_. Header C |
+|<. left |=. centered |>. right |
+|^. top |-. middle |~. bottom |
+|\2. spans two columns | single |
+|/2. spans two rows | a | b |
+| c | d |
+|(highlight). class cell |{color:red}. styled cell |[fr]. language cell |
+|_\2. header spanning| |
+|{background:#eee}. row styled by first cell | 1 | 2 |
+
+|a|b|c|
+|1|2|3|
+
+h2. Alignment, attributes and escapes
+
+p(#unique-id.some-class). A paragraph with an id and a class.
+
+p{margin:1em 0;padding:0}[en](a b c). Style, language and multiple classes together.
+
+p. Percent signs and *asterisks* inside words: 100% sure, foo*bar*baz.
+
+p. Escaped markup: ==*not bold*== and a backslash \*literal asterisk\*.
+
+p. Unicode: Zürich — größe ✓ 🏭 在庫管理.
+
+h2. Page structure
+
+hr.
+***
+---
+___
+
+p. Footer text with a signature -- Acme Warehousing, 2026.

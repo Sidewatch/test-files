@@ -1,0 +1,72 @@
+{
+  "name": "warehouse-inventory",
+  "version": "2.4.0",
+  "private": true,
+  "description": "Inventory service with \"quoted\" text, a backslash \\ and a slash \/",
+  "escapes": "newline\n tab\t return\r backspace\b formfeed\f unicode \u00e9 \u4e2d \ud83d\udce6 solidus \/ quote \" backslash \\",
+  "unicode": "Zürich → 東京 ✓ 📦",
+  "emptyString": "",
+  "nothing": null,
+  "flags": { "enabled": true, "archived": false },
+  "numbers": {
+    "zero": 0,
+    "integer": 42,
+    "negative": -17,
+    "float": 3.14159,
+    "negativeFloat": -0.75,
+    "exponent": 6.022e23,
+    "upperExponent": 1E+9,
+    "negativeExponent": 1.6e-19,
+    "tiny": 5E-324,
+    "big": 12345678901234567890,
+    "negativeZero": -0.0
+  },
+  "emptyObject": {},
+  "emptyArray": [],
+  "keywords": ["inventory", "warehouse", "stock"],
+  "matrix": [[1, 2, 3], [4, 5, 6], [7, 8, 9]],
+  "mixed": [1, "two", 3.0, true, false, null, { "k": "v" }, [1, [2, [3]]]],
+  "warehouses": [
+    {
+      "id": 1,
+      "code": "WH-NORTH",
+      "address": { "street": "1 Dock Road", "city": "Springfield", "postcode": "AB1 2CD", "geo": { "lat": 51.5074, "lng": -0.1278 } },
+      "active": true,
+      "bins": [
+        { "bin": "A-01", "sku": "WIDGET-100", "quantity": 250, "unitPrice": 2.5, "tags": ["small", "fast"] },
+        { "bin": "A-02", "sku": "GADGET-200", "quantity": 0, "unitPrice": 14.99, "tags": [] },
+        { "bin": "B-17", "sku": "BOLT-M8", "quantity": 12000, "unitPrice": 0.03, "tags": ["bulk"] }
+      ]
+    },
+    {
+      "id": 2,
+      "code": "WH-SOUTH",
+      "address": null,
+      "active": false,
+      "bins": []
+    }
+  ],
+  "rare": {
+    "escapedKey\u0041\n\t\"\\": "keys can carry every escape",
+    "": "empty key",
+    "duplicate": 1,
+    "duplicate": 2,
+    "exponents": [1e0, 1E0, 1e+0, 1e-0, 0e0, -0e-0, 1.0E+10, 123456789e-9],
+    "extremes": [1.7976931348623157e308, 5e-324, -1.7976931348623157e308, 9007199254740993, -9007199254740993],
+    "allEscapes": "\" \\ \/ \b \f \n \r \t \u0000 \u001f \u007f \u0080 \u2028 \u2029 \uffff \ud800\udc00",
+    "rawUnicode": "é ñ 中 😀 ‮ zero-width: ​",
+    "whitespaceInside": [   1   ,2,	3
+    ],
+    "deeplyNested": [[[[[[[[[[{"bottom": null}]]]]]]]]]],
+    "compact": {"a":1,"b":[1,2,{"c":[]}],"d":{}},
+    "longString": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+    "numbersAsKeys": {"1": "one", "2.5": "two-point-five", "-3": "minus"},
+    "schemaLike": {"$schema": "https://json-schema.org/draft/2020-12/schema", "$id": "https://example.com/stock.json", "$ref": "#/$defs/item", "$defs": {"item": {"type": "object", "required": ["sku"], "properties": {"sku": {"type": "string", "pattern": "^[A-Z]{3}-\\d+$"}}}}}
+  },
+  "contact": { "email": "ops@example.com", "phone": "+44 20 7946 0000", "ip": "192.0.2.10", "ipv6": "2001:db8::1" },
+  "dates": { "created": "2026-01-31T12:00:00Z", "day": "2026-01-31", "duration": "PT36H" },
+  "regex": "^[A-Z]{3}-\\d{3,}$",
+  "path": "C:\\warehouse\\data\\stock.db",
+  "url": "https://example.com/api/v2/items?sku=WIDGET-100&limit=50#top",
+  "config": { "port": 8080, "timeoutSeconds": 30.5, "retries": 3, "ratio": 0.75, "apiKey": "example-not-a-real-key" }
+}

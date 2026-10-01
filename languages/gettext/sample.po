@@ -1,0 +1,212 @@
+# German translation for the Acme warehouse app.
+# Copyright (C) 2026 Acme Ltd
+# This file is distributed under the same license as the warehouse package.
+# Translators: see the TRANSLATORS comments below for context.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: warehouse 1.4\n"
+"Report-Msgid-Bugs-To: bugs@example.com\n"
+"POT-Creation-Date: 2026-09-24 10:00+0100\n"
+"PO-Revision-Date: 2026-09-25 09:30+0100\n"
+"Last-Translator: Translator Team <team@example.com>\n"
+"Language-Team: German <de@example.com>\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 3.4\n"
+
+# ── Simple entries with reference comments ──
+#: src/orders.py:42
+msgid "Orders for %(name)s"
+msgstr "Bestellungen für %(name)s"
+
+#: src/orders.py:48 src/reports.py:7 templates/orders.html:12
+msgid "Warehouse"
+msgstr "Lager"
+
+#. TRANSLATORS: shown on the dashboard header, keep it short.
+#: src/dashboard.py:10
+msgid "Stock overview"
+msgstr "Bestandsübersicht"
+
+# ── Flags: python-format, c-format, no-wrap, fuzzy ──
+#: src/orders.py:58
+#, python-format
+msgid "%d item"
+msgid_plural "%d items"
+msgstr[0] "%d Artikel"
+msgstr[1] "%d Artikel"
+
+#: src/shipping.c:120
+#, c-format
+msgid "Shipped %1$s to %2$s on %3$02d.%4$02d.%5$04d"
+msgstr "%1$s wurde am %3$02d.%4$02d.%5$04d an %2$s versandt"
+
+#: src/shipping.c:130
+#, fuzzy, c-format
+msgid "Weight: %.2f kg"
+msgstr "Gewicht: %.2f kg"
+
+#: src/js/app.js:9
+#, javascript-format, no-wrap
+msgid "Hello, ${name}!"
+msgstr "Hallo, ${name}!"
+
+#: src/ui.php:3
+#, php-format, no-c-format
+msgid "Discount: %s%%"
+msgstr "Rabatt: %s%%"
+
+# ── Context ──
+#: src/orders.py:71
+msgctxt "button"
+msgid "Cancel"
+msgstr "Abbrechen"
+
+#: src/orders.py:72
+msgctxt "verb"
+msgid "Cancel"
+msgstr "Stornieren"
+
+#: src/orders.py:90
+msgctxt "menu"
+msgid "File"
+msgid_plural "Files"
+msgstr[0] "Datei"
+msgstr[1] "Dateien"
+
+# ── Escapes and quoting ──
+#: src/strings.py:1
+msgid "Tab\there, quote \" inside, backslash \\ and newline\n"
+msgstr "Tab\tda, Anführungszeichen \" innen, Backslash \\ und Zeilenumbruch\n"
+
+#: src/strings.py:2
+msgid "Unicode: café \x41 octal \101 bell \a"
+msgstr "Unicode: Café \x41 oktal \101 Glocke \a"
+
+# ── Multi-line strings ──
+#: src/help.py:5
+msgid ""
+"Line one of a long help text that is split over several\n"
+"source lines and continues here, with a trailing space "
+"before the next piece."
+msgstr ""
+"Zeile eins eines langen Hilfetextes, der auf mehrere\n"
+"Quellzeilen verteilt ist und hier weitergeht, mit einem "
+"Leerzeichen vor dem nächsten Teil."
+
+# ── Plurals ──
+#: src/boxes.py:20
+msgid "%d box"
+msgid_plural "%d boxes"
+msgstr[0] "%d Kiste"
+msgstr[1] "%d Kisten"
+
+# ── Previous msgid (fuzzy updates) ──
+#: src/orders.py:100
+#, fuzzy
+#| msgctxt "old-context"
+#| msgid "Delivery note"
+#| msgid_plural "Delivery notes"
+msgid "Delivery slip"
+msgid_plural "Delivery slips"
+msgstr[0] "Lieferschein"
+msgstr[1] "Lieferscheine"
+
+# ── Untranslated and empty ──
+#: src/todo.py:1
+msgid "Not translated yet"
+msgstr ""
+
+#: src/todo.py:2
+msgid "Also untranslated"
+msgid_plural "Also untranslated (plural)"
+msgstr[0] ""
+msgstr[1] ""
+
+# ── Obsolete entries ──
+#~ msgid "Old string"
+#~ msgstr "Alter Text"
+
+#~ msgctxt "legacy"
+#~ msgid "Obsolete %d thing"
+#~ msgid_plural "Obsolete %d things"
+#~ msgstr[0] "Veraltetes Ding"
+#~ msgstr[1] "Veraltete Dinge"
+
+#~| msgid "Previous obsolete"
+#~ msgid "Gone"
+#~ msgstr "Weg"
+
+# ── Header-style and extracted comments ──
+#. Extracted comment for translators: appears above the entry.
+#. Second extracted line.
+#: src/a.py:1 src/b.py:2
+#: src/c.py:3
+#, c-format, fuzzy, no-c-format, python-brace-format, perl-format, lisp-format, ruby-format
+msgid "Flags demonstration %s"
+msgstr "Flaggen-Demonstration %s"
+
+#, csharp-format, objc-format, sh-format, tcl-format, qt-format, kde-format, boost-format, gcc-internal-format, ycp-format, smalltalk-format, java-format, java-printf-format, awk-format, pascal-format, librep-format, scheme-format, elisp-format, php-format, lua-format, rust-format, gfc-internal-format
+msgid "Many format flags"
+msgstr "Viele Format-Flaggen"
+
+#, range: 1..10
+msgid "Pick a number"
+msgstr "Wähle eine Zahl"
+
+#, wrap, no-wrap, no-python-format, no-javascript-format
+msgid "Wrap flags"
+msgstr "Umbruch-Flaggen"
+
+# ── Context with plural and previous values ──
+#: src/ctx.py:1
+#, fuzzy
+#| msgctxt "old context"
+#| msgid "Old singular"
+#| msgid_plural "Old plural"
+msgctxt "menu"
+msgid "Item"
+msgid_plural "Items"
+msgstr[0] "Eintrag"
+msgstr[1] "Einträge"
+
+# ── Strings with every escape ──
+msgid "Escapes: \a \b \f \n \r \t \v \\ \" \123 \x7F"
+msgstr "Escapes: \a \b \f \n \r \t \v \\ \" \123 \x7F"
+
+msgid ""
+"Empty first line then "
+"continuation lines "
+"concatenated."
+msgstr ""
+"Leere erste Zeile, dann "
+"Fortsetzungszeilen, "
+"zusammengefügt."
+
+# ── Format strings and placeholders ──
+msgid "Named %(count)d of %(total)d for {user} and ${name} with %s and %1$s and %-5.2f"
+msgstr "Benannt %(count)d von %(total)d für {user} und ${name} mit %s und %1$s und %-5.2f"
+
+msgid "HTML <b>bold</b> &amp; <a href=\"https://example.com\">link</a>"
+msgstr "HTML <b>fett</b> &amp; <a href=\"https://example.com\">Link</a>"
+
+# ── Unicode and long lines ──
+msgid "Unicode: café 日本語 ☕ Ελληνικά"
+msgstr "Unicode: Café 日本語 ☕ Ελληνικά"
+
+# ── Obsolete with comments and previous ──
+#~ #. extracted comment on obsolete entry
+#~ #: src/removed.py:9
+#~ msgid "Removed"
+#~ msgstr "Entfernt"
+
+#~ msgid ""
+#~ "Obsolete multi-line "
+#~ "entry"
+#~ msgstr ""
+#~ "Veralteter mehrzeiliger "
+#~ "Eintrag"

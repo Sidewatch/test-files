@@ -1,0 +1,17 @@
+// JSON5: everything JSONC allows, plus bare keys, single quotes, hex, and more number forms.
+{
+  service: 'inventory',
+  'display name': "Acme Inventory",
+  port: 3000,
+  mask: 0x1F,
+  ratio: .75,
+  ceiling: +Infinity,
+  floor: -Infinity,
+  missing: NaN,
+  retries: +3,
+  regions: [
+    'eu-west',
+    'us-east', // trailing comma follows
+  ],
+  limits: { maxItems: 10000, burst: 2.5e3, label: 'a \'quoted\' word' },
+}

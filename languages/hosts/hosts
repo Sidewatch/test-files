@@ -1,0 +1,83 @@
+##
+# Host database — sample entries for local development.
+#
+# localhost is used to configure the loopback interface
+# when the system is booting. Do not change this entry.
+##
+
+# ── Loopback ──
+127.0.0.1       localhost
+127.0.1.1       workstation.example.com workstation
+255.255.255.255 broadcasthost
+::1             localhost ip6-localhost ip6-loopback
+fe80::1%lo0     localhost
+
+# ── IPv6 special groups ──
+ff02::1         ip6-allnodes
+ff02::2         ip6-allrouters
+2001:db8::1     ipv6.example.com
+2001:db8:85a3::8a2e:370:7334 long-v6.example.com
+
+# ── Local services (multiple aliases, inline comments) ──
+127.0.0.1       api.local admin.local
+127.0.0.1       db.local        # Postgres in Docker
+127.0.0.1       cache.local queue.local # Redis and the job queue
+192.0.2.10      staging.example.com stg
+192.0.2.11      build.example.com
+198.51.100.7    mirror.example.com
+203.0.113.42    warehouse.example.com www.warehouse.example.com
+
+# ── Tabs and irregular spacing ──
+192.0.2.20	tabbed.example.com
+192.0.2.21	 	mixed.example.com	alias-one	alias-two
+
+# ── Block telemetry hosts ──
+0.0.0.0         telemetry.example.net
+0.0.0.0         metrics.example.net
+0.0.0.0         ads.example.net tracker.example.net
+::              blocked6.example.net
+
+# ── Internationalised and unusual names ──
+192.0.2.30      xn--bcher-kva.example.com
+192.0.2.31      under_score.example.com
+192.0.2.32      host-with-dash.sub.domain.example.org.
+
+#192.0.2.99     disabled.example.com
+  # indented comment
+
+# ── IPv4 and IPv6 address forms ──
+0.0.0.0         unspecified.example.com
+127.1           short-form-loopback
+10.0.0.1        private-a.example.com
+172.16.0.1      private-b.example.com
+192.168.0.1     private-c.example.com
+169.254.1.1     link-local.example.com
+::ffff:192.0.2.1 ipv4-mapped.example.com
+0:0:0:0:0:0:0:1 expanded-loopback.example.com
+2001:0db8:0000:0000:0000:0000:0000:0001 fully-expanded.example.com
+fe80::1%en0     zone-index.example.com
+64:ff9b::192.0.2.33 nat64.example.com
+
+# ── Hostname forms ──
+192.0.2.50      single
+192.0.2.51      sub.domain.example.com.
+192.0.2.52      UPPER.Example.COM
+192.0.2.53      digits-123.example.com 123.example.com
+192.0.2.54      a.b.c.d.e.f.example.com
+192.0.2.55      xn--nxasmq6b.example.com
+192.0.2.56      localhost.localdomain loghost
+
+# ── Spacing and comment forms ──
+192.0.2.60 compact.example.com
+192.0.2.61     trailing-comment.example.com#no-space-before-hash
+192.0.2.62     with-space.example.com     #    spaced comment
+192.0.2.63     many  aliases  on   one   line   alias4 alias5 alias6 # and a comment
+   192.0.2.64  indented-entry.example.com
+#192.0.2.65    commented-out-entry.example.com
+ # indented comment line
+##
+## Double-hash block
+##
+
+# Unicode comment: café 日本語 ☕
+

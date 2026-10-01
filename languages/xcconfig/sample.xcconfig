@@ -1,0 +1,166 @@
+// ── Comments ───────────────────────────────────────────────
+// Xcode build settings for the Release configuration.
+// TODO: split per target. FIXME: signing identity for CI.
+/* Block comments are not part of xcconfig, but // lines are. */
+
+// ── Includes ───────────────────────────────────────────────
+#include "Shared.xcconfig"
+#include? "Local.xcconfig"
+#include "../Config/Base.xcconfig"
+#include "Pods/Target Support Files/Pods-Inventory/Pods-Inventory.release.xcconfig"
+
+// ── Plain values: strings, numbers, booleans ───────────────
+PRODUCT_NAME = Inventory
+PRODUCT_MODULE_NAME = Inventory
+PRODUCT_BUNDLE_IDENTIFIER = com.example.inventory
+PRODUCT_DISPLAY_NAME = Acme Warehouse Inventory
+MARKETING_VERSION = 1.4.0
+CURRENT_PROJECT_VERSION = 140
+INFOPLIST_FILE = Inventory/Info.plist
+INFOPLIST_KEY_CFBundleDisplayName = "Inventory \"Pro\""
+INFOPLIST_KEY_NSHumanReadableCopyright = Copyright © 2026 Acme Corp.
+
+MACOSX_DEPLOYMENT_TARGET = 14.0
+IPHONEOS_DEPLOYMENT_TARGET = 17.0
+SDKROOT = macosx
+SUPPORTED_PLATFORMS = macosx iphoneos iphonesimulator
+ARCHS = arm64 x86_64
+ONLY_ACTIVE_ARCH = NO
+SWIFT_VERSION = 6.0
+SWIFT_STRICT_CONCURRENCY = complete
+CLANG_CXX_LANGUAGE_STANDARD = gnu++20
+GCC_C_LANGUAGE_STANDARD = gnu17
+
+// ── Signing ────────────────────────────────────────────────
+CODE_SIGN_IDENTITY = Developer ID Application
+CODE_SIGN_STYLE = Manual
+CODE_SIGN_ENTITLEMENTS = Inventory/Inventory.entitlements
+DEVELOPMENT_TEAM = TEAM000000
+PROVISIONING_PROFILE_SPECIFIER =
+ENABLE_HARDENED_RUNTIME = YES
+ENABLE_APP_SANDBOX = YES
+CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO
+
+// ── Variable references and inheritance ────────────────────
+OTHER_SWIFT_FLAGS = $(inherited) -warnings-as-errors -Xfrontend -enable-actor-data-race-checks
+OTHER_LDFLAGS = $(inherited) -ObjC -framework "Network" -lsqlite3
+OTHER_CFLAGS = $(inherited) -Wall -Wextra -Werror
+HEADER_SEARCH_PATHS = $(inherited) "$(SRCROOT)/Vendor/include" $(SRCROOT)/Headers/**
+FRAMEWORK_SEARCH_PATHS = $(inherited) $(PROJECT_DIR)/Frameworks
+LIBRARY_SEARCH_PATHS = $(inherited) ${PROJECT_DIR}/Libraries
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = $(inherited) RELEASE
+SWIFT_OBJC_BRIDGING_HEADER = $(SRCROOT)/$(PRODUCT_NAME)/$(PRODUCT_NAME)-Bridging-Header.h
+LD_RUNPATH_SEARCH_PATHS = $(inherited) @executable_path/../Frameworks @loader_path/Frameworks
+BUILD_DIR = $(SRCROOT)/build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)
+TARGET_NAME_LOWER = $(TARGET_NAME:lower)
+BUNDLE_ID_SUFFIX = $(PRODUCT_BUNDLE_IDENTIFIER:rfc1034identifier)
+EXECUTABLE_NAME_C = $(PRODUCT_NAME:c99extidentifier)
+VERSION_STRING = $(MARKETING_VERSION).$(CURRENT_PROJECT_VERSION)
+NESTED = $(inherited_$(CONFIGURATION))
+FALLBACK = $(UNDEFINED_VAR:default=fallback)
+QUOTED = "$(PRODUCT_NAME) $(MARKETING_VERSION)"
+
+// ── Conditional settings: sdk, arch, config ────────────────
+GCC_PREPROCESSOR_DEFINITIONS = $(inherited) NDEBUG=1 APP_NAME=\"Inventory\" VERSION=$(CURRENT_PROJECT_VERSION)
+GCC_PREPROCESSOR_DEFINITIONS[sdk=macosx*] = $(inherited) NDEBUG=1 MACOS=1
+GCC_PREPROCESSOR_DEFINITIONS[sdk=iphoneos*] = $(inherited) NDEBUG=1 IOS=1
+GCC_PREPROCESSOR_DEFINITIONS[config=Debug] = $(inherited) DEBUG=1
+GCC_PREPROCESSOR_DEFINITIONS[config=Release][arch=arm64] = $(inherited) NDEBUG=1 ARM64=1
+EXCLUDED_ARCHS[sdk=iphonesimulator*] = arm64
+EXCLUDED_SOURCE_FILE_NAMES[config=Release] = *Debug*.swift *Preview*.swift
+SWIFT_OPTIMIZATION_LEVEL[config=Debug] = -Onone
+SWIFT_OPTIMIZATION_LEVEL[config=Release] = -O
+SWIFT_COMPILATION_MODE[config=Release] = wholemodule
+CODE_SIGN_IDENTITY[sdk=macosx*] = -
+CODE_SIGN_IDENTITY[sdk=iphoneos*] = iPhone Distribution
+LD_RUNPATH_SEARCH_PATHS[sdk=macosx*] = $(inherited) @executable_path/../Frameworks
+VALID_ARCHS[sdk=iphoneos*][arch=arm64] = arm64 arm64e
+
+// ── Boolean and enumerated flags ───────────────────────────
+GCC_OPTIMIZATION_LEVEL = s
+DEBUG_INFORMATION_FORMAT = dwarf-with-dsym
+COPY_PHASE_STRIP = YES
+STRIP_INSTALLED_PRODUCT = YES
+DEAD_CODE_STRIPPING = YES
+ENABLE_TESTABILITY = NO
+GENERATE_INFOPLIST_FILE = YES
+ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon
+ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor
+CLANG_ENABLE_MODULES = YES
+CLANG_ENABLE_OBJC_ARC = YES
+CLANG_WARN_DOCUMENTATION_COMMENTS = YES_ERROR
+CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE
+GCC_TREAT_WARNINGS_AS_ERRORS = YES
+SWIFT_TREAT_WARNINGS_AS_ERRORS = NO
+VALIDATE_PRODUCT = YES
+SKIP_INSTALL = NO
+INSTALL_PATH = $(LOCAL_APPS_DIR)
+DEFINES_MODULE = YES
+
+// ── Every variable operator ────────────────────────────────
+OP_IDENTIFIER = $(PRODUCT_NAME:identifier)
+OP_C99 = $(PRODUCT_NAME:c99extidentifier)
+OP_RFC1034 = $(PRODUCT_BUNDLE_IDENTIFIER:rfc1034identifier)
+OP_QUOTE = $(OTHER_LDFLAGS:quote)
+OP_LOWER = $(PRODUCT_NAME:lower)
+OP_UPPER = $(PRODUCT_NAME:upper)
+OP_BASE = $(INFOPLIST_FILE:base)
+OP_DIR = $(INFOPLIST_FILE:dir)
+OP_FILE = $(INFOPLIST_FILE:file)
+OP_SUFFIX = $(INFOPLIST_FILE:suffix)
+OP_STANDARDIZE = $(SRCROOT/../Shared:standardizepath)
+OP_DEFAULT = $(MISSING_VALUE:default=fallback)
+OP_CHAIN = $(PRODUCT_NAME:lower:identifier)
+OP_BRACES = ${PRODUCT_NAME}-${MARKETING_VERSION}
+OP_MIXED = $(SRCROOT)/${PRODUCT_NAME}/$(TARGET_NAME:lower).plist
+OP_INHERIT_BRACES = ${inherited} extra
+OP_ESCAPED = \$(NOT_EXPANDED)
+OP_WITH_SPACES = value with spaces   and    gaps
+OP_TRAILING_COMMENT = value // trailing comment
+
+// ── Every condition key ────────────────────────────────────
+KEY_SDK[sdk=macosx10.15] = exact
+KEY_SDK[sdk=macosx*] = wildcard
+KEY_SDK[sdk=iphoneos*] = ios
+KEY_SDK[sdk=iphonesimulator*] = sim
+KEY_SDK[sdk=watchos*] = watch
+KEY_SDK[sdk=appletvos*] = tv
+KEY_SDK[sdk=xros*] = vision
+KEY_ARCH[arch=x86_64] = intel
+KEY_ARCH[arch=arm64] = apple
+KEY_ARCH[arch=arm64e] = pac
+KEY_ARCH[arch=*] = any
+KEY_CONFIG[config=Debug] = debug
+KEY_CONFIG[config=Release] = release
+KEY_CONFIG[config=Beta*] = beta
+KEY_VARIANT[variant=normal] = normal
+KEY_VARIANT[variant=profile] = profile
+KEY_VARIANT[variant=debug] = debug
+KEY_MULTI[sdk=macosx*][arch=arm64][config=Release] = all three
+KEY_MULTI[sdk=iphoneos*, arch=arm64] = comma separated
+
+// ── Settings seen in real projects ─────────────────────────
+INFOPLIST_PREPROCESS = YES
+INFOPLIST_PREFIX_HEADER = $(SRCROOT)/Config/InfoPrefix.h
+INFOPLIST_PREPROCESSOR_DEFINITIONS = BUILD_NUMBER=$(CURRENT_PROJECT_VERSION)
+INFOPLIST_OTHER_PREPROCESSOR_FLAGS = -traditional
+PRODUCT_NAME[config=Debug] = Inventory (Debug)
+ASSETCATALOG_COMPILER_APPICON_NAME[config=Debug] = AppIcon-Debug
+ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES
+LD_GENERATE_MAP_FILE = YES
+ENABLE_BITCODE = NO
+BUILD_LIBRARY_FOR_DISTRIBUTION = YES
+SWIFT_EMIT_LOC_STRINGS = YES
+LOCALIZATION_PREFERS_STRING_CATALOGS = YES
+STRING_CATALOG_GENERATE_SYMBOLS = YES
+TARGETED_DEVICE_FAMILY = 1,2
+SUPPORTS_MACCATALYST = NO
+WARNING_CFLAGS = -Wall -Wno-unused-parameter
+GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR
+GCC_WARN_UNUSED_VARIABLE = YES
+GCC_DYNAMIC_NO_PIC = NO
+GCC_SYMBOLS_PRIVATE_EXTERN = YES
+GCC_NO_COMMON_BLOCKS = YES
+MTL_ENABLE_DEBUG_INFO = NO
+MTL_FAST_MATH = YES
+SDKROOT[config=Debug] = macosx

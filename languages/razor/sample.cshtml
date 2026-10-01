@@ -1,0 +1,184 @@
+@page "/orders/{id:int?}"
+@model OrdersModel
+@using Inventory.Web.Helpers
+@using static System.Math
+@using Alias = Inventory.Domain.Order
+@namespace Inventory.Web.Pages
+@inject IStockService Stock
+@inject ILogger<OrdersModel> Logger
+@inherits BasePage<OrdersModel>
+@implements IDisposable
+@layout MainLayout
+@attribute [Authorize(Roles = "manager")]
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@removeTagHelper Foo.Bar, Foo
+@tagHelperPrefix th:
+@typeparam TItem where TItem : class
+@preservewhitespace true
+@rendermode InteractiveServer
+@functions {
+    private int pageSize = 25;
+    private string Label(Order o) => $"#{o.Number} ({o.Status})";
+    private static decimal Tax(decimal amount) => amount * 0.075m;
+}
+@{
+    ViewData["Title"] = $"{Model.User.Name} — Orders";
+    var paidCount = Model.Orders.Count(o => o.IsPaid);
+    const int MaxRows = 100;
+    string verbatim = @"C:\temp\inventory";
+    var interpolated = $"{paidCount,5:N0} of {Model.Orders.Count}";
+    var raw = """a "raw" string""";
+    int hex = 0xFF, binary = 0b1010, big = 1_000_000;
+    double dbl = 1.5e-3; float flt = 2.5f; decimal money = 19.99m; long l = 42L; char ch = '\n';
+    object nothing = null;
+    bool flag = true && !false || paidCount > 0 ? true : false;
+    var sku = Model.Sku ?? "none";
+    var length = Model.Notes?.Length ?? 0;
+}
+@* A Razor comment: not sent to the client.
+   TODO: paginate the table. FIXME: encode the notes. *@
+<!-- An HTML comment: sent to the client. -->
+
+<h1>Orders for @Model.User.Name</h1>
+<p>Email me at support@example.com, escaped at sign: user@@example.com</p>
+<p>Implicit: @Model.User.Name, @Model.Orders[0].Total, @Model.Orders.Count(), @(paidCount + 1), @Html.Raw("<b>raw</b>")</p>
+<p>@Label(Model.Orders.First()) and @Tax(10m).ToString("C")</p>
+<p>Escaped braces: @@ and email-like text: a@b.com</p>
+
+@if (!Model.Orders.Any())
+{
+    <p class="muted">No orders yet.</p>
+}
+else if (Model.Orders.Count < 3)
+{
+    <p>Only a few.</p>
+    <text>Text block without a tag wrapper</text>
+    @:A single line of literal text, with @Model.User.Name inside
+}
+else
+{
+    <table class="orders">
+        @foreach (var order in Model.Orders.OrderByDescending(o => o.PlacedAt))
+        {
+            <tr class="@(order.IsPaid ? "paid" : "open")" data-id="@order.Id">
+                <td><a asp-page="/Order" asp-route-id="@order.Id">#@order.Number</a></td>
+                <td>@order.Total.ToString("C")</td>
+                <td>@order.PlacedAt.ToString("yyyy-MM-dd")</td>
+                <td>@(order.Notes ?? "—")</td>
+            </tr>
+        }
+    </table>
+    <p>@paidCount of @Model.Orders.Count paid</p>
+    <partial name="_Pagination" model="Model.Paging" />
+}
+
+@switch (Model.Status)
+{
+    case "paid":
+        <span class="badge ok">Paid</span>
+        break;
+    case "open":
+    case "pending":
+        <span class="badge">Open</span>
+        break;
+    default:
+        <span class="badge muted">Unknown</span>
+        break;
+}
+
+@for (var i = 0; i < 3; i++)
+{
+    <li>Row @i</li>
+}
+
+@{ var n = 0; }
+@while (n < 2)
+{
+    <li>Loop @(n++)</li>
+}
+
+@do
+{
+    n--;
+} while (n > 0);
+
+@try
+{
+    var parsed = int.Parse(Model.Count);
+    <span>@parsed</span>
+}
+catch (FormatException ex)
+{
+    <span class="error">@ex.Message</span>
+}
+finally
+{
+    Logger.LogInformation("rendered");
+}
+
+@using (Html.BeginForm("Create", "Orders", FormMethod.Post, new { @class = "form", id = "order-form" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.LabelFor(m => m.Sku)
+    @Html.TextBoxFor(m => m.Sku, new { @class = "form-control", placeholder = "AC-1001" })
+    @Html.ValidationMessageFor(m => m.Sku)
+    <input asp-for="Quantity" class="form-control" />
+    <span asp-validation-for="Quantity" class="text-danger"></span>
+    <select asp-for="Warehouse" asp-items="Model.Warehouses"></select>
+    <button type="submit" class="btn btn-primary" disabled="@(!Model.CanSubmit)">Save</button>
+}
+
+@lock (this)
+{
+    <p>Locked</p>
+}
+
+<component type="typeof(Counter)" render-mode="ServerPrerendered" param-Start="5" />
+<environment include="Development"><p>Dev only</p></environment>
+<cache enabled="true" expires-after="@TimeSpan.FromMinutes(5)"><p>@DateTime.Now</p></cache>
+<a asp-controller="Orders" asp-action="Details" asp-route-id="42">Details</a>
+<img src="~/images/logo.png" alt="Logo" />
+<link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+
+<style>
+    .orders td { padding: .25rem; }
+    .paid { color: #0a5; }
+</style>
+
+@section Styles {
+    <style>.badge { border-radius: 4px; }</style>
+}
+
+@section Scripts {
+    <script>
+        const count = @Model.Orders.Count;
+        const name = "@Model.User.Name";
+        const data = @Html.Raw(Json.Serialize(Model.Orders));
+        console.log(`${count} orders for ${name}`);
+        document.querySelectorAll('.orders tr').forEach(r => r.classList.add('row'));
+    </script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+}
+
+@RenderBody()
+@await RenderSectionAsync("Scripts", required: false)
+@await Html.PartialAsync("_Footer")
+@await Component.InvokeAsync("Cart", new { count = 3 })
+@(await Stock.CountAsync())
+<p>@Html.DisplayNameFor(m => m.Sku) @Html.DisplayFor(m => m.Total)</p>
+@code {
+    [Parameter] public int Start { get; set; }
+    [Parameter] public EventCallback<int> OnChange { get; set; }
+    [CascadingParameter] public Theme Theme { get; set; } = default!;
+
+    private int current;
+
+    protected override async Task OnInitializedAsync()
+    {
+        current = Start;
+        await Task.Delay(10);
+    }
+
+    private void Increment() => current++;
+    public void Dispose() { }
+}

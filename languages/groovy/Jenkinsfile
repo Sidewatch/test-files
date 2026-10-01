@@ -1,0 +1,310 @@
+#!/usr/bin/env groovy
+// Declarative and scripted Jenkins pipeline: build, test in parallel, deploy on main.
+/* Block comment. TODO: move shared steps into a library. FIXME: flaky lint stage. */
+
+@Library('acme-shared@main') _
+@Library(['acme-shared', 'acme-extras@v2']) import com.example.Utils
+import groovy.json.JsonOutput
+import hudson.model.Result
+
+// ── Helper functions in the scripted section ──
+def notify(String channel, String message = 'build finished') {
+    echo "Notifying ${channel}: ${message}"
+}
+
+@NonCPS
+def parseVersions(String text) {
+    return text.split('\n').collect { it.trim() }.findAll { it }
+}
+
+Map config = [
+    registry: 'registry.example.com',
+    retries : 3,
+    regions : ['eu-west', 'us-east'],
+]
+
+// ── Declarative pipeline ──
+pipeline {
+    agent { label 'linux && docker' }
+
+    options {
+        timeout(time: 30, unit: 'MINUTES')
+        buildDiscarder(logRotator(numToKeepStr: '20', artifactNumToKeepStr: '5'))
+        disableConcurrentBuilds()
+        timestamps()
+        ansiColor('xterm')
+        skipDefaultCheckout(false)
+        retry(2)
+    }
+
+    parameters {
+        string(name: 'VERSION', defaultValue: '1.4.0', description: 'Version to build')
+        booleanParam(name: 'DEPLOY', defaultValue: true, description: "Deploy after tests?")
+        choice(name: 'TARGET', choices: ['staging', 'production'], description: 'Where to deploy')
+        text(name: 'NOTES', defaultValue: '', description: 'Release notes')
+        password(name: 'TOKEN', defaultValue: 'example-not-a-real-key', description: 'Placeholder')
+    }
+
+    triggers {
+        cron('H 2 * * 1-5')
+        pollSCM('H/15 * * * *')
+        upstream(upstreamProjects: 'base-image', threshold: hudson.model.Result.SUCCESS)
+    }
+
+    tools {
+        jdk 'jdk21'
+        maven 'maven-3.9'
+    }
+
+    environment {
+        REGISTRY = 'registry.example.com'
+        IMAGE = "${env.REGISTRY}/inventory:${env.BUILD_NUMBER}"
+        CREDS = credentials('registry-credentials')
+        LITERAL = '$notInterpolated'
+        MULTI = """line one
+line two ${params.VERSION}"""
+    }
+
+    stages {
+        stage('Build') {
+            steps {
+                sh './gradlew assemble'
+                sh '''
+                    echo "Building ${VERSION}"
+                    ls -la build/libs
+                '''
+                sh script: 'git rev-parse --short HEAD', returnStdout: true
+                bat 'echo windows'
+                echo "Branch: ${env.BRANCH_NAME ?: 'detached'}"
+                dir('subproject') { sh 'pwd' }
+                withEnv(['A=1', "B=${params.VERSION}"]) { sh 'env | sort' }
+                archiveArtifacts artifacts: 'build/libs/*.jar', fingerprint: true, allowEmptyArchive: false
+                stash name: 'jars', includes: 'build/libs/*.jar'
+            }
+        }
+        stage('Test') {
+            failFast true
+            parallel {
+                stage('Unit') {
+                    steps { sh './gradlew test' }
+                    post { always { junit 'build/test-results/**/*.xml' } }
+                }
+                stage('Lint') { steps { sh './gradlew spotlessCheck' } }
+                stage('Integration') {
+                    agent { docker { image 'postgres:16'; args '-p 5432:5432' } }
+                    steps { sh 'make integration' }
+                }
+            }
+        }
+        stage('Matrix') {
+            matrix {
+                axes {
+                    axis { name 'PLATFORM'; values 'linux', 'windows', 'mac' }
+                    axis { name 'JDK'; values '17', '21' }
+                }
+                excludes {
+                    exclude {
+                        axis { name 'PLATFORM'; values 'mac' }
+                        axis { name 'JDK'; notValues '21' }
+                    }
+                }
+                stages {
+                    stage('Compile') { steps { echo "Compile ${PLATFORM} ${JDK}" } }
+                }
+            }
+        }
+        stage('Approve') {
+            when {
+                beforeInput true
+                allOf {
+                    branch 'main'
+                    not { changeRequest() }
+                    expression { return params.DEPLOY }
+                }
+            }
+            input {
+                message 'Deploy to production?'
+                ok 'Deploy'
+                submitter 'release-managers'
+                parameters { string(name: 'APPROVER', defaultValue: 'ops') }
+            }
+            steps { echo "Approved by ${APPROVER}" }
+        }
+        stage('Deploy') {
+            when {
+                anyOf {
+                    branch 'main'
+                    tag pattern: 'v\\d+\\.\\d+', comparator: 'REGEXP'
+                    environment name: 'FORCE_DEPLOY', value: 'true'
+                }
+            }
+            steps {
+                script {
+                    def tag = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+                    docker.build(IMAGE, "--build-arg GIT_SHA=${tag} .").push()
+                    if (params.TARGET == 'production') {
+                        input message: 'Really?'
+                    } else if (tag.startsWith('x')) {
+                        error 'bad tag'
+                    } else {
+                        unstable('staging only')
+                    }
+                    for (region in config.regions) {
+                        echo "Deploying to ${region}"
+                    }
+                    def versions = parseVersions("1.0\n1.1\n")
+                    versions.each { v -> echo "v=${v}" }
+                    try {
+                        retry(config.retries) { sh 'deploy.sh' }
+                    } catch (err) {
+                        echo "Failed: ${err.message}"
+                        currentBuild.result = 'FAILURE'
+                    } finally {
+                        cleanWs()
+                    }
+                }
+                lock(resource: 'deploy-lock', inversePrecedence: true) {
+                    milestone 1
+                    timeout(time: 5, unit: 'MINUTES') { sh 'deploy.sh' }
+                }
+                withCredentials([usernamePassword(credentialsId: 'registry-credentials', usernameVariable: 'U', passwordVariable: 'P')]) {
+                    sh 'echo "$U" >/dev/null'
+                }
+            }
+        }
+    }
+
+    post {
+        always { junit 'build/test-results/**/*.xml' }
+        success { notify('#builds', "Build ${env.BUILD_NUMBER} OK") }
+        failure { mail to: 'ops@example.com', subject: "Build ${env.BUILD_NUMBER} failed", body: 'See ${BUILD_URL}' }
+        unstable { echo 'unstable' }
+        changed { echo 'status changed' }
+        fixed { echo 'fixed' }
+        regression { echo 'regression' }
+        aborted { echo 'aborted' }
+        cleanup { deleteDir() }
+    }
+}
+
+// ── Scripted pipeline ──
+node('linux') {
+    stage('Scripted') {
+        checkout scm
+        def props = readJSON text: '{"a": 1}'
+        def json = JsonOutput.toJson([build: env.BUILD_NUMBER, ok: true, ratio: 0.75, nothing: null])
+        writeFile file: 'out.json', text: JsonOutput.prettyPrint(json)
+        def result = currentBuild.currentResult == 'SUCCESS' ? 'green' : 'red'
+        def n = 0x1F + 0b101 + 017 + 1_000 + 3.14 + 1e3 + 10L
+        def re = ~/^v\d+$/
+        assert n > 0 : 'n must be positive'
+        switch (result) {
+            case 'green': echo 'ok'; break
+            default: echo 'not ok'
+        }
+        parallel(
+            one: { echo 'one' },
+            two: { echo 'two' },
+            failFast: true
+        )
+        while (n-- > 1020) { continue }
+    }
+}
+
+// ── Remaining Pipeline steps and constructs ──
+class Helper implements Serializable {
+    def steps
+    String name
+    Helper(steps, String name) { this.steps = steps; this.name = name }
+    def run() { steps.echo "helper ${name}" }
+}
+
+def helper = new Helper(this, 'x')
+helper.run()
+
+node {
+    // Basic steps
+    stage('Steps A') {
+        sleep time: 5, unit: 'SECONDS'
+        sleep 1
+        pwd()
+        pwd tmp: true
+        isUnix()
+        fileExists 'pom.xml'
+        readFile file: 'a.txt', encoding: 'UTF-8'
+        readYaml text: 'a: 1'
+        readProperties file: 'x.properties'
+        writeYaml file: 'out.yaml', data: [a: 1]
+        touch file: 'marker'
+        unstash 'jars'
+        deleteDir()
+        tool name: 'jdk21', type: 'jdk'
+        build job: 'downstream', parameters: [string(name: 'V', value: '1')], wait: false, propagate: false
+        error 'abort'
+        warnError('step failed') { sh 'false' }
+        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') { sh 'false' }
+        publishHTML(target: [reportDir: 'report', reportFiles: 'index.html', reportName: 'Report'])
+        emailext subject: 'Done', body: 'ok', to: 'ops@example.com'
+        slackSend channel: '#builds', color: 'good', message: 'ok'
+        input id: 'Proceed', message: 'Proceed?', ok: 'Yes'
+        timeout(activity: true, time: 5) { sh 'wait.sh' }
+        retry(3) { sh 'flaky.sh' }
+        waitUntil { fileExists 'ready' }
+        ansiColor('xterm') { echo '\033[31mred\033[0m' }
+        withSonarQubeEnv('sonar') { sh 'scan' }
+        git url: 'https://example.com/repo.git', branch: 'main', credentialsId: 'git-creds'
+        checkout([$class: 'GitSCM', branches: [[name: '*/main']], userRemoteConfigs: [[url: 'https://example.com/repo.git']]])
+        properties([parameters([string(name: 'X', defaultValue: 'y')]), disableConcurrentBuilds()])
+        withCredentials([string(credentialsId: 'tok', variable: 'TOKEN'), file(credentialsId: 'f', variable: 'FILE'), sshUserPrivateKey(credentialsId: 'k', keyFileVariable: 'KEY')]) {
+            sh 'use "$TOKEN"'
+        }
+    }
+
+    // Groovy language forms in pipeline code
+    stage('Groovy') {
+        def list = [1, 2, 3]
+        def map = [a: 1, 'b': 2]
+        list.each { echo "item ${it}" }
+        list.eachWithIndex { v, i -> echo "${i}:${v}" }
+        map.each { k, v -> echo "${k}=${v}" }
+        def str = 'single'
+        def gstr = "gstring ${str} and $str and ${map.a}"
+        def multi = """
+            multi ${str}
+        """
+        def slashy = /slashy ${str} \d+/
+        def sh1 = sh(script: 'echo hi', returnStdout: true).trim()
+        def status = sh(script: 'false', returnStatus: true)
+        if (status != 0 && !sh1) { echo 'failed' } else if (status == 0 || sh1) { echo 'ok' }
+        def ternary = status ? 'bad' : 'good'
+        def elvis = env.MISSING ?: 'unset'
+        def safe = env.NAME?.toUpperCase()
+        def casted = (String) 1
+        def asInt = '5' as Integer
+        def isStr = str instanceof String
+        def inRange = 3 in 1..5
+        def spread = list*.plus(1)
+        def re = str =~ /(\w+)/
+        def parsed = readJSON(text: '{"x": [1, 2, {"y": null}]}')
+        def closure = { String a, int b = 2 -> "${a}${b}" }
+        echo closure('x')
+        env.MY_VAR = 'value'
+        env.PATH = "${env.PATH}:/opt/bin"
+        currentBuild.displayName = "#${env.BUILD_NUMBER} ${params.VERSION}"
+        currentBuild.description = 'Build description'
+        echo "Result: ${currentBuild.result ?: 'SUCCESS'} Duration: ${currentBuild.durationString}"
+        echo "${env.JOB_NAME} ${env.BUILD_URL} ${env.WORKSPACE} ${env.GIT_COMMIT} ${env.CHANGE_ID} ${env.TAG_NAME}"
+        echo "${scm.userRemoteConfigs[0].url} ${params.TARGET} ${BUILD_TAG}"
+    }
+}
+
+// ── Shared library step definition (vars/*.groovy style) ──
+def call(Map args = [:], Closure body = null) {
+    def cfg = [name: 'default'] + args
+    if (body) {
+        body.resolveStrategy = Closure.DELEGATE_FIRST
+        body.delegate = cfg
+        body()
+    }
+    return cfg
+}

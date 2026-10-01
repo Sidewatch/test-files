@@ -1,0 +1,370 @@
+// ── Comments ──
+// Sass (indented syntax) showcase for a warehouse dashboard.
+// Silent comment: removed from the CSS output. TODO: theme tokens. FIXME: legacy ie rules.
+/* Loud comment: kept in the CSS output */
+/*! Preserved loud comment, even in compressed mode */
+/* Multi-line loud comment
+   continues on an indented line, with #{interpolation} too */
+//
+  A multi-line silent comment:
+  everything indented below belongs to it
+
+/// Doc comment (SassDoc).
+/// @param {Number} $r [4px] - the radius
+/// @return {Number}
+/// @example scss
+///   .a { border-radius: radius(4px) }
+/// @access public
+
+// ── Module system ──
+@use "sass:color"
+@use "sass:math"
+@use "sass:map"
+@use "sass:list"
+@use "sass:string"
+@use "sass:meta"
+@use "sass:selector"
+@use "tokens" as t
+@use "library" with ($primary: #336699, $radius: 4px)
+@use "mixins" as *
+@forward "src/list" hide list-reset, $horizontal-list-gap
+@forward "src/theme" show theme, $palette
+@forward "buttons" as btn-*
+@import "legacy", "other"
+@import url("https://example.com/fonts.css")
+
+// ── Variables ──
+$primary: #336699
+$accent: #ff6600 !default
+$radius: 4px
+$spacing: 0.75rem
+$font-stack: "Inter", system-ui, -apple-system, sans-serif
+$breakpoints: (small: 480px, medium: 768px, large: 1200px)
+$sizes: (small: 0.875rem, base: 1rem, large: 1.25rem)
+$list-comma: 1px, 2px, 3px
+$list-space: 1px 2px 3px
+$list-bracket: [first second third]
+$nested-map: (colors: (primary: $primary, accent: $accent), spacing: (sm: 4px, md: 8px))
+$flag: true
+$nothing: null
+$string-unquoted: sans-serif
+$string-single: 'single'
+$global-var: 5 !global
+$important-ish: 10px !important
+$calc: calc(100% - #{$spacing})
+$hex-short: #fa0
+$hex-alpha: #ff660080
+$rgb: rgb(255 102 0 / 50%)
+$hsl: hsl(220deg 30% 20%)
+$url: url("/images/logo.png")
+$unicode-range: U+0025-00FF
+$ratio: math.div(16, 9)
+$numbers: 42 -7 3.14 1e3 1.5E-3 .5 100% 12px 1.5em 2rem 50vh 45deg 250ms 2s 96dpi
+$custom-prop-value: --brand
+
+:root
+  --brand: #{$primary}
+  --spacing: #{$spacing}
+  --empty:
+  --json: { "a": 1 }
+
+// ── Functions ──
+@function radius($r: $radius)
+  @return $r * 1
+
+@function luminance($color)
+  $rgb: (red: color.channel($color, "red"), green: color.channel($color, "green"))
+  @each $name, $value in $rgb
+    $value: math.div($value, 255)
+    $rgb: map.merge($rgb, ($name: $value))
+  @return 0.2126 * map.get($rgb, red) + 0.7152 * map.get($rgb, green)
+
+@function sum($numbers...)
+  $total: 0
+  @each $n in $numbers
+    $total: $total + $n
+  @return $total
+
+@function breakpoint($name)
+  @if not map.has-key($breakpoints, $name)
+    @error "Unknown breakpoint `#{$name}`."
+  @return map.get($breakpoints, $name)
+
+@function deprecated-fn()
+  @warn "deprecated-fn is deprecated"
+  @debug "debugging: #{$primary}"
+  @return null
+
+// ── Mixins ──
+=rounded($r: $radius)
+  border-radius: $r
+
+@mixin theme($theme: DarkGray, $args...)
+  background: $theme
+  @content
+
+=respond-to($name)
+  @media (min-width: breakpoint($name))
+    @content
+
+=with-content-args
+  @content(1px, $color: red)
+
+@mixin keyframes($name)
+  @keyframes #{$name}
+    @content
+
+// ── Selectors and nesting ──
+*, *::before, *::after
+  box-sizing: border-box
+
+html:focus-within
+  scroll-behavior: smooth
+
+.card
+  +rounded
+  @include theme(#fff)
+    color: black
+  color: $primary
+  background: color.adjust($primary, $lightness: 40%)
+  padding: $spacing
+  margin: { top: 1px; bottom: 2px }
+  font:
+    family: $font-stack
+    size: 1rem
+    weight: 700
+  border: 1px solid rgba($primary, 0.5)
+  transition: border-color 250ms cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s ease-in
+  width: calc(100% - #{$spacing * 2})
+  height: math.div(100%, 3)
+  line-height: 1.5
+  content: "tab\9 quote\" unicode\1F4E6"
+  +respond-to(medium)
+    padding: $spacing * 2
+
+  &:hover
+    border-color: color.adjust($primary, $lightness: -10%)
+
+  &.is-active
+    transform: translateY(-2px) scale(1.02)
+
+  &__title
+    font-size: 1.25rem   // the heading
+
+  &--wide
+    width: 100%
+
+  & + &
+    margin-top: 8px
+
+  > .child
+    color: red
+
+  + .sibling
+    color: green
+
+  ~ .general
+    color: blue
+
+  .dark &
+    background: #1b1f23
+
+  #{&}-suffix
+    color: purple
+
+  @at-root .detached
+    color: orange
+
+  @at-root
+    .also-detached
+      color: pink
+
+  &:not(.disabled):is(.a, .b):where(.c)
+    outline: none
+
+  &[data-state="open"], &[aria-expanded=true]
+    display: block
+
+  input[type="text" i]::placeholder
+    color: gray
+
+// ── Placeholders and extend ──
+%message-shared
+  border: 1px solid #ccc
+  padding: 10px
+  color: #333
+
+.message
+  @extend %message-shared
+
+.success
+  @extend .message
+  border-color: green
+
+.warning
+  @extend .message !optional
+  border-color: yellow
+
+// ── Control directives ──
+@if $flag
+  .on
+    display: block
+@else if $nothing == null
+  .maybe
+    display: none
+@else
+  .off
+    display: none
+
+@if not $flag and $primary != red or 1 < 2
+  .logic
+    color: red
+
+@each $name, $size in $sizes
+  .text-#{$name}
+    font-size: $size
+
+@each $key, $value in map.get($nested-map, colors)
+  .bg-#{$key}
+    background: $value
+
+@each $item in a, b, c
+  .item-#{$item}
+    order: list.index((a, b, c), $item)
+
+@each $a, $b in (one: 1, two: 2)
+  .pair-#{$a}
+    order: $b
+
+@for $i from 1 through 3
+  .col-#{$i}
+    width: math.div(100%, 12) * $i
+
+@for $i from 1 to 3
+  .row-#{$i}
+    height: 10px * $i
+
+$n: 0
+@while $n < 3
+  .w-#{$n}
+    width: 10px * $n
+  $n: $n + 1
+
+// ── Operators and math ──
+.math
+  a: 1 + 2
+  b: 3 - 1
+  c: 2 * 3
+  d: math.div(6, 3)
+  e: 7 % 3
+  f: 1 == 1
+  g: 1 != 2
+  h: 1 < 2
+  i: 1 >= 2
+  j: "a" + "b"
+  k: -$spacing
+  l: +$spacing
+  m: 10px / 2
+  n: (10px / 2)
+  o: math.pow(2, 8)
+  p: math.round(1.5)
+  q: percentage(0.5)
+  r: if($flag, 1, 2)
+  s: unquote("raw")
+  t: selector.append("a", ".b")
+  u: meta.type-of($flag)
+  v: string.to-upper-case("x")
+  w: list.nth($list-comma, 2)
+  x: map.get($breakpoints, medium)
+  y: color.mix($primary, white, 25%)
+  z: color.scale($primary, $lightness: 20%)
+
+// ── Interpolation ──
+$prop: margin
+$side: left
+.interp
+  #{$prop}-#{$side}: 10px
+  width: calc(100% - #{$spacing})
+  content: "#{$prop} is #{$side}"
+  background: url("#{$url-base}/img.png")
+  font: #{$font-size}/#{$line-height} $font-stack
+
+#{$selector-var}
+  color: red
+
+@media screen and (min-width: #{map.get($breakpoints, medium)})
+  .responsive
+    display: flex
+
+// ── At-rules ──
+@charset "UTF-8"
+
+@font-face
+  font-family: "Inventory Sans"
+  src: url("inv.woff2") format("woff2"), url("inv.woff") format("woff")
+  font-weight: 100 900
+  font-display: swap
+
++keyframes(pulse)
+  from
+    opacity: 1
+  50%
+    opacity: 0.4
+  to
+    opacity: 1
+
+@media (max-width: 600px)
+  .card
+    padding: $spacing * 0.5
+
+@media screen and (min-width: 640px), print and (orientation: portrait)
+  .wide
+    display: block
+
+@media (400px <= width <= 700px)
+  .range
+    color: green
+
+@supports (display: grid) and (not (display: inline-grid))
+  .grid
+    display: grid
+
+@container sidebar (min-inline-size: 30rem)
+  .widget
+    display: flex
+
+@layer base, components
+@layer base
+  body
+    margin: 0
+
+@page :first
+  margin: 2cm
+
+@namespace svg url(http://www.w3.org/2000/svg)
+
+@property --angle
+  syntax: "<angle>"
+  inherits: false
+  initial-value: 0deg
+
+@counter-style thumbs
+  system: cyclic
+  symbols: "👍"
+  suffix: " "
+
+@scope (.shelf) to (.bin)
+  :scope > span
+    color: gray
+
+@starting-style
+  .toast
+    opacity: 0
+
+// ── Legacy and hacks ──
+.legacy
+  *zoom: 1
+  _height: 1px
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#80000000', endColorstr='#80000000')
+  display: none !important
+  color: red !IMPORTANT

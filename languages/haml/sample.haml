@@ -1,0 +1,326 @@
+-# ── Comments ──
+-# Haml silent comment: the whole block below is removed from output.
+-# @orders and current_user come from the controller.
+-#
+  Nested content under a silent comment
+  is also dropped entirely.
+/ HTML comment, rendered as <!-- -->
+/
+  Block HTML comment
+  with multiple lines
+/[if IE]
+  %p You are using Internet Explorer.
+
+-# ── Doctype and root ──
+!!! 5
+-# !!! XML, !!! Strict, !!! Frameset also exist
+!!! XML
+%html{lang: "en"}
+  %head
+    %meta{charset: "utf-8"}
+    %meta{name: "viewport", content: "width=device-width, initial-scale=1"}
+    %title= "#{current_user.name} — Orders"
+    = stylesheet_link_tag "application", media: "all"
+    = csrf_meta_tags
+    :css
+      .hero { color: #fff; }
+      body { margin: 0; }
+  %body
+    -# ── Elements, classes, ids, shorthand ──
+    #top.container.wide
+      %h1.title= t(".title", name: current_user.name)
+      %p.muted.small#intro Plain inline text with an id and classes
+      .box Div shorthand with class
+      #main Div shorthand with id
+      %span.a.b.c.d chained classes
+      %br/
+      %img{src: "/logo.png", alt: "Logo"}/
+      %input{type: "text", name: "q", disabled: true, checked: false}/
+      %hr
+
+    -# ── Attributes: hash, html style, data, boolean, dynamic ──
+    %a{href: "/orders", class: "btn", id: "go", "data-turbo": "false"} Orders
+    %a(href="/home" title='Home page') HTML-style attributes
+    %a(href=url_var class=css_var) Dynamic HTML-style attributes
+    %div{data: {id: 42, role: "main", toggle: "x"}, aria: {label: "Main"}} Nested data hash
+    %div{class: ["a", "b"], id: [:x, :y]} Array class and id
+    %p{:class => "old", :id => "hash-rocket"} Old-style hash
+    %p{**attrs} Splatted attributes
+    %p[order] Object reference attribute
+    %p[order, :summary] Object reference with prefix
+
+    -# ── Whitespace removal and preserving ──
+    %p> Whitespace removed around
+    %p< Whitespace removed inside
+    %pre~ Preserved whitespace
+    %textarea~ preserved text
+
+    -# ── Ruby: output, escaping, interpolation ──
+    = link_to order.number, order_path(order)
+    != raw_html_here
+    &= escaped_always
+    ~ preserved_output
+    = "Interpolated #{order.number} and \#{escaped}"
+    %p Inline interpolation: #{order.total} and #{h(order.note)}
+    %p= order.total
+    %p!= "<b>unescaped</b>"
+    %p&= "<i>escaped</i>"
+    = succeed "." do
+      %a{href: "/"} Home
+    = precede "(" do
+      %b note
+    = surround "[", "]" do
+      %em tag
+
+    -# ── Control flow ──
+    - if @orders.empty?
+      %p.muted= t(".empty")
+    - elsif @orders.size > 100
+      %p Lots of orders
+    - else
+      %table.orders
+        - @orders.each do |order|
+          %tr{class: order.paid? ? "paid" : "open"}
+            %td= link_to order.number, order_path(order)
+            %td= number_to_currency(order.total)
+            %td= time_ago_in_words(order.created_at) + " ago"
+      = paginate @orders
+    - unless current_user.admin?
+      %p Not an admin
+    - case order.status
+    - when :paid
+      %span Paid
+    - when :open
+      %span Open
+    - else
+      %span Unknown
+    - while false
+      %p never
+    - for i in 1..3
+      %li= i
+    - begin
+      - risky
+    - rescue => e
+      %p= e.message
+    - items = %w[a b c]
+    - total = 0
+    - order.lines.each_with_index do |line, index|
+      - total += line.qty
+      %li{class: (index.even? ? "even" : "odd")}= line.sku
+
+    -# ── Multiline: pipe and comma continuation ──
+    %p= link_to "A long link text", |
+      order_path(order),           |
+      class: "long"                |
+    = render "summary",
+      count: @orders.size,
+      total: total
+    %div{class: "a",
+         id: "b"} Attribute hash across lines
+
+    -# ── Filters ──
+    :plain
+      Plain text, not parsed: %p stays literal #{interpolated}
+    :escaped
+      <b>escaped & shown</b>
+    :preserve
+      keeps
+        indentation
+    :cdata
+      raw cdata content
+    :ruby
+      value = 1 + 2
+      puts value
+    :markdown
+      # Heading
+      * item one
+      * item two
+    :sass
+      .box
+        color: red
+    :scss
+      .box { color: blue; }
+    :coffee
+      alert "hi"
+    :javascript
+      console.log("#{@orders.size} orders");
+    %footer
+      = render "summary", count: @orders.size
+      \= escaped equals at line start
+      \- escaped dash at line start
+      %p Non-ASCII: café 日本語 ☕
+
+    -# ── Doctype variants (each would normally start its own document) ──
+    -# !!! 1.1
+    -# !!! Strict
+    -# !!! Frameset
+    -# !!! Basic
+    -# !!! Mobile
+    -# !!! RDFa
+    -# !!! XML iso-8859-1
+
+    -# ── Self-closing, explicit and implicit ──
+    %br
+    %meta{name: "x"}
+    %img{src: "a.png"}/
+    %custom-tag/
+    .empty-div/
+    #empty-id/
+    %input{type: "checkbox", checked: true}/
+
+    -# ── XML namespace and html-style attributes with expressions ──
+    %html(xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en")
+    %p(class="a #{interpolated}" data-x='y')
+    %p(foo=bar baz="qux" @attr=1)
+    %p{"data-a" => 1, :b => 2, c: 3, "d-e": 4, f: nil, g: false, h: true}
+    %p{class: [:a, "b", nil, false], id: [:x, "y"]}
+    %a{href: url_for(controller: "orders", action: "show", id: 1)} Link with a call
+    %p{style: "color: red; margin: 0"}= "styled"
+    %p{data: {"nested-key": {deep: 1}}} Deeply nested data
+
+    -# ── Interpolation prefixes: ! & = ~ ──
+    & Escaped text with #{interpolation} <b>shown</b>
+    ! Unescaped text with #{interpolation} <b>bold</b>
+    \= literal equals
+    \- literal dash
+    \# literal hash
+    \% literal percent
+    \. literal dot
+    \& literal ampersand
+    \! literal bang
+    \\ literal backslash
+    Plain text with \#{escaped interpolation} and #{real_interpolation}
+    %p Escaped: \\#{not_interpolated}
+
+    -# ── Multiline output and attribute continuation ──
+    = link_to "Long link",
+      order_path(order),
+      class: "link",
+      data: { turbo: false }
+    %p= "first part " |
+        "second part " |
+        "third part"    |
+    %p{class: "a",
+       id: "b",
+       data: { x: 1 }}= "multiline attribute hash"
+
+    -# ── Blocks, yield and helpers ──
+    = yield
+    = yield :sidebar
+    - content_for :title do
+      Page title
+    = content_for :sidebar do
+      %p Sidebar
+    = form_for @order do |f|
+      = f.label :number
+      = f.text_field :number, class: "field"
+      = f.submit "Save"
+    = render partial: "row", collection: @orders, as: :order
+    = render layout: "box" do
+      %p Inside the box
+    - haml_concat "raw concat"
+    - haml_tag :div, "tag helper", class: "x"
+    = capture_haml do
+      %p captured
+    = escape_once("&lt;")
+    = html_escape("<")
+    = find_and_preserve("<pre>x</pre>")
+    = preserve("a\nb")
+    = list_of([1, 2]) do |i|
+      = i
+
+    -# ── Ruby control flow ──
+    - 3.times do |i|
+      %li= i
+    - items.each_with_index do |item, i|
+      %li{class: (i.even? ? "even" : "odd")}= item
+    - x = 1 if true
+    - while x < 3
+      - x += 1
+    - until x > 5
+      - x += 1
+    - begin
+      - raise "boom"
+    - rescue StandardError => e
+      %p= e.message
+    - ensure
+      %p cleanup
+    - case x
+    - when 1
+      %p one
+    - when 2, 3
+      %p few
+    - else
+      %p many
+    - unless x.zero?
+      %p non-zero
+    - else
+      %p zero
+    - if x > 1 && !x.nil? || x.positive?
+      %p ternary: #{x > 1 ? "big" : "small"}
+    - elsif x.negative?
+      %p neg
+    - else
+      %p other
+
+    -# ── More filters ──
+    :erb
+      <%= 1 + 2 %> inside ERB
+    :css
+      .box { color: red; }
+    :less
+      @c: red;
+      .box { color: @c; }
+    :stylus
+      .box
+        color red
+    :scss
+      $c: blue;
+      .box { color: $c; }
+    :sass
+      $c: green
+      .box
+        color: $c
+    :coffeescript
+      square = (x) -> x * x
+    :javascript
+      var x = #{@orders.size};
+    :ruby
+      a = 1
+      b = a + 1
+    :markdown
+      ## Heading
+      Some *emphasis* and `code`.
+    :textile
+      h1. Textile heading
+    :plain
+      Plain filter content
+    :escaped
+      <b>escaped</b>
+    :cdata
+      cdata content
+    :preserve
+      preserved
+          whitespace
+
+    -# ── Whitespace and indentation edge cases ──
+    %p<
+      %b inner
+    %p>
+      %b outer
+    %p><
+      %b both
+    %pre
+      :preserve
+        keep
+          this
+    %div
+      %span One
+      %span Two
+    %p
+      Text on the following line
+      continues here
+    %p= "ruby on same line"
+    %p
+      = "ruby on following line"
+    %p Non-ASCII: café 日本語 ☕ &mdash; &#169;

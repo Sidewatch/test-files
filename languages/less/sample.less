@@ -1,0 +1,301 @@
+// Less: a warehouse UI stylesheet exercising the whole language.
+/* Block comment (kept in output) */
+/** Doc-style block comment */
+// TODO: split into partials. FIXME: legacy IE filter.
+
+// ── Imports ──
+@import "variables";
+@import (reference) "mixins.less";
+@import (css, optional) url("https://fonts.example.com/inter.css");
+@import (less, multiple) "components/*.less";
+@plugin "plugins/functions";
+
+// ── Variables ──
+@brand: #2d6cdf;
+@brand-dark: darken(@brand, 15%);
+@accent: rgba(255, 128, 0, .85);
+@white: #fff;
+@black: #000000;
+@short-hex: #abc;
+@alpha-hex: #11223344;
+@font-stack: "Inter", "Helvetica Neue", Arial, sans-serif;
+@base-size: 16px;
+@line-height: 1.5;
+@gutter: (@base-size * 1.5);
+@radius: 4px;
+@ratio: 16 / 9;
+@percent: 50%;
+@time: 250ms;
+@angle: 45deg;
+@unit-mix: 1em + 2px;
+@big: 1.5e3;
+@negative: -12px;
+@important-val: 10px !important;
+@selector: ~".warehouse";
+@property: color;
+@prefix: "wh";
+@escaped: ~"calc(100% - @{gutter})";
+@list: 1px, 2px, 3px;
+@map: { primary: @brand; secondary: @accent; };
+@detached: { background: red; };
+@url-base: "https://example.com/assets";
+@breakpoints: { sm: 576px; md: 768px; lg: 992px; };
+
+// ── Mixins ──
+.border-radius(@r: @radius) {
+  -webkit-border-radius: @r;
+          border-radius: @r;
+}
+.box-shadow(@x: 0, @y: 1px, @blur: 3px, @color: rgba(0,0,0,.2)) {
+  box-shadow: @x @y @blur @color;
+}
+.clearfix() {
+  &::after { content: ""; display: table; clear: both; }
+}
+.mixin(@color; @padding: 2px; ...) { color: @color; padding: @padding; }
+.mixin(@a) when (lightness(@a) >= 50%) { background-color: black; }
+.mixin(@a) when (lightness(@a) < 50%) { background-color: white; }
+.guard(@n) when (isnumber(@n)) and (@n > 0), (@n = -1) { width: @n; }
+.guard(@n) when not (@n = 0) { height: @n; }
+.truth(@a) when (@a) { x: y; }
+.m() !important;
+.bordered(@width: 2px) { border: @width solid black; }
+#namespace {
+  .mixin() { color: blue; }
+  .nested() { #namespace > .mixin(); }
+}
+
+// ── Rulesets and nesting ──
+.warehouse {
+  font-family: @font-stack;
+  font-size: @base-size;
+  line-height: @line-height;
+  color: @black;
+  background: @white url("@{url-base}/bg.png") no-repeat center / cover;
+  width: ~"calc(100% - @{gutter})";
+  margin: -@gutter auto 0;
+  padding: (@gutter / 2) @gutter;
+  .border-radius();
+  .box-shadow(0, 2px, 6px, fade(@black, 20%));
+  .clearfix;
+  #namespace > .mixin();
+  #namespace.nested();
+  @media (min-width: @breakpoints[md]) and (max-width: 1200px) {
+    padding: @gutter * 2;
+  }
+  @media print { display: none; }
+  @supports (display: grid) { display: grid; }
+
+  &:hover, &:focus-visible { color: @brand-dark; }
+  &-item { display: flex; }
+  &.active { font-weight: bold; }
+  & + & { margin-top: 1rem; }
+  > .child { flex: 1 1 0%; }
+  ~ .sibling { opacity: .5; }
+  + .adjacent { opacity: .75; }
+  .parent & { color: red; }
+  &:not(.disabled):nth-child(2n+1)::before { content: "\201C"; }
+  &[data-state="open"] { height: auto; }
+  &[href^='https://'], &[href$=".pdf"], &[title*=sku i] { text-decoration: underline; }
+  @{property}: @brand;
+  @{prefix}-color: red;
+  .@{prefix}-bin { color: @accent; }
+  #@{prefix}-id { top: 0; }
+  background+: url(1.png);
+  background+_: url(2.png);
+  @detached();
+  @r: { color: red; };
+  @r();
+  color: @map[primary];
+  width: @breakpoints[@@name];
+}
+
+.extend-demo {
+  &:extend(.warehouse all);
+  .inline:extend(.warehouse-item) { top: 0; }
+}
+.warehouse-item:extend(.clearfix) {}
+
+// ── Functions and operations ──
+.functions {
+  a: percentage(0.5);
+  b: lighten(@brand, 10%);
+  c: mix(@brand, @white, 25%);
+  d: if((@mode = dark), @black, @white);
+  e: boolean(@a > 0);
+  f: unit(5, px);
+  g: ceil(2.4) + floor(2.6) + round(2.567, 2) + abs(-3) + sqrt(16) + pow(2, 3) + mod(11, 3) + min(1, 2) + max(1, 2);
+  h: e("ms:alwaysHasItsOwnSyntax.For.Stuff()");
+  i: %("%d/%d", 1, 2);
+  j: replace("Hello", "l", "L");
+  k: extract(@list, 2) length(@list);
+  l: range(4);
+  m: color("#aabbcc") ~`"js eval".toUpperCase()`;
+  n: data-uri("image/svg+xml;charset=UTF-8", "icon.svg");
+  o: svg-gradient(to right, red, green 30%, blue);
+  p: image-width("x.png");
+  q: @a + @b - @c * @d / @e;
+  r: (@a + @b) * 2;
+  s: ./2px;
+  t: calc(~"100% - @{gutter}");
+  u: hsl(210, 60%, 50%) hsla(210, 60%, 50%, .5) rgb(1 2 3 / 50%);
+  v: red green blue;
+  w: 10px+5 3em*2;
+  x: @@var-name;
+}
+
+// ── Each, plugins, maps, loops via recursion ──
+.loop(@i) when (@i > 0) {
+  .col-@{i} { width: (@i * 100% / 12); }
+  .loop(@i - 1);
+}
+.loop(12);
+each(@list, { .sel-@{value} { order: @index; } });
+@selectors: blue, green, red;
+each(@selectors, {
+  .sel-@{value} { a: b; }
+});
+
+// ── At-rules ──
+@font-face {
+  font-family: "Inter";
+  src: url("@{url-base}/inter.woff2") format("woff2"), url(inter.woff) format('woff');
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131;
+}
+@keyframes pulse {
+  0%   { opacity: 1; }
+  50%  { opacity: .4; }
+  100% { opacity: 1; }
+}
+@-webkit-keyframes pulse { from { opacity: 1; } to { opacity: .4; } }
+@page :first { margin: 1in; }
+@charset "UTF-8";
+@namespace svg url(http://www.w3.org/2000/svg);
+@layer base, components;
+@container (min-width: 400px) { .card { display: grid; } }
+
+.legacy { filter: ~"ms:alwaysHasItsOwnSyntax.For.Stuff()"; *zoom: 1; _height: 1px; color: #FFF\9; }
+.important { color: red !important; width: @w !important; }
+.unicode::before { content: "→ \2713 東京"; }
+
+// ── Rare constructs ──
+@import (inline) "raw.css";
+@import (optional, reference) "maybe";
+@import (css) url("https://example.com/a.css") screen and (min-width: 600px);
+@plugin (optional) "plugin-with-options";
+@var-list: ~"a, b", 'c', "d";
+@escaped-single: ~'single quoted escape';
+@js-eval: `"hello".toUpperCase() + '!'`;
+@js-escaped: ~`"red".toUpperCase()`;
+@color-ops: (#fff - #111) + (#222 * 2) / 2;
+@unit-math: (10px + 5) * 2 - 1em;
+@neg-var: -@gutter;
+@prop-ref: $color;
+@css-var-ref: var(--brand);
+@ruleset-var: { .inner { color: red; } };
+@detached-args: { margin: 0; };
+@url-interp: url("@{url-base}/img/@{name}.png");
+@sel-interp: ~".sel-@{prefix}";
+@@indirect: @brand;
+
+// mixin features
+.m-arguments(@a: 1, @b: 2, @c: 3) { box-shadow: @arguments; margin: @a @b; }
+.m-rest(@first, @rest...) { padding: @rest; first: @first; }
+.m-rest2(...) { all: @arguments; r: @rest; }
+.m-pattern(dark, @c) { color: darken(@c, 10%); }
+.m-pattern(light, @c) { color: lighten(@c, 10%); }
+.m-pattern(@_, @c) { color: @c; }
+.m-default() when (default()) { fallback: true; }
+.m-default() when (@a) { a: true; }
+.m-types(@v) when (iscolor(@v)) { type: color; }
+.m-types(@v) when (isnumber(@v)) { type: number; }
+.m-types(@v) when (isstring(@v)) { type: string; }
+.m-types(@v) when (iskeyword(@v)) { type: keyword; }
+.m-types(@v) when (isurl(@v)) { type: url; }
+.m-types(@v) when (ispixel(@v)) { type: px; }
+.m-types(@v) when (isem(@v)) { type: em; }
+.m-types(@v) when (ispercentage(@v)) { type: pct; }
+.m-types(@v) when (isunit(@v, rem)) { type: rem; }
+.m-types(@v) when (isruleset(@v)) { type: ruleset; }
+.m-types(@v) when (isdefined(@v)) { type: defined; }
+.m-cmp(@a; @b) when (@a > @b) and (@b >= 0), (@a =< 10) { x: y; }
+.m-cmp(@a; @b) when not (@a = @b) { n: n; }
+.m-semicolon(1, 2; 3) { s: @arguments; }
+.m-important { .m-arguments(1, 2) !important; }
+.m-call-forms {
+  .m-arguments;
+  .m-arguments();
+  .m-arguments(@c: 9);
+  .m-arguments(1; 2; 3);
+  .m-rest(1, 2, 3, 4);
+  .m-pattern(dark, #888);
+  #namespace.mixin();
+  #namespace > .mixin;
+  #namespace .mixin();
+  @r: { color: blue; };
+  @r();
+  .mixin-with-ruleset({ color: red; });
+  @media (min-width: 768px) { .m-default(); }
+}
+.mixin-with-ruleset(@rs) { @rs(); }
+.m-recursive(@n) when (@n > 0) { .item-@{n} { w: (@n * 10px); } .m-recursive(@n - 1); }
+.m-recursive(0) {}
+#ns when (@mode = dark) { .m() { c: d; } }
+.guarded-selector when (@enable = true) { display: block; }
+& when (@dark = true) { .root-guard { color: white; } }
+.selector-guard { & when (iscolor(@brand)) { color: @brand; } }
+
+// extend variants
+.ext-a { &:extend(.base); }
+.ext-b:extend(.base, .other all) {}
+.ext-c { &:extend(.a, .b); &:extend(.c all); }
+.ext-d { .nested:extend(.base) { x: y; } }
+.base:extend(.ext-a) { }
+@media print { .ext-e:extend(.base all) {} }
+
+// maps and lookups
+@config: { colors: { primary: red; secondary: blue; } sizes: { sm: 1px; lg: 2px; } };
+.lookups {
+  a: @config[colors][primary];
+  b: @config[@@key];
+  c: @config[$prop];
+  d: .mixin-returning()[@result];
+  e: #ns.m()[c];
+  f: if((iscolor(@brand)), @brand, black);
+  g: if(not (@a = 1), 1, 2);
+  h: boolean(@x > 1);
+  i: each(range(3), { .e-@{value} { index: @index; key: @key; } });
+}
+.mixin-returning() { @result: 42; }
+
+// css pass-through at-rules and syntax
+@property --accent { syntax: '<color>'; inherits: false; initial-value: #2d6cdf; }
+@scope (.card) to (.content) { img { border: 1px solid black; } }
+@starting-style { .fade { opacity: 0; } }
+@counter-style thumbs { system: cyclic; symbols: "👍"; suffix: " "; }
+@font-feature-values Font One { @styleset { nice-style: 12; } }
+@custom-media --narrow (max-width: 30em);
+@media (--narrow) and (prefers-color-scheme: dark), print and (orientation: landscape) { .m { x: y; } }
+@media (400px <= width <= 700px) { .range { x: y; } }
+@supports not (display: grid) and (selector(:has(a))) { .s { x: y; } }
+@document url-prefix(http://example.com/) { .d { x: y; } }
+@viewport { width: device-width; }
+@-ms-viewport { width: device-width; }
+@layer framework.base { .l { x: y; } }
+@container sidebar (min-width: 400px) { .c { x: y; } }
+@import url("theme.css") layer(theme) supports(display: grid) screen;
+:root { --brand: #2d6cdf; --empty:; --json: { "a": 1 }; --calc: calc(1px + 2px); --str: 'x'; }
+.css-vars { color: var(--brand, #000); width: calc(100% - var(--gutter, 10px) * 2); margin: min(1px, 2px) max(3px, 4vw) clamp(1rem, 2.5vw, 2rem); }
+.selectors {
+  &:is(.a, .b) > :where(.c) + .d ~ .e:has(> img):not(:first-child):nth-of-type(odd)::after { x: y; }
+  &::selection, &::placeholder, &::-webkit-scrollbar, &:-moz-focusring { x: y; }
+  a[target=_blank]:not([href^="http"]):hover, input[type="checkbox" s], [data-x|="en"], [data-y~='z'] { x: y; }
+  *, * + *, html > body, ns|tag, *|tag, |tag { x: y; }
+  .\31 0, .a\:b, .a\/b, #\#id, .é, .日本 { x: y; }
+}
+.numbers { a: 1e3px; b: -.5em; c: +.5; d: 1.5E-3; e: 10Q; f: 1x; g: 2dppx; h: 100vmax; i: 0.5turn; j: 1fr; k: 3s; l: 200ms; m: 1kHz; n: 1dpi; o: #FFF; p: #abcd; q: #AABBCCDD; r: U+0025-00FF, u+4??; }
+.values { a: "string with \" quote and \\ backslash"; b: 'single \' quote'; c: url(data:image/png;base64,iVBOR=); d: url( 'spaced.png' ); e: attr(data-x); f: counter(c) " " counters(c, "."); g: "\201C" "\2014"; h: !important; i: 1px/2px; j: a , b , c; k: rgb(0 0 0 / .5); l: color-mix(in srgb, red 50%, blue); m: linear-gradient(to right, red 0%, blue 100%); n: translate(-50%, -50%) rotate(45deg); o: cubic-bezier(.1, .7, 1, .1); p: steps(4, jump-end); q: env(safe-area-inset-top); r: image-set("a.png" 1x, "b.png" 2x); }
+.hacks { *display: inline; _zoom: 1; color: red\9; color: red !ie; filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#80000000', endColorstr='#80000000'); -ms-filter: "alpha(opacity=50)"; }
+// line comment at end of file without trailing newline issues
+/* final block comment */

@@ -1,0 +1,394 @@
+---
+title: Warehouse diagrams
+config:
+  theme: forest
+  flowchart:
+    curve: basis
+---
+%%{init: {"theme": "neutral", "securityLevel": "loose"}}%%
+%% Mermaid showcase: one diagram per family. Comments start with two percent signs.
+
+flowchart TB
+    direction LR
+    A[Receive goods] --> B{Inspect?}
+    B -->|pass| C(Shelve)
+    B -- fail --> D([Quarantine])
+    C ==> E[(Stock DB)]
+    D -.-> F((Return))
+    E --- G>Flag]
+    G --o H{{Hexagon}}
+    H --x I[/Parallelogram/]
+    I <--> J[\Alt parallelogram\]
+    J --> K[/Trapezoid\]
+    K --> L[\Inverse trapezoid/]
+    L --> M[["Subroutine"]]
+    M --> N@{ shape: cloud, label: "Cloud" }
+    subgraph Dock["Loading dock"]
+        direction TB
+        P1 --> P2
+    end
+    A --> Dock
+    classDef hot fill:#f96,stroke:#333,stroke-width:2px,color:#000
+    class A,B hot
+    style C fill:#bbf,stroke:#33f
+    linkStyle 0 stroke:#ff3,stroke-width:4px
+    click A "https://example.com/receive" "Open receiving" _blank
+    click B callback "Tooltip"
+
+sequenceDiagram
+    autonumber
+    participant W as Warehouse
+    actor U as Picker
+    participant API
+    box rgb(200,220,255) Backend
+        participant DB
+    end
+    U->>W: Request pick list
+    activate W
+    W-->>U: List ready
+    W->>+API: POST /orders
+    API-)DB: Async write
+    API-xW: Rejected
+    API--)W: Notified
+    deactivate W
+    Note over U,W: Both parties agree
+    Note right of API: Retries 3 times
+    alt in stock
+        W->>U: Ship
+    else backordered
+        W->>U: Delay
+    end
+    opt gift wrap
+        U->>W: Wrap it
+    end
+    loop every minute
+        API->>DB: Heartbeat
+    end
+    par to north
+        W->>API: sync
+    and to south
+        W->>API: sync
+    end
+    critical connect
+        API->>DB: open
+    option timeout
+        API->>W: fail
+    end
+    break when full
+        W->>U: stop
+    end
+    rect rgb(240, 240, 255)
+        U->>W: highlighted
+    end
+    create participant Label
+    W->>Label: print
+    destroy Label
+    Label-->>W: done
+
+classDiagram
+    direction RL
+    class Item {
+        <<abstract>>
+        +String sku
+        -int qty
+        #double price
+        ~List~string~ tags
+        +restock(int amount) bool
+        +price() double$
+        +audit()* void
+    }
+    class Pallet~T~ {
+        +List~T~ items
+    }
+    <<interface>> Shippable
+    Item <|-- Widget : inherits
+    Item *-- Pallet : composition
+    Item o-- Rack : aggregation
+    Item --> Shippable : association
+    Item ..> Log : dependency
+    Item ..|> Shippable : realization
+    Item "1" --> "0..*" Tag : has
+    note for Item "Root of all stock"
+    link Item "https://example.com" "Docs"
+    callback Item "onClick" "Tip"
+
+stateDiagram-v2
+    [*] --> Pending
+    Pending --> Paid : payment ok
+    Pending --> Cancelled : timeout / user
+    Paid --> Shipped : picked & packed
+    state Shipped {
+        [*] --> InTransit
+        InTransit --> Delivered
+        --
+        [*] --> Tracking
+    }
+    state fork_state <<fork>>
+    state join_state <<join>>
+    state choice_state <<choice>>
+    Shipped --> [*]
+    Cancelled --> [*]
+    note right of Paid
+        A paid order can still be
+        cancelled within 1 hour.
+    end note
+    note left of Pending : Waiting for payment
+    classDef bad fill:#f00,color:white
+    class Cancelled bad
+
+erDiagram
+    CUSTOMER ||--o{ ORDER : places
+    ORDER ||--|{ LINE_ITEM : contains
+    PRODUCT }o--o{ CATEGORY : "belongs to"
+    PRODUCT ||..o| SUPPLIER : "sourced from"
+    CUSTOMER {
+        string name PK "Full name"
+        string email UK
+        int age
+    }
+    LINE_ITEM {
+        int qty
+        string sku FK
+    }
+
+gantt
+    title Restock plan
+    dateFormat YYYY-MM-DD
+    axisFormat %b %d
+    excludes weekends
+    section Receiving
+    Order placed       :done,    a1, 2025-01-06, 3d
+    Truck arrives      :active,  a2, after a1, 2d
+    section Shelving
+    Put away           :crit,    b1, after a2, 4d
+    Count              :         b2, 2025-01-20, 1w
+    Milestone          :milestone, m1, 2025-01-27, 0d
+
+pie showData
+    title Stock by warehouse
+    "North" : 42.5
+    "South" : 30
+    "East" : 27.5
+
+journey
+    title Picker's day
+    section Morning
+      Scan badge: 5: Picker
+      Get list: 3: Picker, Lead
+    section Afternoon
+      Pack: 2: Picker
+
+gitGraph
+    commit id: "init"
+    branch feature
+    checkout feature
+    commit tag: "v0.1" type: HIGHLIGHT
+    checkout main
+    merge feature
+    cherry-pick id: "init"
+
+mindmap
+  root((Inventory))
+    Receiving
+      ::icon(fa fa-truck)
+      Inspect
+    Shipping
+      Pack
+
+timeline
+    title Milestones
+    2024 : Prototype : Pilot
+    2025 : Launch
+
+quadrantChart
+    title Reach
+    x-axis Low --> High
+    y-axis Slow --> Fast
+    quadrant-1 Expand
+    quadrant-2 Promote
+    Widget: [0.3, 0.6]
+
+xychart-beta
+    title "Sales"
+    x-axis [jan, feb, mar]
+    y-axis "Units" 0 --> 100
+    bar [10, 40, 80]
+    line [15, 35, 70]
+
+requirementDiagram
+    requirement stock_req {
+        id: 1
+        text: keep stock above reorder point
+        risk: high
+        verifymethod: test
+    }
+    element monitor {
+        type: service
+    }
+    monitor - satisfies -> stock_req
+
+block-beta
+    columns 3
+    a["Receive"] b:2 c
+    d space e
+
+sankey-beta
+Receiving,Shelf,50
+Shelf,Shipping,40
+
+packet-beta
+    0-15: "Source Port"
+    16-31: "Destination Port"
+
+C4Context
+    title System context
+    Person(picker, "Picker", "Uses scanners")
+    System(wms, "WMS", "Tracks stock")
+    Rel(picker, wms, "Uses", "HTTPS")
+
+architecture-beta
+    group api(cloud)[API]
+    service db(database)[Database] in api
+    service server(server)[Server] in api
+    junction j
+    db:L -- R:server
+    server:T --> B:j
+
+kanban
+  todo[Todo]
+    task1[Count stock]@{ assigned: 'picker', ticket: 'INV-1', priority: 'High' }
+  doing[In progress]
+    task2[Shelve]
+
+radar-beta
+    title Skills
+    axis a["Speed"], b["Accuracy"], c["Care"]
+    curve c1["Picker"]{4, 3, 5}
+    max 5
+    min 0
+    graticule polygon
+
+treemap-beta
+"Warehouse"
+    "North": 40
+    "South": 25
+
+zenuml
+    Picker->Warehouse.pick(item) {
+      return ok
+    }
+
+flowchart LR
+    %% edge ids, animations, markdown strings, and styling
+    A["`**Markdown** string with _italics_`"] e1@--> B(("Circle"))
+    e1@{ animate: true }
+    B --- |text| C
+    C -- text --- D
+    D === E
+    E -.->|dotted| F
+    F ~~~ G
+    G & H --> I & J
+    subgraph one [One]
+    X --> Y
+    end
+    one --> one2
+    classDef default fill:#fff,stroke:#000,stroke-dasharray: 5 5
+    class X,Y default
+    X:::hot --> Y:::cold
+    linkStyle default stroke:#999
+    linkStyle 0,1 color:red
+    A@{ icon: "fa:user", form: "square", label: "User", pos: "b", h: 48 }
+
+sequenceDiagram
+    participant A@{ "type" : "boundary" }
+    A->>B: line with <br/> and #35; entities #9829;
+    link A: Dashboard @ https://example.com/dash
+    links A: {"Wiki": "https://example.com/wiki"}
+    A-->>+B: activate
+    B-->>-A: deactivate
+    Note over A,B: multi
+    autonumber off
+
+stateDiagram
+    direction TB
+    [*] --> A
+    A --> B: event [guard] / action
+    state "Described" as s1
+    s1 --> [*]
+    state if_state <<choice>>
+    B --> if_state
+    if_state --> A: if n < 0
+    if_state --> s1: if n >= 0
+    A --> B:::someclass
+    classDef someclass fill:#f00
+
+classDiagram-v2
+    class Animal:::cssClass
+    Animal : +int age
+    Animal : +isMammal() bool
+    class Shape~T~
+    class Color {
+        <<enumeration>>
+        RED
+        GREEN
+    }
+    Animal <|-- Duck
+    Animal <-- Fish
+    Animal -- Zebra
+    Animal .. Cat
+    namespace Zoo {
+        class Keeper
+    }
+    style Animal fill:#f9f
+    cssClass "Animal" someclass
+
+erDiagram
+    direction LR
+    A ||--|| B : one-to-one
+    A }|..|{ C : "many to many"
+    A |o--o| D : zero-or-one
+    E {
+        int id PK, FK "comment here"
+        varchar(50) name
+    }
+
+gantt
+    dateFormat X
+    tickInterval 1week
+    weekday monday
+    todayMarker stroke-width:5px,stroke:#0f0,opacity:0.5
+    section Alpha
+    Task :vert, v1, 17:30, 2m
+    Done :done, des1, 2025-01-01, 2025-01-05
+    After :after des1 des2, 5d
+
+pie
+    "A" : 1
+    "B" : 2
+
+mindmap
+  root((Root))
+    Branch[square]
+    Branch2(rounded)
+    ))bang((
+    )cloud(
+    {{hexagon}}
+    :::someclass fa fa-book
+
+timeline
+    section Early
+    1990 : A : B
+         : C
+    section Late
+    2020 : D
+
+xychart-beta horizontal
+    x-axis "Months" [jan, feb]
+    y-axis "Revenue" 0 --> 100
+    line [1, 2]
+
+sankey-beta
+%% source,target,value
+"Quoted, name",Target,10.5
+
+classDef hot fill:#f96

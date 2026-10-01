@@ -1,0 +1,202 @@
+{{! ── Comments ── }}
+{{! Short Handlebars comment: orders list. TODO: paginate. }}
+{{!-- Long comment that may contain }} braces and {{mustaches}} safely. --}}
+<!-- An HTML comment is passed through to the output. -->
+
+{{!-- ── Expressions ── --}}
+<h1>Orders for {{user.name}}</h1>
+<p>{{user.address.city}} / {{user/address/postcode}} / {{../parent}} / {{this}} / {{this.name}} / {{./local}}</p>
+<p>{{lookup names 0}} {{lookup user "name"}} {{array.[0]}} {{[odd key].value}} {{items.[10].sku}}</p>
+<p>Unescaped: {{{footerHtml}}} and {{&ampersandHtml}}</p>
+<p>Escaped mustache: \{{not-evaluated}} and \\{{evaluated-after-backslash}}</p>
+<p>Data variables: {{@index}} {{@key}} {{@first}} {{@last}} {{@root.title}} {{@../index}} {{@level}}</p>
+
+{{!-- ── Literals ── --}}
+{{helper "double quoted" 'single quoted' "with \"escape\""}}
+{{helper 42 -7 3.14 true false null undefined}}
+{{helper key="value" count=3 flag=true nothing=null nested=(sub 1 2)}}
+{{helper [segment literal] "mixed" 1.5e3}}
+
+{{!-- ── Whitespace control ── --}}
+<ul>
+  {{~#each items~}}
+    <li>{{~name~}}</li>
+  {{~/each~}}
+</ul>
+{{~! comment with whitespace control ~}}
+{{{~triple~}}}
+
+{{!-- ── Conditionals ── --}}
+{{#if orders.length}}
+  <table class="orders">
+    {{#each orders as |order index|}}
+      <tr class="{{#if order.paid}}paid{{else}}open{{/if}}">
+        <td>#{{order.number}}</td>
+        <td>{{money order.total currency="GBP"}}</td>
+        <td>{{formatDate order.placedAt "yyyy-MM-dd"}}</td>
+        {{#if (eq index 0)}}<td><span class="badge">latest</span></td>{{/if}}
+        {{#unless order.cancelled}}<td>active</td>{{/unless}}
+      </tr>
+    {{/each}}
+  </table>
+  {{> pagination page=page total=pages}}
+{{else if archived}}
+  <p>Archived orders only.</p>
+{{else}}
+  <p class="muted">No orders yet.</p>
+{{/if}}
+
+{{!-- ── Loops: each with else, keys, nested ── --}}
+{{#each warehouse.shelves as |shelf shelfIndex|}}
+  <section id="shelf-{{shelfIndex}}">
+    <h2>{{shelf.label}}</h2>
+    {{#each shelf.items as |item|}}
+      <p>{{@index}}: {{item.sku}} ({{item.qty}}) in {{../label}} / {{shelf.label}}</p>
+      {{#if @last}}<hr>{{/if}}
+    {{else}}
+      <p>Empty shelf</p>
+    {{/each}}
+  </section>
+{{/each}}
+
+{{#each lookupTable}}
+  {{@key}} = {{this}}
+{{/each}}
+
+{{!-- ── with, lookup, log ── --}}
+{{#with user.profile as |profile|}}
+  <p>{{profile.bio}} — {{profile.joined}}</p>
+{{else}}
+  <p>No profile.</p>
+{{/with}}
+{{log "rendering orders" level="info"}}
+{{#each (take items 3)}}{{this.sku}}{{/each}}
+
+{{!-- ── Partials and blocks ── --}}
+{{> header}}
+{{> (lookup . "layoutName") title="Orders"}}
+{{> userCard user=user compact=true}}
+{{#> layout title="Orders"}}
+  <p>Content passed to the layout block.</p>
+{{/layout}}
+{{#> card}}
+  {{#*inline "title"}}Custom title{{/inline}}
+  <p>Card body</p>
+{{/card}}
+{{#*inline "row"}}
+  <tr><td>{{name}}</td></tr>
+{{/inline}}
+{{> row name="inline partial"}}
+{{#> @partial-block}}{{/@partial-block}}
+{{> @partial-block}}
+
+{{!-- ── Subexpressions and helpers ── --}}
+{{money (multiply item.qty item.price) currency=(lookup config "currency")}}
+{{#if (and (gt qty 0) (or inStock backorder))}}Available{{/if}}
+{{#if (not (eq status "cancelled"))}}Live{{/if}}
+{{uppercase (trim (concat firstName " " lastName))}}
+
+{{!-- ── Custom block helpers ── --}}
+{{#repeat 3}}
+  <span>{{@index}}</span>
+{{/repeat}}
+
+{{#list people}}
+  {{firstName}} {{lastName}}
+{{/list}}
+
+{{#form action="/orders" method="post"}}
+  <input name="sku" value="{{sku}}">
+{{/form}}
+
+{{!-- ── Decorators and raw blocks ── --}}
+{{* decorator arg}}
+{{{{raw}}}}
+  {{this is not evaluated}} {{#if x}}raw{{/if}}
+{{{{/raw}}}}
+
+{{!-- ── Inline HTML, script and style with expressions ── --}}
+<style>
+  .badge { color: {{theme.accent}}; }
+</style>
+<script>
+  window.__ORDERS__ = {{{json orders}}};
+  const title = "{{title}}";
+</script>
+<a href="{{url}}?q={{encodeURIComponent query}}" class="{{#if active}}active{{/if}}" {{#if disabled}}disabled{{/if}}>Link</a>
+
+{{!-- ── Inverse sections and else chains ── --}}
+{{#if flag}}yes{{^}}no{{/if}}
+{{#each items}}{{this}}{{^}}none{{/each}}
+{{^missing}}Rendered when missing is falsy{{/missing}}
+{{#if a}}A{{else if b}}B{{else if c}}C{{else}}D{{/if}}
+{{#unless done}}pending{{else}}done{{/unless}}
+{{#each list}}{{this}}{{~else~}}empty{{~/each}}
+{{#with person}}{{name}}{{else}}nobody{{/with}}
+
+{{!-- ── Paths: dots, brackets, parents, root, segment literals ── --}}
+{{.}} {{this}} {{this.name}} {{./name}} {{../name}} {{../../grandparent}} {{@root.name}} {{@root.[odd key]}}
+{{people.[0].name}} {{people.[first name]}} {{this.[foo bar]}} {{[a b]}} {{array.[1]}}
+{{@index}} {{@../index}} {{@../../index}} {{@key}} {{@first}} {{@last}} {{@level}}
+{{object.property.nested.deep}} {{object/property/nested}} {{lookup object "property"}} {{lookup array 1}}
+
+{{!-- ── Helpers with every argument form ── --}}
+{{helper}}
+{{helper arg}}
+{{helper arg1 arg2 arg3}}
+{{helper "string with }} braces" 'single with {{ braces'}}
+{{helper 1 -2 3.5 -4.5 1e3 true false null undefined}}
+{{helper (nested arg) (nested2 (deeper 1 2) "x") key=(sub value)}}
+{{helper key1=value1 key2="string" key3=3 key4=true key5=null key6=undefined key7=path.to.value key8=@index}}
+{{helper arg1 key=value}}
+{{helper [segment literal] this.[odd name] ../parent @root.name}}
+{{helper "a" "b" as |x y|}}
+{{#helper arg key=value as |block params|}}content{{else}}inverse{{/helper}}
+{{#helper arg}}{{#helper2}}{{#helper3}}deep{{/helper3}}{{/helper2}}{{/helper}}
+
+{{!-- ── Partials in every form ── --}}
+{{> simple}}
+{{> "quoted-name"}}
+{{> 'single-quoted'}}
+{{> dir/nested/name}}
+{{> name.with.dots}}
+{{> [bracketed name]}}
+{{> partial context}}
+{{> partial context key=value other="string" num=3 flag=true}}
+{{> partial key=value}}
+{{> (dynamic "name") context}}
+{{> (lookup . "partialName")}}
+{{~> trimmed ~}}
+{{#> block-partial arg key=value}}
+  {{#*inline "named"}}override{{/inline}}
+  default content
+{{/block-partial}}
+{{#*inline "a-b-c"}}inline {{this}}{{/inline}}
+{{#*inline "with-hash"}}{{key}}{{/inline}}
+
+{{!-- ── Decorators ── --}}
+{{* inline-decorator}}
+{{#* custom-decorator arg key=value}}content{{/custom-decorator}}
+
+{{!-- ── Escapes and raw ── --}}
+\{{escaped mustache}}
+\\{{double escaped, then evaluated}}
+{{{{raw-helper}}}}{{not evaluated}} {{{triple}}} {{!-- not a comment --}}{{{{/raw-helper}}}}
+{{{triple}}} {{&ampersand}} {{{ triple spaced }}} {{ spaced }} {{  spaced.path  }}
+
+{{!-- ── Whitespace control everywhere ── --}}
+{{~value~}} {{~#if x~}}a{{~else~}}b{{~/if~}} {{~> partial~}} {{~{triple}~}} {{~!-- comment --~}} {{~&amp~}} {{~#*inline "x"~}}y{{~/inline~}}
+
+{{!-- ── HTML contexts ── --}}
+<input value="{{value}}" {{#if checked}}checked{{/if}} data-json='{{{json data}}}' {{attrs}}>
+<a href="/orders/{{id}}?q={{query}}" class="{{classes}}">{{label}}</a>
+<!-- HTML comment with {{mustache}} inside -->
+<script type="text/x-handlebars-template" id="inner">
+  {{!-- nested template --}}
+  \{{raw inside script}}
+</script>
+<textarea>{{text}}</textarea>
+<svg><use href="#{{icon}}"/></svg>
+
+{{{footerHtml}}}
+{{!-- Non-ASCII: café 日本語 ☕ --}}

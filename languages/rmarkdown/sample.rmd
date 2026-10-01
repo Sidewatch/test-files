@@ -1,0 +1,256 @@
+---
+title: "Warehouse revenue report"
+subtitle: "R Markdown syntax showcase"
+author:
+  - "Acme Reports Team"
+  - "Acme Stock Desk"
+date: "2026-09-24"
+abstract: |
+  A multi-line abstract in YAML.
+  Describes weekly revenue and stock.
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    theme: flatly
+    code_folding: hide
+    df_print: paged
+  pdf_document:
+    latex_engine: xelatex
+    keep_tex: false
+  word_document: default
+params:
+  warehouse: "north"
+  threshold: 25
+  start: !r as.Date("2026-09-01")
+bibliography: references.bib
+link-citations: true
+runtime: html_document
+---
+
+<!-- An HTML comment: not rendered. TODO: add the regional breakdown. -->
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.align = "center")
+library(dplyr)
+library(ggplot2)
+options(digits = 3)
+```
+
+# Introduction {#intro .unnumbered}
+
+This is an **R Markdown** document: *emphasis*, __strong__, _also emphasis_, ***both***,
+~~strikethrough~~, `inline code`, superscript^2^, subscript~2~, and a footnote.[^note]
+Inline R: the week ending `r format(Sys.Date(), "%d %B")` had `r nrow(orders)` orders.
+A parameter: `r params$warehouse`. Citations: [@smith2020; @jones2021, p. 12], @smith2020, [-@jones2021].
+
+[^note]: The footnote body.
+
+## Lists
+
+- Unordered item
+    - Nested item (four-space indent)
+        - Deeper item
+* Another bullet style
++ Third bullet style
+
+1. Ordered item
+2. Second item
+    a. Nested lettered item
+    b. Another
+3. Third
+
+- [ ] Task not done
+- [x] Task done
+
+Term
+:   Definition of the term.
+
+Second term
+:   Another definition.
+
+(@) Example list item
+(@) Another example
+
+## Headings
+
+### Level three
+
+#### Level four
+
+##### Level five
+
+###### Level six
+
+Setext level one
+================
+
+Setext level two
+----------------
+
+## Links and images
+
+[Inline link](https://example.com "Title"), <https://example.com>, [reference link][ref], and [a link with attributes](https://example.com){target="_blank"}.
+
+![Alt text](logo.png){width=50% #fig-logo}
+
+![A figure with caption](chart.png)
+
+[ref]: https://example.com/reference "Reference title"
+
+## Quotes, rules, code
+
+> A block quote.
+>
+> > A nested quote.
+
+---
+
+***
+
+    An indented code block.
+
+```
+A fenced block without a language.
+```
+
+```python
+print("fenced code with a language")
+```
+
+~~~bash
+echo "tilde fence"
+~~~
+
+## Chunks
+
+```{r load, echo=TRUE, message=FALSE}
+orders <- read.csv("orders.csv")
+paid <- orders %>% filter(status == "paid")
+summary_tbl <- paid %>%
+  group_by(status) %>%
+  summarise(n = n(), revenue = sum(total))
+```
+
+```{r plot, fig.width=6, fig.height=3, fig.cap="Paid orders", dev="png", out.width="80%"}
+ggplot(paid, aes(number, total)) +
+  geom_point(colour = "#336699") +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r table, results='asis'}
+knitr::kable(summary_tbl, caption = "Revenue by status", digits = 2)
+```
+
+```{r cached, cache=TRUE, eval=FALSE, include=TRUE, echo=-1}
+Sys.sleep(1)
+```
+
+```{r opts, ref.label="load", echo=TRUE, eval=FALSE}
+```
+
+```{python py-chunk}
+import pandas as pd
+df = pd.DataFrame({"sku": ["AC-1001"], "qty": [25]})
+print(df)
+```
+
+```{bash shell-chunk}
+ls -la | head -3
+```
+
+```{sql sql-chunk, connection=con, output.var="low_stock"}
+SELECT sku, quantity FROM stock WHERE quantity < 10;
+```
+
+```{r, child="appendix.Rmd"}
+```
+
+```{block, type="rmdnote"}
+A custom block engine chunk.
+```
+
+```{css, echo=FALSE}
+.low { color: #c33; }
+```
+
+```{js, echo=FALSE}
+console.log("loaded");
+```
+
+```{r engine-opts, engine.path="/usr/bin/python3", engine="python"}
+x = 1
+```
+
+Paid orders: **`r nrow(paid)`**, revenue **`r sprintf("£%.2f", sum(paid$total))`**, mean `r round(mean(paid$total), 1)`.
+
+Inline with options: `r#rround(pi, 2)`.
+
+## Tables
+
+| SKU     | Qty | Price  |
+|:--------|----:|:------:|
+| AC-1001 |  25 | 19.99  |
+| AC-1002 |   3 |  5.00  |
+
+Table: Stock levels
+
+-------  -----  ------
+SKU      Qty    Price
+-------  -----  ------
+AC-1001  25     19.99
+AC-1002  3      5.00
+-------  -----  ------
+
+## Math
+
+Inline math $E = mc^2$ and display math:
+
+$$
+\text{Total} = \sum_{i=1}^{n} q_i \cdot p_i
+$$
+
+\begin{equation}
+  a^2 + b^2 = c^2
+\end{equation}
+
+## Raw and special
+
+\newpage
+
+<div class="note">
+Raw HTML block with **markdown** inside when `markdown="1"`.
+</div>
+
+```{=html}
+<p>Raw HTML via a raw attribute.</p>
+```
+
+Line break at the end\
+of this line, and an em-dash --- plus en-dash -- and ellipsis...
+
+Escapes: \* \_ \# \` \\ and `\\`.
+
+::: {.note}
+A fenced div with a class.
+:::
+
+::: {.columns}
+:::: {.column width="50%"}
+Left.
+::::
+:::: {.column width="50%"}
+Right.
+::::
+:::
+
+# References {-}
+
+<div id="refs"></div>
+
+# Appendix {#appendix .unnumbered}
+
+```{r session-info}
+sessionInfo()
+```

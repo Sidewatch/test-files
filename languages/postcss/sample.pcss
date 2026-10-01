@@ -1,0 +1,239 @@
+@charset "UTF-8";
+
+/* ── Comments ──
+   PostCSS showcase for a warehouse dashboard: nesting, custom media,
+   custom selectors, mixins, variables, functions and at-rules.
+   TODO: split the tokens into their own package
+   FIXME: contrast on .badge--low is under 4.5:1 */
+
+// Line comments are allowed by postcss-scss style parsers and are ignored here
+
+/* ── Imports and custom at-rules ── */
+@import "tokens.pcss";
+@import url("https://example.com/fonts/inventory.css") screen and (min-width: 40em);
+@import url('print.css') print;
+@layer reset, base, components, utilities;
+@namespace svg url(http://www.w3.org/2000/svg);
+
+@custom-media --narrow (max-width: 600px);
+@custom-media --wide (min-width: 1200px) and (min-resolution: 2dppx);
+@custom-media --reduced (prefers-reduced-motion: reduce);
+@custom-selector :--heading h1, h2, h3, h4, h5, h6;
+@custom-selector :--button button, .btn, [type="submit"];
+
+/* ── Custom properties ── */
+:root {
+  --primary: #336699;
+  --accent: #ff6600;
+  --accent-alpha: #ff660080;
+  --short-hex: #fa0;
+  --radius: 4px;
+  --spacing: 0.75rem;
+  --font-stack: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --shadow: 0 1px 2px rgb(0 0 0 / 20%), 0 4px 12px hsl(220deg 30% 20% / 0.15);
+  --empty:;
+  --json: { "sku": "AC-1001", "qty": 25 };
+  --z-modal: 1000;
+  --duration: 250ms;
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Mixins and variables (postcss-mixins, postcss-simple-vars) ── */
+$gap: 8px;
+$columns: 12;
+$brand: #0a5;
+
+@define-mixin rounded $r: var(--radius) {
+  border-radius: $r;
+}
+
+@define-mixin badge $bg, $fg: white {
+  display: inline-block;
+  padding: 0 calc($gap / 2);
+  background: $bg;
+  color: $fg;
+  @mixin rounded 999px;
+  @mixin-content;
+}
+
+@define-mixin icon $name {
+  &.icon-$(name) {
+    background: url("/icons/$(name).svg") no-repeat center / contain;
+  }
+}
+
+/* ── Selectors ── */
+*, *::before, *::after { box-sizing: border-box; }
+html:focus-within { scroll-behavior: smooth; }
+:--heading { font-family: var(--font-stack); line-height: 1.2; }
+:--button:hover, :--button:focus-visible { outline: 2px solid var(--accent); }
+
+a[href^="https://"]:not([href*="example.com" i])::after { content: " \2197"; }
+input[type="number"],
+input[data-unit='kg'],
+li:nth-child(2n + 1):not(:last-child),
+tr:nth-of-type(odd) > td:first-child + td ~ td,
+.stock:is(.low, .out)[aria-live=polite],
+.shelf:where(.top, .bottom) .bin,
+.row:has(> .badge--low) {
+  color: inherit;
+}
+
+#warehouse-main.grid > .cell { grid-column: span 2; }
+svg|rect, *|*, |p { fill: currentColor; }
+::selection { background: color-mix(in srgb, var(--accent) 40%, white); }
+:lang(de) q::before { content: "\201E"; }
+::part(label), ::slotted(span), ::cue(v[voice="picker"]) { font-weight: 600; }
+
+/* ── Nesting ── */
+.card {
+  @mixin rounded;
+  color: var(--primary);
+  padding: var(--spacing);
+  margin-block: calc(var(--spacing) * 2) calc(-1 * var(--spacing));
+  background: color-mix(in srgb, var(--primary) 20%, white);
+  box-shadow: var(--shadow);
+  transition: border-color var(--duration) var(--ease), transform .2s ease-in;
+
+  &:hover { border-color: color-mix(in srgb, var(--primary), black 10%); }
+  &.is-active { transform: translateY(-2px) scale(1.02) rotate(0.5deg); }
+  & .card__title { font-size: 1.25rem; font-weight: 700; }
+  & + & { margin-top: $gap; }
+  .dark & { background: #1b1f23; }
+
+  @media (--narrow) {
+    padding: calc(var(--spacing) / 2);
+  }
+
+  @nest .sidebar & {
+    float: none;
+  }
+
+  @media (--wide) and (orientation: landscape) {
+    columns: 2 20rem;
+  }
+}
+
+.badge { @mixin badge #c33; }
+.badge--ok { @mixin badge $brand, #fff { text-transform: uppercase; } }
+.logo { @mixin icon warehouse; }
+
+/* ── Values, units and numbers ── */
+.numbers {
+  width: 100%;
+  height: 50vh;
+  min-width: 12.5ch;
+  max-width: 80rem;
+  margin: -1px +2px 0.5em .25em;
+  line-height: 1.5e0;
+  flex: 1 1 0%;
+  opacity: .8;
+  order: -1;
+  letter-spacing: 1E-2em;
+  rotate: 45deg;
+  animation-duration: 1.5s;
+  transition-delay: 120ms;
+  resolution: 2dppx;
+  inline-size: clamp(10rem, 40vw, 60rem);
+  aspect-ratio: 16 / 9;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  grid-template-areas:
+    "header header"
+    "nav    main";
+  font: italic small-caps bold 14px/1.4 "Helvetica Neue", Arial, sans-serif;
+  color: rgba(255, 102, 0, .5);
+  background:
+    linear-gradient(to right, transparent, #0003),
+    url(data:image/png;base64,iVBORw0KGgo=) no-repeat,
+    url("hero.png") center / cover;
+  width: calc(100% - (2 * var(--spacing)) + env(safe-area-inset-left, 0px));
+  content: "tab\9 quote\" backslash\\ unicode\1F4E6 \
+continued";
+  quotes: "«" "»" '‹' '›';
+}
+
+/* ── Important, vendor prefixes, hacks ── */
+.legacy {
+  -webkit-box-orient: vertical;
+  -moz-appearance: none;
+  display: none !important;
+  color: red !IMPORTANT;
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#80000000', endColorstr='#80000000');
+}
+
+/* ── At-rules ── */
+@font-face {
+  font-family: "Inventory Sans";
+  src: url("inv.woff2") format("woff2"), url("inv.woff") format("woff");
+  font-weight: 100 900;
+  font-display: swap;
+  unicode-range: U+0025-00FF, U+4??;
+}
+
+@keyframes pulse {
+  from { opacity: 1; }
+  50%  { opacity: .4; }
+  to   { opacity: 1; }
+}
+
+@supports (display: grid) and (not (display: inline-grid)) {
+  .grid { display: grid; gap: $gap; }
+}
+
+@media screen and (min-width: 640px), print and (orientation: portrait) {
+  .only-wide { display: block; }
+}
+
+@media (400px <= width <= 700px) { .range { color: green; } }
+@media (--reduced) { * { animation: none !important; } }
+
+@container sidebar (min-inline-size: 30rem) {
+  .widget { display: flex; }
+}
+
+@layer components {
+  .table { border-collapse: collapse; }
+}
+
+@property --angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@page :first {
+  margin: 2cm;
+  size: A4 landscape;
+}
+
+@scope (.shelf) to (.bin) {
+  :scope > span { color: gray; }
+}
+
+@starting-style {
+  .toast { opacity: 0; }
+}
+
+/* ── Control directives (postcss-for, postcss-each, postcss-conditionals) ── */
+@for $i from 1 to 3 {
+  .col-$i { width: calc(100% / $columns * $i); }
+}
+
+@each $status in ok, low, out {
+  .stock-$(status) { background: var(--$(status)-bg, #eee); }
+}
+
+@if $columns == 12 {
+  .grid-12 { display: grid; }
+} @else {
+  .grid-n { display: block; }
+}
+
+@media (min-width: 768px) {
+  @media (--wide) {
+    .nested-media { margin: 0; }
+  }
+}
+
+@custom-media --print-only print;
+@media (--print-only) { .no-print { display: none; } }

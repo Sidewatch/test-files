@@ -1,0 +1,116 @@
+feat(preview)!: show tables as tabs with a live filter
+
+The database preview stacked every table on one page; now each table is
+a tab with its first 200 rows, and the bar's filter narrows rows as you
+type. Archives list their entries with sizes and modification times.
+
+Details:
+
+- Tabs are built lazily so a 40-table file opens instantly.
+- The filter is case-insensitive and matches across all columns.
+  * Quoted phrases such as "red widget" match literally.
+  * A leading "-" excludes rows containing the term.
+- Fixed an off-by-one in `PreviewTable.rowCount` (see #142).
+
+1. First numbered point about the migration.
+2. Second numbered point, with a URL: https://example.com/docs/preview
+
+> Quoted text from the review thread:
+> "Can we keep the old layout behind a switch?"
+
+BREAKING CHANGE: the `stackedTables` option is removed; use `tabbedTables`.
+
+Fixes #142
+Closes: #150, #151
+Refs: ACME-1234
+See-also: abc1234def5678
+Reviewed-by: Jane Example <jane@example.com>
+Co-Authored-By: Joe Bloggs <joe@example.com>
+Signed-off-by: Jane Example <jane@example.com>
+Acked-by: Team Lead <lead@example.com>
+Cc: <ops@example.com>
+
+Revert "feat(preview): older stacked layout"
+
+This reverts commit 0123456789abcdef0123456789abcdef01234567.
+
+(cherry picked from commit fedcba9876543210fedcba9876543210fedcba98)
+
+fixup! feat(preview): show tables as tabs
+squash! feat(preview): add archive listing
+amend! fix(preview): typo in the filter label
+Merge branch 'feature/tabs' into main
+Merge pull request #153 from acme/feature/tabs
+
+WIP: draft notes -- this line is intentionally longer than seventy-two characters to exercise the overflow marker.
+
+Code span: `PreviewTable.rowCount`, issue links #142 and acme/warehouse#99, URL <https://example.com/a?b=c>, path Sources/Preview/DatabasePreview.swift:42.
+    Indented code-like line (four spaces).
+	Tab-indented line.
+* Asterisk bullet
++ Plus bullet
+  - Nested dash bullet
+1) Parenthesis numbered item
+BREAKING-CHANGE: hyphenated trailer form
+Resolves: #160
+Fixed: #161
+Implements: #162
+Bug: 163
+Change-Id: I0123456789abcdef0123456789abcdef01234567
+Helped-by: Contributor <helper@example.com>
+Reported-by: Reporter <reporter@example.com>
+Tested-by: Tester <tester@example.com>
+Suggested-by: Suggester <suggester@example.com>
+Co-authored-by: Pair Partner <pair@example.com>
+
+# Conflicts:
+#	Sources/Preview/DatabasePreview.swift
+#	README.md
+#
+# It looks like you may be committing a merge.
+# If this is not correct, please remove the file
+#	.git/MERGE_HEAD
+# and try again.
+#
+# Author:    Jane Example <jane@example.com>
+# HEAD detached at 0123abc
+# interactive rebase in progress; onto 4567def
+# Last commands done (2 commands done):
+#    pick 0123abc feat: first
+#    squash 4567def feat: second
+# You are currently rebasing branch 'feature' on '4567def'.
+;
+; Lines starting with ';' are comments when core.commentChar is ';'.
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+#
+# Date:      Thu Sep 24 10:00:00 2026 +0100
+#
+# On branch main
+# Your branch is ahead of 'origin/main' by 2 commits.
+#   (use "git push" to publish your local commits)
+#
+# Changes to be committed:
+#	modified:   Sources/Preview/DatabasePreview.swift
+#	new file:   Sources/Preview/ArchivePreview.swift
+#	deleted:    Sources/Preview/StackedLayout.swift
+#	renamed:    Sources/Old.swift -> Sources/New.swift
+#
+# Changes not staged for commit:
+#	modified:   README.md
+#
+# Untracked files:
+#	notes.txt
+#
+# ------------------------ >8 ------------------------
+# Do not modify or remove the line above.
+# Everything below it will be ignored.
+diff --git a/Sources/Preview/ArchivePreview.swift b/Sources/Preview/ArchivePreview.swift
+new file mode 100644
+index 0000000..e69de29
+--- /dev/null
++++ b/Sources/Preview/ArchivePreview.swift
+@@ -0,0 +1,3 @@
++import Foundation
++
++struct ArchivePreview {}

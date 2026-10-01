@@ -1,0 +1,215 @@
+# ── Comments ──
+# TOML showcase: every value type, table form and string form.
+# TODO: split per environment
+# FIXME: the replica weight is in the wrong unit
+
+title = "Warehouse Inventory Config"  # trailing comment after a value
+
+# ── Bare, quoted and dotted keys ──
+bare_key = "bare"
+bare-key-2 = "dashes allowed"
+1234 = "numeric bare key"
+"quoted key" = "needs quotes"
+'literal key' = "single-quoted key"
+"unicode ключ" = "unicode in key"
+"" = "empty quoted key"
+site.name = "dotted"
+site."google.com" = true
+fruit.apple.color = "red"
+fruit.apple.taste.sweet = true
+
+# ── Strings ──
+basic = "I'm a string. \"You can quote me\". Name\tJos\u00E9\nLocation\tSF."
+escapes = "backspace\b tab\t newline\n formfeed\f return\r quote\" backslash\\ unicode\u00e9 long\U0001F3ED"
+literal = 'C:\Users\config\app.toml'
+literal_regex = '\d{3}-\d{4}'
+literal_quotes = 'Tom "Dubs" Preston-Werner'
+empty_basic = ""
+empty_literal = ''
+unicode_text = "Zürich ✓ 🏭 在庫"
+
+multi_basic = """
+Roses are red
+Violets are blue"""
+
+multi_basic_trimmed = """\
+  The quick brown \
+  fox jumps over \
+  the lazy dog.\
+  """
+
+multi_basic_quotes = """Here are two quotation marks: "". Simple enough.
+Here are three: ""\"; and ten: ""\"""\"""\"""\"""\"."""
+
+multi_literal = '''
+The first newline is trimmed in raw strings.
+   All other whitespace is preserved. \n is not an escape.
+'''
+
+multi_literal_quotes = '''Here are fifteen quotation marks: """""""""""""""'''
+
+# ── Integers ──
+int_plain = 42
+int_positive = +99
+int_negative = -17
+int_zero = 0
+int_underscore = 1_000_000
+int_hex = 0xDEADBEEF
+int_hex_mixed = 0xdead_beef
+int_octal = 0o755
+int_binary = 0b11010110
+int_max = 9223372036854775807
+
+# ── Floats ──
+float_plain = 3.1415
+float_positive = +1.0
+float_negative = -0.01
+float_exp = 5e+22
+float_exp2 = 1e06
+float_exp3 = -2E-2
+float_both = 6.626e-34
+float_underscore = 224_617.445_991_228
+float_inf = inf
+float_pos_inf = +inf
+float_neg_inf = -inf
+float_nan = nan
+float_pos_nan = +nan
+float_neg_nan = -nan
+
+# ── Booleans ──
+enabled = true
+verbose = false
+
+# ── Dates and times ──
+offset_datetime = 1979-05-27T07:32:00Z
+offset_datetime_tz = 1979-05-27T00:32:00-07:00
+offset_datetime_frac = 1979-05-27T00:32:00.999999-07:00
+offset_datetime_space = 1979-05-27 07:32:00Z
+local_datetime = 1979-05-27T07:32:00
+local_datetime_frac = 1979-05-27T00:32:00.5
+local_date = 1979-05-27
+local_time = 07:32:00
+local_time_frac = 00:32:00.999999
+
+# ── Arrays ──
+ports = [8080, 8443, 9090]
+hosts = ["alpha.local", "beta.local", "gamma.local"]
+empty_array = []
+mixed_types = [1, 2.5, "three", true, 1979-05-27, [4, 5], { six = 6 }]
+nested_arrays = [[1, 2], ["a", "b", "c"]]
+trailing_comma = [1, 2, 3,]
+multiline_array = [
+  "first",   # comment inside an array
+  "second",
+  """multi
+line""",
+  'literal',
+]
+array_of_inline = [{ x = 1, y = 2 }, { x = 7, y = 8 }]
+
+# ── Inline tables ──
+point = { x = 1, y = 2 }
+animal = { type.name = "pug" }
+empty_inline = {}
+nested_inline = { outer = { inner = { deep = "value" } }, list = [1, 2, 3] }
+mixed_inline = { name = "hammer", sku = 738594937, tags = ["tool", "hand"], price = 9.99, active = true }
+quoted_inline = { "a key" = 1, 'b key' = 2 }
+
+# ── Standard tables ──
+[database]
+server = "192.0.2.1"
+port = 5432
+username = "admin"
+password = "example-not-a-real-password"
+connection_max = 5000
+enabled = false
+allowed = ["192.0.2.0/24", "198.51.100.0/24"]
+
+[database.pool]
+min = 2
+max = 20
+timeout = 30.5
+
+[servers]
+
+  [servers.primary]
+  ip = "10.0.0.1"
+  dc = "eqdc10"
+  weight = 1.5e3
+
+  [servers.replica]
+  ip = "10.0.0.2"
+  dc = "eqdc10"
+  weight = 0xDEADBEEF
+
+# Dotted and quoted table names
+[dog."tater.man"]
+type.name = "pug"
+
+[ a . b . c ]
+spaced_header = true
+
+["quoted table"]
+key = "value"
+
+['literal table']
+key = "value"
+
+[owner]
+name = "Acme Warehousing"
+founded = 1979-05-27
+bio = """
+Multi-line string bio.
+Supports multiple lines.
+"""
+
+# ── Super tables defined after sub tables ──
+[x.y.z.w]
+deep = true
+
+[x]
+shallow = true
+
+# ── Arrays of tables ──
+[[products]]
+name = "Hammer"
+sku = 738594937
+price = 9.99
+
+[[products]]  # an empty table within the array
+
+[[products]]
+name = "Nail"
+sku = 284758393
+color = "gray"
+
+[[products.variants]]
+size = "small"
+
+[[products.variants]]
+size = "large"
+
+[[fruits]]
+name = "apple"
+
+[fruits.physical]
+color = "red"
+shape = "round"
+
+[[fruits.varieties]]
+name = "red delicious"
+
+[[fruits.varieties]]
+name = "granny smith"
+
+[[fruits]]
+name = "banana"
+
+[[fruits.varieties]]
+name = "plantain"
+
+# ── Features ──
+[features]
+literal_path = 'C:\Users\config\app.toml'
+regex = '\d{3}-\d{4}'
+unicode = "éè"

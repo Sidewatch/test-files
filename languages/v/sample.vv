@@ -1,0 +1,589 @@
+#!/usr/bin/env v run
+// ── Comments ───────────────────────────────────────────────
+// Line comment. TODO: persist the stock to disk. FIXME: rounding.
+/* Block comment
+   /* nested block comments are allowed in V */
+   still inside */
+
+// ── Module, imports, compile-time flags ────────────────────
+module main
+
+import os
+import time { now, Time }
+import strings as sb
+import math
+import json
+import orm
+
+$if debug {
+	#flag -DDEBUG
+}
+#flag linux -lm
+#include <stdio.h>
+#define WAREHOUSE_CAP 500
+
+// ── Constants ──────────────────────────────────────────────
+const reorder_point = 25
+const (
+	max_items  = 1_000
+	app_name   = 'Warehouse'
+	pi_approx  = 3.14159
+	mask       = 0xff
+	perms      = 0o755
+	flags      = 0b1010_0101
+	big_float  = 1.5e3
+	small      = 2.5e-3
+	letter     = `a`
+	snowman    = `☃`
+	escaped    = `\n`
+)
+__global stock_total int
+
+// ── Enums, structs, interfaces, sum types ──────────────────
+enum Status {
+	pending
+	paid = 5
+	cancelled
+}
+
+@[flag]
+enum Perm {
+	read
+	write
+	exec
+}
+
+@[heap]
+@[json: 'item']
+struct Item {
+pub:
+	sku   string @[json: 'SKU'; required]
+	name  string = 'unnamed'
+pub mut:
+	qty   int
+	price f64 = 1.0
+	tags  []string
+mut:
+	status Status = .pending
+__global:
+	shared_count int
+}
+
+struct Pair[T, U] {
+	first  T
+	second U
+}
+
+struct Config {
+	Item // embedded
+	retries int @[default: '3']
+}
+
+interface Describer {
+	describe() string
+mut:
+	counter int
+}
+
+type Outcome = Item | string | int
+type Callback = fn (int) string
+type Alias = []string
+
+union Number {
+	i int
+	f f64
+}
+
+// ── Functions and methods ──────────────────────────────────
+fn (i Item) describe() string {
+	return if i.qty == 0 { '${i.sku}: out of stock' } else { '${i.sku}: ${i.qty} left' }
+}
+
+fn (mut i Item) restock(amount int) {
+	i.qty += amount
+}
+
+@[inline]
+@[deprecated: 'use restock']
+fn add(a int, b int) int {
+	return a + b
+}
+
+fn sum[T](xs []T) T {
+	mut total := T{}
+	for x in xs {
+		total += x
+	}
+	return total
+}
+
+fn variadic(prefix string, nums ...int) int {
+	return nums.len
+}
+
+fn parse(line string) !Item {
+	parts := line.split(',')
+	if parts.len != 3 {
+		return error('expected 3 fields, got ${parts.len}')
+	}
+	return Item{
+		sku: parts[0]
+		qty: parts[1].int()
+		price: parts[2].f64()
+	}
+}
+
+fn maybe(i int) ?int {
+	if i < 0 {
+		return none
+	}
+	return i
+}
+
+fn C.puts(&char) int
+fn (s Status) str() string {
+	return match s {
+		.pending { 'pending' }
+		.paid { 'paid' }
+		.cancelled { 'cancelled' }
+	}
+}
+
+fn (a Item) + (b Item) Item {
+	return Item{ sku: a.sku, qty: a.qty + b.qty }
+}
+
+// ── Strings, runes, interpolation ──────────────────────────
+fn strings_demo() {
+	single := 'single \'quoted\' with \t tab and \n newline'
+	double := "double quoted string"
+	rawstr := r'C:\inventory\raw'
+	hexs := '\x41\u0042'
+	name := 'WGT-100'
+	line := 'item ${name} has ${1 + 2 * 3} units, pi ${pi_approx:.2f}, hex ${255:x}'
+	simple := 'plain $name and ${name.to_lower()}'
+	multi := 'line one
+line two'
+	c_str := c'native C string'
+	println([single, double, rawstr, hexs, line, simple, multi, c_str].join('\n'))
+}
+
+// ── Main ───────────────────────────────────────────────────
+fn main() {
+	lines := ['A-100,12,4.5', 'B-200,40,1.25', 'bad line']
+	mut items := []Item{}
+	for line in lines {
+		items << parse(line) or {
+			eprintln('skip: ${err}')
+			continue
+		}
+	}
+	low := items.filter(it.qty <= reorder_point)
+	for it in low {
+		println(it.describe())
+	}
+	value := items.map(it.qty * it.price).reduce(fn (a f64, b f64) f64 {
+		return a + b
+	}, 0.0)
+	println('value: ${value:.2f} (${os.args.len} args)')
+
+	// numbers & operators
+	mut n := 10
+	n += 1
+	n -= 1
+	n *= 2
+	n /= 2
+	n %= 7
+	n <<= 1
+	n >>= 1
+	n &= 0xf
+	n |= 1
+	n ^= 2
+	n++
+	n--
+	ok := !(n > 1 && n < 5) || n == 3 || n != 4 || n >= 1 || n <= 9
+	bits := ~n & 2 | 3 ^ 4 << 1 >> 1
+	ternary := if ok { 'yes' } else { 'no' }
+	is_item := items[0] is Item
+	cast := f64(n) + int(2.5) + u8(3)
+	mut x := 5
+	y := unsafe { x }
+	ptr := &x
+
+	// arrays, maps, ranges, slices
+	arr := [1, 2, 3, 4, 5]
+	fixed := [3]int{}
+	slice := arr[1..3]
+	head := arr[..2]
+	tail := arr[2..]
+	last := arr#[-1..]
+	mut m := map[string]int{}
+	m['a'] = 1
+	m2 := {
+		'sku': 1
+		'qty': 2
+	}
+	if 'a' in m {
+		println(m['a'] or { 0 })
+	}
+	if 5 !in arr {
+		println('missing')
+	}
+	opt := maybe(3) or { 0 }
+	opt2 := maybe(-1)?
+	res := parse('x,1,2') or { Item{} }
+	chained := items[0].describe().to_upper().len
+
+	// control flow
+	for i := 0; i < 3; i++ {
+		if i == 1 {
+			continue
+		} else if i == 2 {
+			break
+		}
+	}
+	for i in 0 .. 5 {
+		print(i)
+	}
+	for k, v in m {
+		println('${k}=${v}')
+	}
+	for {
+		break
+	}
+	mut count := 3
+	for count > 0 {
+		count--
+	}
+	outer: for i in 0 .. 3 {
+		for j in 0 .. 3 {
+			if j == 1 {
+				continue outer
+			}
+			if i == 2 {
+				break outer
+			}
+		}
+	}
+	match n {
+		1, 2 { println('low') }
+		3...9 { println('mid') }
+		else { println('other') }
+	}
+	match outcome_demo() {
+		Item { println('item') }
+		string { println('string') }
+		else {}
+	}
+	if x := maybe(1) {
+		println(x)
+	} else {
+		println('none')
+	}
+	defer {
+		println('cleanup')
+	}
+	assert n >= 0, 'n must not be negative'
+	go worker(1)
+	spawn worker(2)
+	ch := chan int{cap: 2}
+	ch <- 1
+	select {
+		v := <-ch {
+			println(v)
+		}
+		else {}
+	}
+	lock stock_total {
+		stock_total++
+	}
+	sh := shared Item{ sku: 'S' }
+	rlock sh {
+		println(sh.sku)
+	}
+	$if windows {
+		println('windows')
+	} $else {
+		println('unix')
+	}
+	println(@FILE + @LINE + @FN + @MOD + @VEXE)
+	_ = [ok, bits, ternary, is_item, cast, y, ptr, slice, head, tail, last, m2, opt, opt2, res, chained, fixed]
+	goto end
+	end:
+	panic('unreachable')
+}
+
+fn outcome_demo() Outcome {
+	return 'text'
+}
+
+fn worker(id int) {
+	time.sleep(10 * time.millisecond)
+	println('worker ${id}')
+}
+
+fn test_add() {
+	assert add(1, 2) == 3
+}
+
+// ── Generics, comptime and attributes ──────────────────────
+struct Stack[T] {
+mut:
+	items []T
+}
+
+fn (mut s Stack[T]) push[T](item T) {
+	s.items << item
+}
+
+fn (s &Stack[T]) peek[T]() ?T {
+	return if s.items.len > 0 { s.items.last() } else { none }
+}
+
+fn describe_type[T](x T) string {
+	$if T is int {
+		return 'int ${x}'
+	} $else $if T is string {
+		return 'string ${x}'
+	} $else $if T is $array {
+		return 'array'
+	} $else $if T is $struct {
+		return 'struct'
+	} $else {
+		return typeof(x).name
+	}
+}
+
+fn reflect[T]() {
+	$for field in T.fields {
+		$if field.typ is string {
+			println('string field ${field.name}')
+		}
+		println(field.name)
+	}
+	$for method in T.methods {
+		println(method.name)
+	}
+	$for attr in T.attributes {
+		println(attr)
+	}
+}
+
+$if linux {
+	#flag -lpthread
+} $else $if macos {
+	#flag -framework Cocoa
+} $else $if windows {
+	#flag -luser32
+}
+
+$if x64 && !tinyc {
+	const wide = true
+}
+$if amd64 || arm64 {
+	const fast = true
+}
+$if prod ? {
+	const production = true
+}
+
+$compile_error('only on supported platforms')
+$compile_warn('experimental')
+const embedded = $embed_file('data.txt')
+const home = $env('HOME')
+const here = @DIR
+const tmpl = $tmpl('page.html')
+const line_no = @LINE
+const loc = @LOCATION
+const build = @BUILD_DATE + @BUILD_TIME + @VCURRENTHASH + @VHASH + @METHOD + @STRUCT + @COLUMN + @FILE_LINE + @VMOD_FILE + @VMODROOT
+
+@[unsafe]
+@[direct_array_access]
+@[noinline]
+@[manualfree]
+@[export: 'warehouse_add']
+@[callconv: stdcall]
+@[trusted]
+@[markused]
+@[params]
+struct Options {
+	verbose bool
+	retries int = 3
+}
+
+@[typedef]
+@[minify]
+@[packed]
+struct CStruct {
+	a int
+	b u8
+}
+
+// ── Remaining expressions and statements ───────────────────
+fn extras() {
+	a := Item{ sku: 'A' }
+	b := Item{
+		...a
+		qty: 5
+	}
+	anon := struct {
+		x int
+		y int
+	}{ 1, 2 }
+	mut sorted := [3, 1, 2]
+	sorted.sort(a < b)
+	sorted.sort_with_compare(fn (a &int, b &int) int {
+		return *a - *b
+	})
+	nested := [[1, 2], [3, 4]]
+	strs := ['a', 'b'].map(it.to_upper())
+	any_big := sorted.any(it > 2)
+	all_pos := sorted.all(it > 0)
+	idx := sorted.index(2)
+	first := sorted.first()
+	rev := sorted.reverse()
+	cloned := sorted.clone()
+	joined := strs.join(', ')
+	pos := sorted.filter(it > 0).map(it * 2)
+	str_len := 'héllo'.len
+	ch := 'héllo'[1]
+	sub := 'hello'[1..3]
+	c_ptr := voidptr(0)
+	null_ptr := unsafe { nil }
+	size := sizeof(Item)
+	tname := typeof(a).name
+	off := __offsetof(Item, qty)
+	is_ref := isreftype(Item)
+	dumped := dump(size)
+	likely_ok := likely(size > 0)
+	unlikely_ok := unlikely(size < 0)
+	vptr := &Item(0)
+	arr_ptr := &[]int{}
+	fixed2 := [2][3]int{}
+	chan_ := chan int{}
+	atomic_n := 0
+	mut sh := shared []int{}
+	typ := i8(1) + i16(2) + i32(3) + i64(4) + u8(5) + u16(6) + u32(7) + u64(8) + isize(9) + usize(10) + f32(1.5) + f64(2.5)
+	r := rune(0x263A)
+	bs := byte(65)
+	ok := bool(true)
+	s := string('x')
+	sym := voidptr(c_ptr)
+	mut m := map[string][]int{}
+	m['k'] << 1
+	delete_key := m.delete('k')
+	$if debug {
+		println('debug build')
+	}
+	asm amd64 {
+		mov eax, 1
+		; =r (atomic_n)
+	}
+	_ = [b, anon, nested, any_big, all_pos, idx, first, rev, cloned, joined, pos, str_len, ch, sub, null_ptr, tname, off, is_ref, dumped, likely_ok, unlikely_ok, vptr, arr_ptr, fixed2, chan_, typ, r, bs, ok, s, sym, delete_key, sh]
+}
+
+// ── Embedded SQL (orm) ─────────────────────────────────────
+struct User {
+	id   int    @[primary; sql: serial]
+	name string @[sql: 'user_name'; unique]
+	age  int
+}
+
+fn orm(db orm.Connection) ! {
+	sql db {
+		create table User
+	}!
+	sql db {
+		insert User{ name: 'acme', age: 30 } into User
+	}!
+	users := sql db {
+		select from User where age > 18 && name != '' order by age desc limit 10 offset 2
+	}!
+	count := sql db {
+		select count from User
+	}!
+	sql db {
+		update User set age = 31 where name == 'acme'
+	}!
+	sql db {
+		delete from User where id == 1
+	}!
+	sql db {
+		drop table User
+	}!
+	_ = [users.len, count]
+}
+
+// ── Interfaces, embedding and visibility ───────────────────
+interface Shape {
+	area() f64
+	name string
+}
+
+interface Named {
+	Describer
+	label() string
+}
+
+struct Circle {
+pub:
+	r f64
+}
+
+fn (c Circle) area() f64 {
+	return math.pi * c.r * c.r
+}
+
+pub fn exported_fn() {}
+pub const exported_const = 1
+pub struct ExportedStruct {}
+pub enum ExportedEnum {
+	a
+	b
+}
+pub type ExportedAlias = int
+pub interface ExportedIface {}
+
+fn static_demo() {
+	static counter := 0
+	counter++
+	volatile_var := 0
+	_ = volatile_var
+}
+
+fn generic_call() {
+	_ := sum[int]([1, 2, 3])
+	_ := Pair[int, string]{ first: 1, second: 'a' }
+	_ := describe_type[string]('x')
+}
+
+fn error_types() ! {
+	return error_with_code('failed', 42)
+}
+
+struct MyError {
+	Error
+	code int
+}
+
+fn (e MyError) msg() string {
+	return 'my error'
+}
+
+fn (e MyError) code() int {
+	return e.code
+}
+
+fn try_it() {
+	x := error_types() or {
+		println('error code ${err.code()}: ${err.msg()}')
+		return
+	}
+	y := error_types() or { panic(err) }
+	z := error_types() or { 0 }
+	_ = [x, y, z]
+}
+
+fn test_main() {
+	assert true, 'this passes'
+}

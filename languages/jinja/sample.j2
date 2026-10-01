@@ -1,0 +1,243 @@
+{# ── Comments ── #}
+{# Single-line comment #}
+{#
+   Multi-line comment:
+   {% if never %}{{ rendered }}{% endif %}
+#}
+{# TODO: move the thresholds into group_vars #}
+{# FIXME: sort order is unstable #}
+{#- whitespace-trimmed comment -#}
+
+{# ── Template inheritance ── #}
+{% extends "base/warehouse.html.j2" %}
+{% import "macros/forms.j2" as forms %}
+{% from "macros/tables.j2" import render_row, render_header as header with context %}
+{% include "partials/banner.j2" ignore missing without context %}
+
+{% block title %}Inventory for {{ warehouse.name | title }}{% endblock title %}
+
+{% block head %}
+  {{ super() }}
+  <meta name="generator" content="Acme Reports {{ version }}">
+{% endblock %}
+
+{# ── Variables, literals, numbers ── #}
+{% set site = "Dock 4" %}
+{% set count = 42 %}
+{% set negative = -17 %}
+{% set ratio = 0.75 %}
+{% set scientific = 1.6e-19 %}
+{% set flag_on = true %}
+{% set flag_off = false %}
+{% set flag_py = True and not False %}
+{% set nothing = none %}
+{% set py_nothing = None %}
+{% set list_lit = [1, 2, 3, "four", 5.5] %}
+{% set tuple_lit = (1, 2) %}
+{% set dict_lit = {"sku": "A-100", "qty": 5, 'single': 'quoted', "nested": {"a": [1, 2]}} %}
+{% set string_escapes = "tab\there \"quoted\" newline\n unicode é Zürich → 東京" %}
+
+{# block set #}
+{% set banner %}
+  Welcome to {{ site }}
+{% endset %}
+
+{% set ns = namespace(total=0, seen=[]) %}
+
+{# ── Expressions ── #}
+{{ count + 1 - 2 * 3 / 4 // 5 % 6 ** 2 }}
+{{ "joined " ~ site ~ " / " ~ count }}
+{{ count == 42 and count != 41 or count < 0 and not count >= 100 }}
+{{ count > 1 and count <= 50 }}
+{{ "yes" if flag_on else "no" }}
+{{ "shorthand" if flag_on }}
+{{ 'a' in 'abc' }} {{ 'z' not in 'abc' }}
+{{ count is defined }} {{ count is not none }} {{ count is divisibleby 3 }}
+{{ count is odd }} {{ count is number }} {{ site is string }} {{ list_lit is iterable }}
+{{ list_lit[0] }} {{ list_lit[1:3] }} {{ list_lit[-1] }}
+{{ dict_lit.sku }} {{ dict_lit["qty"] }} {{ dict_lit.nested.a[0] }}
+{{ range(1, 10, 2) | list }}
+{{ lipsum(2, false, 20, 40) }}
+{{ cycler("odd", "even").next() }}
+{{ joiner(", ")() }}
+{{ loop is defined }}
+
+{# ── Filters ── #}
+{{ site | upper | trim }}
+{{ site|lower|replace("Dock", "Bay")|center(20) }}
+{{ list_lit | join(", ") | truncate(30, true, "…") }}
+{{ items | selectattr("qty", "greaterthan", 0) | map(attribute="sku") | list | sort | unique | first }}
+{{ items | rejectattr("discontinued") | sum(attribute="qty") }}
+{{ items | groupby("category") | length }}
+{{ items | sort(attribute="qty", reverse=true) | batch(3) | list }}
+{{ items | dictsort | tojson }}
+{{ price | round(2, "ceil") | float | int | abs }}
+{{ text | striptags | wordcount }}
+{{ html | e }} {{ html | safe }} {{ html | forceescape }}
+{{ url | urlencode }} {{ data | tojson(indent=2) }}
+{{ undefined_var | default("fallback", true) | d("short") }}
+{{ filesize | filesizeformat(true) }}
+{{ text | indent(4, first=true) | wordwrap(60) }}
+{{ items | length }} {{ items | count }} {{ items | last }} {{ items | reverse | list }}
+
+{# ── Whitespace control ── #}
+{%- if flag_on -%}
+  trimmed on both sides
+{%- endif -%}
+{{- "trimmed output" -}}
+{%+ if flag_on %}plus keeps leading whitespace{% endif %}
+
+{# ── Control flow ── #}
+{% if count > 100 %}
+  big
+{% elif count > 10 %}
+  medium
+{% else %}
+  small
+{% endif %}
+
+{% for item in items | default([]) if not item.discontinued %}
+  {%- set ns.total = ns.total + item.qty -%}
+  <tr class="{{ loop.cycle('odd', 'even') }}{% if loop.first %} first{% endif %}{% if loop.last %} last{% endif %}">
+    <td>{{ loop.index }}/{{ loop.length }} (rev {{ loop.revindex }}, idx0 {{ loop.index0 }}, rev0 {{ loop.revindex0 }})</td>
+    <td>{{ item.sku }}{{ loop.previtem.sku if loop.previtem }}{{ loop.nextitem.sku if loop.nextitem }}</td>
+    <td>{{ item["qty"] | default(0) }} {% if loop.changed(item.category) %}new category{% endif %}</td>
+    {% if item.qty == 0 %}{% continue %}{% endif %}
+    {% if ns.total > 1000 %}{% break %}{% endif %}
+  </tr>
+{% else %}
+  <tr><td colspan="3">No stock</td></tr>
+{% endfor %}
+
+{% for key, value in dict_lit | dictsort %}
+  {{ key }}={{ value }}
+{% endfor %}
+
+{% for row in matrix recursive %}
+  {{ row.name }}{% if row.children %}<ul>{{ loop(row.children) }}</ul>{% endif %}
+{% endfor %}
+
+{# ── Macros and call blocks ── #}
+{% macro field(name, value="", type="text", required=false, **attrs) -%}
+  <input type="{{ type }}" name="{{ name }}" value="{{ value | e }}"
+         {%- if required %} required{% endif %}
+         {%- for k, v in attrs.items() %} {{ k }}="{{ v }}"{% endfor %}>
+{%- endmacro %}
+
+{% macro dialog(title) %}
+  <div class="dialog"><h2>{{ title }}</h2>{{ caller() }}</div>
+{% endmacro %}
+
+{% call dialog("Confirm shipment") %}
+  Ship {{ count }} units from {{ site }}?
+{% endcall %}
+
+{% call(user) render_list(users) %}
+  {{ user.name }}
+{% endcall %}
+
+{{ field("sku", "A-100", required=true, class="wide", data_id=7) }}
+{{ forms.input("qty", 5) }}
+
+{# ── Filter blocks, raw, with, autoescape ── #}
+{% filter upper | trim %}
+  shouting text for {{ site }}
+{% endfilter %}
+
+{% raw %}
+  {{ not rendered }} {% also not rendered %} {# nor this #}
+{% endraw %}
+
+{% with local = count * 2, other = "scoped" %}
+  {{ local }} {{ other }}
+{% endwith %}
+
+{% autoescape true %}{{ "<b>escaped</b>" }}{% endautoescape %}
+{% autoescape false %}{{ "<b>raw</b>" }}{% endautoescape %}
+
+{% trans count=count %}
+  One item in {{ site }}.
+{% pluralize %}
+  {{ count }} items in {{ site }}.
+{% endtrans %}
+
+{% do ns.seen.append(site) %}
+{% debug %}
+
+{# ── Line statements (when enabled) ── #}
+# for x in range(3)
+{{ x }}
+# endfor
+## line comment
+
+{# ── Ansible-style YAML embedding ── #}
+- name: Deploy {{ app_name | default('inventory') }}
+  ansible.builtin.template:
+    src: "{{ role_path }}/templates/app.conf.j2"
+    dest: "/etc/{{ app_name }}/app.conf"
+    mode: "0644"
+  when: ansible_os_family == "Debian" and inventory_hostname in groups['warehouse']
+  vars:
+    api_url: "https://api.example.com/{{ version }}"
+    addr: "{{ ansible_default_ipv4.address | default('192.0.2.10') }}"
+
+{# ── Rare constructs: statements ── #}
+{% set first, second = 1, 2 %}
+{% set (a, b) = (3, 4) %}
+{% set ns.total = ns.total + 1 %}
+{% set formatted | upper %}block set with a filter{% endset %}
+{% block sidebar scoped %}{{ item }}{% endblock %}
+{% block footer required %}{% endblock footer %}
+{% block nested_outer %}{% block nested_inner %}{{ self.nested_inner() }}{% endblock %}{% endblock %}
+{% extends layout_template if layout_template is defined else "base.html.j2" %}
+{% include ["custom/header.j2", "default/header.j2"] ignore missing with context %}
+{% import "macros.j2" as m without context %}
+{% from "macros.j2" import input as field, textarea, button with context %}
+{% from "macros.j2" import helper without context %}
+{% macro varargs_demo(first, second=2, *args, **kwargs) %}
+  {{ varargs }} {{ kwargs }} {{ caller }} {{ caller.name }} {{ varargs_demo.arguments }} {{ varargs_demo.catch_kwargs }} {{ varargs_demo.catch_varargs }} {{ varargs_demo.caller }}
+  {% if caller %}{{ caller(first, key=second) }}{% endif %}
+{% endmacro %}
+{% call(a, b=2) varargs_demo(1, 2, 3, x=4) %}body {{ a }} {{ b }}{% endcall %}
+{% call(user) filter(upper) %}x{% endcall %}
+{% filter center(40) | upper %}centred{% endfilter %}
+{% for a, (b, c) in nested_pairs %}{{ a }}{{ b }}{{ c }}{{ loop.depth }}{{ loop.depth0 }}{% endfor %}
+{% for x in items if x is not none and x is sameas true or x is in [1, 2] %}{{ x }}{% endfor %}
+{% for i in range(10)|reverse|select("odd")|list|batch(2)|first %}{{ i }}{% endfor %}
+{% if a is not defined or b is undefined %}{% elif c is none and d is boolean and e is false and f is true %}{% endif %}
+{% if g is callable and h is mapping and i is sequence and j is integer and k is float and l is number and m is string %}{% endif %}
+{% if n is escaped and o is lower and p is upper and q is eq(1) and r is ne(2) and s is lt(3) and t is le(4) and u is gt(5) and v is ge(6) %}{% endif %}
+{% if w is filter and x is test and y is divisibleby(3) and z is even %}{% endif %}
+
+{# ── Rare constructs: expressions and literals ── #}
+{{ "adjacent " "string " 'concatenation' }}
+{{ [] }} {{ {} }} {{ () }} {{ (1,) }} {{ [1, [2, [3]]] }} {{ {"k": {"n": [1]}} }}
+{{ 1_000 }} {{ 1e3 }} {{ 0.5 }} {{ 5. }} {{ -(-1) }} {{ +1 }}
+{{ 10 // 3 }} {{ 10 % 3 }} {{ 2 ** 3 ** 2 }} {{ 7 / 2 }} {{ 1 ~ 2 ~ 3 }}
+{{ not not true }} {{ true and false or not true }} {{ 1 < 2 < 3 }} {{ 1 == 1 != 2 }}
+{{ x.0 }} {{ x.attr.0.name }} {{ x['a']['b'] }} {{ x[1:-1] }} {{ x[::2] }} {{ x[:3] }} {{ x[2:] }}
+{{ x.__class__.__name__ }} {{ x._private }} {{ _ }} {{ __ }} {{ ü }}
+{{ "yes" if a if b else "no" }} {{ (a if b else c) if d else e }}
+{{ a|default(b)|default(c, true) }} {{ a | default( 'x' ) | trim }} {{ items|map("upper")|join }}
+{{ "%s and %s"|format(1, 2) }} {{ "%(a)s"|format(a=1) }} {{ "x" % () }}
+{{ items|slice(3)|list }} {{ items|attr("name") }} {{ items|xmlattr }} {{ items|items }} {{ text|urlize(40, true, target="_blank") }}
+{{ items|max }} {{ items|min(case_sensitive=true) }} {{ items|random }} {{ items|pprint }} {{ items|string }} {{ items|list }}
+{{ items|select("equalto", 1)|list }} {{ items|reject("none")|list }} {{ items|selectattr("a", "eq", 1) }} {{ items|rejectattr("a", "ne", 1) }}
+{{ items|groupby("a", default="none", case_sensitive=true) }} {{ items|sum(attribute="a", start=10) }} {{ text|title }} {{ text|capitalize }}
+{{ text|wordwrap(20, true, "\n", false) }} {{ text|indent(width=2, first=false, blank=true) }} {{ text|truncate(10, killwords=true, end="...", leeway=2) }}
+{{ value|float(0.0) }} {{ value|int(0, 16) }} {{ value|abs }} {{ value|round(1, "floor") }} {{ value|filesizeformat }} {{ data|tojson }} {{ data|safe|escape|e }}
+{{ namespace }} {{ range }} {{ lipsum }} {{ dict(a=1, b=2) }} {{ cycler }} {{ joiner }} {{ self }} {{ super() }} {{ loop }} {{ varargs }} {{ kwargs }} {{ caller }}
+{{ "multi
+line string literal" }}
+{{ '\'' }} {{ "\"" }} {{ '\\' }} {{ "\t\n\r" }} {{ "\x41é\U0001F4E6" }}
+{{ "{{ not " ~ "interpolated }}" }} {{ "{%" ~ " nor this " ~ "%}" }}
+
+{# ── Rare constructs: whitespace-control variants ── #}
+{%- set trimmed -%}  inside  {%- endset -%}
+{{- 'a' -}} {{+ 'b' +}} {%+ if true +%}kept{%+ endif +%}
+{#- trimmed comment -#} {#+ kept comment +#}
+{%- raw -%}{{ raw }}{%- endraw -%}
+{%- for x in y -%}{{- x -}}{%- endfor -%}
+{% raw %}{% endraw %}{% raw %}{% raw %}{% endraw %}{% endraw %}
+## line comment prefix (when configured)
+# line statement prefix (when configured)

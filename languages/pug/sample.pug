@@ -1,0 +1,178 @@
+//- ── Comments ──
+//- Pug showcase: warehouse stock page. This comment is NOT rendered.
+//- TODO: paginate the table. FIXME: escape the footer HTML.
+// This comment IS rendered into the HTML output.
+//
+  A block comment: everything indented below
+  belongs to the comment and is rendered.
+//-
+  An unbuffered block comment.
+  Nothing here is output.
+
+//- ── Doctype, include, extends ──
+doctype html
+//- doctype xml / strict / transitional / custom: doctype html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+include helpers/mixins.pug
+include:markdown-it ../docs/intro.md
+include styles.css
+extends layout.pug
+
+//- ── Code: unbuffered, buffered, escaped, unescaped ──
+-
+  var warehouse = { name: "North <Depot>", open: true }
+  var items = [
+    { sku: "AC-1001", qty: 25, price: 19.99, tags: ["new", "sale"] },
+    { sku: "AC-1002", qty: 0, price: 5, tags: [] },
+  ]
+- var total = items.reduce((s, i) => s + i.qty * i.price, 0)
+- var title = `Stock for ${warehouse.name}`
+- var re = /^AC-\d{4}$/i
+- var n = 0x1F + 1_000 + 3.14e2
+
+block head
+  meta(charset="utf-8")
+  meta(name="viewport" content="width=device-width, initial-scale=1")
+  title= title
+  link(rel="stylesheet" href="/stock.css")
+  style.
+    .low { color: #c33; }
+    .ok  { color: #0a5; }
+  script(src="/app.js" defer)
+  script.
+    window.__STOCK__ = !{JSON.stringify(items)};
+    console.log("loaded", #{items.length}, 'items');
+
+block content
+  //- ── Tags, ids, classes, attributes ──
+  h1#main-title.title.big(data-warehouse=warehouse.name) Stock for #{warehouse.name}
+  .container
+    #sidebar.panel
+    p.
+      A text block using the dot syntax. Interpolation works: #{total.toFixed(2)}
+      and so does escaped \#{notInterpolated} and unescaped !{'<b>bold</b>'}.
+      Tag interpolation: #[strong bold] and #[a(href="/x") a link] inside text.
+    p
+      | Piped text line one
+      | and line two, with a trailing space.
+      br
+      | Then #[em emphasis].
+    a(href="/stock?sku=AC-1001&qty=25" target="_blank" rel="noopener") Details
+    a(href='/single-quoted' title="Mixed \"escapes\" here") Link
+    input(type="checkbox" checked)
+    input(type="text" name="sku" value=items[0].sku disabled=false required)
+    input(type='checkbox', checked=true, class='a b c')
+    button(type="button" onclick="alert('hi')" class={ active: warehouse.open, hidden: !warehouse.open }) Go
+    div(class="a" class=["b", "c"] style={ color: "red", "font-size": "12px" })
+    div(style="color: red;" data-json=JSON.stringify(items[0]))
+    div&attributes({ id: "spread", "data-x": 1 })
+    img(src="logo.png" alt="Logo")/
+    foo: bar: baz Nested inline tags with the colon shorthand
+    ul: li One
+    p= 'Buffered code: ' + warehouse.name
+    p!= '<em>Unescaped code</em>'
+    p #{'escaped <>'} and !{'<i>raw</i>'}
+    textarea
+      | Preformatted
+      |   spaces stay
+
+  //- ── Conditionals ──
+  if items.length === 0
+    p.muted No items.
+  else if items.length < 3
+    p Few items: #{items.length}
+  else
+    p Many items.
+
+  unless warehouse.open
+    p Closed
+
+  case items.length
+    when 0
+      p none
+    when 1
+    when 2
+      p few
+    when 3: p three
+    default
+      p many
+
+  //- ── Iteration ──
+  table.stock
+    thead
+      tr
+        th SKU
+        th Qty
+        th Price
+        th Tags
+    tbody
+      each item, i in items
+        tr(class=i % 2 ? "odd" : "even")
+          td= item.sku
+          td(class=item.qty === 0 ? "low" : "ok")= item.qty
+          td $#{item.price.toFixed(2)}
+          td
+            each tag in item.tags
+              span.tag= tag
+            else
+              em no tags
+      else
+        tr: td(colspan=4) Empty
+
+  each val, key in { a: 1, b: 2 }
+    li #{key}: #{val}
+
+  - var k = 0
+  while k < 3
+    li= k++
+
+  for item in items
+    p= item.sku
+
+  //- ── Mixins ──
+  mixin badge(status)
+    span.badge(class=status === 'paid' ? 'ok' : 'muted')&attributes(attributes)= status
+
+  mixin card(title, ...rest)
+    .card
+      h2= title
+      if block
+        block
+      else
+        p No content
+      ul
+        each r in rest
+          li= r
+
+  mixin price(value, currency = "USD")
+    span.price #{currency} #{value.toFixed(2)}
+
+  +badge('paid')
+  +badge('open')(class="extra" data-id="1")
+  +card('Widget', 'one', 'two')
+    p Block passed to the mixin
+  +price(19.99)
+  +price(5, "EUR")
+  +#{mixinName}(1)
+
+  //- ── Filters ──
+  :markdown-it
+    # Heading inside a filter
+    * list item
+    * another
+  :scss
+    $c: red;
+    .x { color: $c; }
+  :cdata
+    raw <data>
+
+  //- ── Blocks, append, prepend ──
+  block append scripts
+    script(src="/extra.js")
+  block prepend styles
+    link(rel="stylesheet" href="/extra.css")
+
+footer
+  | &copy; #{new Date().getFullYear()} Example Ltd
+  != footerHtml
+  = ' '
+  a(href="mailto:support@example.com") support@example.com

@@ -1,0 +1,421 @@
+% Bibliography for the Warehouse Operations Handbook.
+% Keys are author-year; a percent sign starts a comment line.
+% TODO: add DOIs for the grey literature entries.
+
+@comment{This is a comment entry; BibTeX ignores everything inside the braces.}
+
+@preamble{ "\providecommand{\noop}[1]{}" }
+@preamble{ "\newcommand{\acme}{Acme Logistics}" # " Ltd." }
+
+% ── String macros ────────────────────────────────────────────────────
+@string{jscm = "Journal of Supply Chain Management"}
+@string{ijpe = {International Journal of Production Economics}}
+@string{acm  = "Association for Computing Machinery"}
+@string{mit  = "MIT Press"}
+@string(parens = "String defined with parentheses")
+@string{jan = "January"}
+
+% ── Articles ─────────────────────────────────────────────────────────
+@article{author1984literate,
+  author    = {Alex Q. Author},
+  title     = {Literate Programming},
+  journal   = {The Computer Journal},
+  volume    = {27},
+  number    = {2},
+  pages     = {97--111},
+  year      = {1984},
+  month     = may,
+  doi       = {10.1093/comjnl/27.2.97},
+  issn      = {0010-4620},
+  url       = {https://doi.org/10.1093/comjnl/27.2.97},
+  keywords  = {programming, documentation},
+  abstract  = {Describes a methodology that treats a program as literature
+               and shows how {WEB} interleaves prose and code.}
+}
+
+@article{harlow1913economic,
+  author  = "Fran W. Harlow",
+  title   = "How Many Parts to Make at Once",
+  journal = "Factory, The Magazine of Management",
+  volume  = 10,
+  number  = {2},
+  pages   = "135--136, 152",
+  year    = 1913
+}
+
+@article{wallace1934inventory,
+  author  = {R. H. Wallace},
+  title   = {A Scientific Routine for Stock Control},
+  journal = jscm,
+  year    = 1934,
+  month   = jan,
+  note    = {Reprinted in \emph{Classics in Logistics}, \acme}
+}
+
+@article{gianni2002inventory,
+  author  = {Gianni, Ilaria and Ponti, Pierpaolo},
+  title   = {Inventory management in supply chains: a reinforcement learning approach},
+  journal = ijpe,
+  volume  = {78},
+  number  = {2},
+  pages   = {153--161},
+  year    = {2002}
+}
+
+% ── Books ────────────────────────────────────────────────────────────
+@book{alder1996sicp,
+  author    = {Alder, Harriet and Sumner, Gerald Jay and Sumner, Julia},
+  title     = {Structure and Interpretation of Computer Programs},
+  publisher = mit,
+  address   = {Cambridge, MA},
+  edition   = {2nd},
+  year      = {1996},
+  isbn      = {978-0-262-51087-5}
+}
+
+@book{sample1998inventory,
+  author    = {Sample, Edward A. and Pike, Dana F. and Peters, Rein},
+  title     = {Inventory Management and Production Planning and Scheduling},
+  publisher = {Wiley},
+  year      = {1998},
+  edition   = {3rd},
+  series    = {Wiley Series in Production},
+  volume    = {3}
+}
+
+@booklet{acme2020guide,
+  title        = {Acme Receiving Guide},
+  author       = {{Acme Logistics}},
+  howpublished = {Distributed to dock staff},
+  address      = {Springfield},
+  month        = jan # "~15",
+  year         = {2020}
+}
+
+% ── Conference and collection items ──────────────────────────────────
+@inproceedings{lambert1978time,
+  author     = {Lena Lambert},
+  title      = {Time, Clocks, and the Ordering of Events in a Distributed System},
+  booktitle  = {Communications of the {ACM}},
+  year       = {1978},
+  pages      = {558--565},
+  publisher  = acm,
+  note       = {Reprinted 2008}
+}
+
+@conference{doe2019pallet,
+  author    = {Doe, Jane},
+  title     = {Pallet Optimisation with {SAT} Solvers},
+  booktitle = {Proceedings of the 12th Workshop on Logistics},
+  year      = {2019}
+}
+
+@incollection{roe2015picking,
+  author    = {Roe, Richard and Poe, Sam},
+  title     = {Order Picking Strategies},
+  booktitle = {Handbook of Warehousing},
+  editor    = {Smith, Alex and Jones, Pat},
+  publisher = {Example Press},
+  year      = {2015},
+  chapter   = {7},
+  pages     = {101--134}
+}
+
+@inbook{brown2010layout,
+  author    = {Brown, Casey},
+  title     = {Warehouse Layout},
+  chapter   = {4},
+  pages     = {55--80},
+  publisher = {Example Press},
+  year      = {2010}
+}
+
+@proceedings{ware2021,
+  title     = {Proceedings of the Warehouse Automation Symposium},
+  editor    = {Lee, Robin},
+  year      = {2021},
+  organization = {Example Society}
+}
+
+% ── Theses, reports, manuals ─────────────────────────────────────────
+@phdthesis{nguyen2018slotting,
+  author = {Nguyen, Linh},
+  title  = {Dynamic Slotting in High-Velocity Warehouses},
+  school = {University of Springfield},
+  year   = {2018}
+}
+
+@mastersthesis{garcia2016rfid,
+  author = {Garc{\'\i}a, Mar{\'\i}a and M{\"u}ller, J{\"o}rg},
+  title  = {{RFID} Tracking at the Dock Door},
+  school = {Example Institute of Technology},
+  year   = {2016}
+}
+
+@techreport{acme2022audit,
+  author      = {{Acme Logistics Internal Audit}},
+  title       = {Annual Cycle-Count Audit},
+  institution = {Acme Logistics},
+  number      = {TR-2022-07},
+  year        = {2022},
+  type        = {Technical Report}
+}
+
+@manual{forklift2023manual,
+  title        = {Forklift Operator Manual},
+  organization = {Example Equipment Co.},
+  edition      = {5},
+  year         = {2023}
+}
+
+@unpublished{anon2024draft,
+  author = {Anonymous},
+  title  = {Notes on Slotting Heuristics},
+  note   = {Unpublished manuscript}
+}
+
+% ── Online and miscellaneous ─────────────────────────────────────────
+@misc{gs1barcodes,
+  author       = {{GS1}},
+  title        = {General Specifications},
+  howpublished = {\url{https://example.com/gs1}},
+  year         = {2023},
+  note         = {Accessed: 2026-01-10}
+}
+
+@online{example2025wms,
+  author  = {Example Systems},
+  title   = {Warehouse Management Systems Overview},
+  url     = {https://example.com/wms},
+  urldate = {2026-01-10},
+  year    = {2025}
+}
+
+@software{inventorykit2024,
+  author  = {Example Contributors},
+  title   = {InventoryKit},
+  version = {1.4.0},
+  url     = {https://example.com/inventorykit},
+  year    = {2024}
+}
+
+% ── Cross references and tricky values ───────────────────────────────
+@incollection{chapter-seven,
+  author    = {Roe, Richard},
+  title     = {Cross-docking},
+  crossref  = {handbook2015},
+  pages     = {150--170}
+}
+
+@book{handbook2015,
+  editor    = {Smith, Alex},
+  title     = {Handbook of Warehousing},
+  publisher = {Example Press},
+  year      = {2015}
+}
+
+@article{quotes-and-braces,
+  author  = {O'Neil, Pat and {van der Berg}, Jan and Nobody, Jr., A.},
+  title   = {The {B}ull-whip Effect: "Quoted" Words, 50\% Savings \& $x^2$ Maths},
+  journal = {Example Review},
+  year    = {2020},
+  note    = "A string with {nested {braces}} and an escaped quote: \"here\"",
+  number  = 3,
+  pages   = {1--12},
+  volume  = 7 # {a},
+  annote  = {Unicode: Müller, Łódź, 東京}
+}
+
+% ── Further constructs ───────────────────────────────────────────────
+@string{ACM = "Association for Computing Machinery"}
+@string{ieee = {Institute of Electrical and Electronics Engineers}}
+@string{apr = "April"}
+
+@comment{jabref-meta: databaseType:bibtex;}
+@comment{
+  Multi-line comment entry.
+  @article{not-an-entry, title = {ignored}}
+}
+
+@preamble{"\newcommand{\sku}[1]{\texttt{#1}}"}
+
+@Article{CamelCaseType,
+  Author  = {Camel, Case},
+  Title   = {Entry Types Are Case-Insensitive},
+  Journal = {Example Review},
+  Year    = {2021},
+}
+
+@ARTICLE(parenthesised,
+  author  = "Parenthesised, Entry",
+  title   = "Entries May Use Parentheses",
+  journal = acm,
+  year    = 2019,
+  month   = apr
+)
+
+@article{concat-heavy,
+  author  = {A. Author} # " and " # {B. Writer},
+  title   = "Concatenation " # "of " # {strings},
+  journal = acm # " Transactions",
+  year    = 2000 + 3,
+  month   = apr # "~1"
+}
+
+@article{latex-accents,
+  author  = {Fran\c{c}ois M\"uller and Jos\'e \"Ozg\"ur and {\L}ukasz Kowalski and J{\o}rgen S{\ae}ther},
+  title   = {Th{\'e}orie des stocks: $\alpha$-optimal \textit{policies} for $n \geq 1$ items},
+  journal = {Revue de {L}ogistique},
+  year    = {2020},
+  pages   = {1--20},
+  note    = {\url{https://example.com/a_b}}
+}
+
+@article{braces-and-quotes,
+  author  = "Smith, John and {Example Society of Logistics}",
+  title   = "A \"quoted\" title with {braces {nested {deeply}}}",
+  journal = {J. Ex.},
+  year    = {1999},
+  abstract = {First line
+              second line with a percent \% sign and {unbalanced \{ brace escaped}}
+}
+
+@misc{key:with:colons-and_underscores.and/slashes,
+  title  = {Keys may contain punctuation},
+  year   = {2022}
+}
+
+@misc{numeric-fields,
+  title   = {Numeric Values},
+  volume  = 12,
+  number  = 3,
+  year    = 2024,
+  pages   = 101,
+  edition = 2
+}
+
+@biblatex-entry{custom-type-ok,
+  title = {Unknown entry types still parse}
+}
+
+@thesis{biblatex-thesis,
+  author      = {Student, Example},
+  title       = {A BibLaTeX Thesis},
+  type        = {mathesis},
+  institution = {Example University},
+  date        = {2023-06-15},
+  location    = {Springfield},
+  langid      = {english},
+  keywords    = {warehouse, logistics},
+  file        = {:thesis.pdf:PDF},
+  eprint      = {2301.00001},
+  eprinttype  = {arxiv},
+  eprintclass = {cs.DS},
+  related     = {key1,key2},
+  relatedtype = {reprintof},
+  options     = {useprefix=true},
+  shorthand   = {EST},
+  sortname    = {Student},
+  xref        = {parent},
+  entryset    = {a,b},
+  ids         = {alias1,alias2},
+  execute     = {\usebibmacro{hook}}
+}
+
+@patent{us-patent,
+  author  = {Inventor, A.},
+  title   = {Pallet Rotator},
+  number  = {US 0000000},
+  holder  = {Acme Logistics},
+  date    = {2021-02-02}
+}
+
+@standard{iso-standard,
+  author       = {{International Organization for Standardization}},
+  title        = {Packaging: Labelling},
+  number       = {ISO 00000},
+  year         = {2018}
+}
+
+@dataset{inventory-data,
+  author   = {Example Contributors},
+  title    = {Annual Stock Counts},
+  year     = {2024},
+  doi      = {10.0000/example.dataset},
+  url      = {https://example.com/dataset},
+  urldate  = {2026-01-01},
+  version  = {v3}
+}
+
+@report{report-entry,
+  author      = {Writer, Report},
+  title       = {Quarterly Report},
+  type        = {resreport},
+  institution = {Example Institute},
+  number      = {Q3},
+  year        = {2025}
+}
+
+@mvbook{multi-volume,
+  author    = {Editor, Multi},
+  title     = {Complete Works},
+  volumes   = {3},
+  publisher = {Example Press},
+  year      = {2010}
+}
+
+@suppbook{supplemental,
+  author    = {Intro, Writer},
+  title     = {Foreword},
+  booktitle = {Complete Works},
+  pages     = {ix--xii},
+  year      = {2010}
+}
+
+@xdata{shared-data,
+  publisher = {Example Press},
+  location  = {Springfield}
+}
+
+@book{uses-xdata,
+  author    = {Using, XData},
+  title     = {Inherits Fields},
+  xdata     = {shared-data},
+  year      = {2015}
+}
+
+@set{entryset-a,
+  entryset = {concat-heavy,latex-accents}
+}
+
+@online{url-only,
+  title   = {A Page},
+  url     = {https://example.com/page?q=1&r=2#frag},
+  urldate = {2026-01-02},
+  organization = {Example}
+}
+
+@inreference{wiki-like,
+  author    = {{Example Encyclopedia}},
+  title     = {Pallet},
+  booktitle = {Example Encyclopedia},
+  year      = {2024}
+}
+
+@collection{collection-entry,
+  editor    = {Editor, Chief and Editor, Deputy},
+  title     = {Warehouse Studies},
+  publisher = {Example Press},
+  year      = {2016}
+}
+
+@proceedings{proceedings-biblatex,
+  editor    = {Chair, Program},
+  title     = {Proceedings of Logistics Day},
+  eventtitle = {Logistics Day 2022},
+  eventdate = {2022-05-10/2022-05-12},
+  venue     = {Springfield},
+  publisher = {Example Society},
+  year      = {2022}
+}
+% TODO: normalise the month fields to biblatex dates.

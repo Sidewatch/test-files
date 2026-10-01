@@ -1,0 +1,184 @@
+/**
+ * Avro IDL protocol for a warehouse ordering service.
+ * Doc comments attach to the declaration that follows them.
+ */
+// A line comment: TODO add a shipment record.
+@namespace("com.example.warehouse")
+@version("2.0")
+@aliases(["com.example.stock"])
+protocol WarehouseService {
+
+  // ── Imports ──────────────────────────────────────────────────────
+  import idl "common.avdl";
+  import protocol "legacy.avpr";
+  import schema "address.avsc";
+
+  // ── Named types ──────────────────────────────────────────────────
+  /** Order lifecycle states. */
+  enum Status {
+    PENDING, PAID, SHIPPED, CANCELLED
+  } = PENDING;
+
+  @aliases(["Sku"])
+  fixed Sku(8);
+
+  fixed Checksum(16);
+
+  /** A line on an order. */
+  record LineItem {
+    string sku;
+    int quantity = 1;
+    double unitPrice;
+    @order("descending") long weightGrams = 0;
+    @java-class("java.util.ArrayList") array<string> labels = [];
+  }
+
+  record Address {
+    string street;
+    union { null, string } line2 = null;
+    string city;
+    string postcode;
+  }
+
+  /** The main order record. */
+  record Order {
+    string id;
+    long createdAt;
+    Status status = "PENDING";
+    array<LineItem> items;
+    union { null, string } note = null;
+    map<string> tags = {};
+    map<array<int>> histogram = {};
+    boolean express = false;
+    float discount = 0.0;
+    double total = 1.5e3;
+    bytes signature = "ÿ";
+    Sku primarySku;
+    Address shipTo;
+    timestamp_ms placedAt;
+    date deliveryDay;
+    time_ms cutoff;
+    uuid trackingId;
+    decimal(10, 2) amount;
+    local_timestamp_ms localPlacedAt;
+    int @logicalType("date") legacyDay;
+    string @avro.java.string("String") name = "unnamed";
+  }
+
+  record Defaults {
+    int anInt = -42;
+    long aLong = 9000000000;
+    float aFloat = 0.5;
+    double aDouble = -1.25e-3;
+    boolean aBool = true;
+    null nothing = null;
+    string text = "tab\t newline\n quote \" backslash \\ unicode é";
+    bytes raw = "\u0000ÿ";
+    array<int> numbers = [1, 2, 3];
+    map<double> prices = {"widget": 4.5, "gadget": 1.25};
+    Status st = "PAID";
+    union { string, int, null } mixed = "x";
+    Address addr = {"street": "1 Dock Rd", "line2": null, "city": "Springfield", "postcode": "00000"};
+  }
+
+  // ── Errors ───────────────────────────────────────────────────────
+  error NotFound {
+    string id;
+  }
+
+  error OutOfStock {
+    string sku;
+    int available = 0;
+  }
+
+  // ── Messages ─────────────────────────────────────────────────────
+  /** Fetch one order. */
+  Order getOrder(string id) throws NotFound;
+
+  Order placeOrder(array<LineItem> items, Address shipTo) throws OutOfStock, NotFound;
+
+  @namespace("com.example.audit")
+  void cancel(string id, union { null, string } reason = null) oneway;
+
+  array<Order> list(Status status = "PENDING", int limit = 50);
+
+  map<int> stockLevels();
+
+  union { null, Order } findByTracking(uuid trackingId);
+
+  void ping();
+
+  /** Parameters can carry annotations too. */
+  boolean isLow(@order("ignore") string sku, int threshold = 25);
+
+  decimal(12, 4) totalFor(string id);
+}
+
+// ── Further constructs ──────────────────────────────────────────────
+// A second protocol cannot share a file, so the rest are shown as
+// additional declarations inside a schema file in IDL form.
+@namespace("com.example.warehouse.extra")
+schema array<Address>;
+
+/** Enum with a default symbol for forward compatibility. */
+@aliases(["OldColor"])
+enum Color {
+  RED, GREEN, BLUE, UNKNOWN
+} = UNKNOWN;
+
+@java-class("java.util.LinkedList")
+record Wrapper {
+  @logicalType("timestamp-micros") long micros;
+  @logicalType("uuid") string id;
+  @logicalType("decimal") @precision(10) @scale(2) bytes price;
+  @logicalType("duration") fixed Duration12(12) span;
+  @avro.java.string("String") string text;
+  @order("ascending") int first;
+  @order("ignore") int second;
+  union { null, int, long, float, double, string, boolean, bytes, array<string>, map<string> } anything = null;
+  union { string, null } reverse;
+  array<array<int>> nested = [[1], [2, 3]];
+  map<map<string>> deep = {};
+  decimal(38, 18) wide;
+  local_timestamp_micros localMicros;
+  timestamp_micros micros2;
+  time_micros timeOfDay;
+}
+
+record Mixed {
+  int       withTabs   = 0;
+  long      big        = -9223372036854775808;
+  float     f          = 1.0e-5;
+  double    d          = 6.02e23;
+  string    unicode    = "café 😀";
+  string    escapes    = "\b \f \n \r \t \" \\ \/";
+  bytes     binary     = "\u0001\u0002";
+  Color     color      = "GREEN";
+  Duration12 dur       = "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000";
+  array<Color> colors  = ["RED", "BLUE"];
+  `error` `record`;                    // identifiers escaped with backticks
+}
+
+/** Reserved words may be escaped. */
+record `fixed` {
+  string `enum`;
+  int `int`;
+}
+
+error Failure {
+  string reason;
+  int code = 500;
+}
+
+// Messages with the full range of throws and oneway forms
+protocol Extended {
+  import idl "extra.avdl";
+  void ping();
+  void fire(string payload) oneway;
+  string echo(string message = "hi");
+  Mixed fetch(int id) throws Failure;
+  Failure describe(Failure f);
+  map<string> headers(array<string> names = []);
+  @aliases(["oldName"]) int renamed(@order("ignore") int a, long b = 2);
+  union { null, Color } maybeColor(union { null, Color } input = null);
+}

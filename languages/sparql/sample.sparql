@@ -1,0 +1,166 @@
+# ── Comments ──
+# SPARQL 1.1: warehouses, stock, and the suppliers who ship it.
+# TODO: federate with the supplier endpoint
+# FIXME: ranking ties are unstable
+
+BASE <https://example.com/inventory/>
+PREFIX rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs:  <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd:   <http://www.w3.org/2001/XMLSchema#>
+PREFIX foaf:  <http://xmlns.com/foaf/0.1/>
+PREFIX ex:    <https://example.com/schema#>
+PREFIX :      <https://example.com/data/>
+
+# ── SELECT with every expression form ──
+SELECT DISTINCT ?warehouse ?name (COUNT(DISTINCT ?item) AS ?items)
+       (SUM(?qty) AS ?units) (AVG(?price) AS ?avgPrice)
+       (MIN(?qty) AS ?least) (MAX(?qty) AS ?most)
+       (SAMPLE(?sku) AS ?anySku)
+       (GROUP_CONCAT(DISTINCT ?sku; separator=", ") AS ?skus)
+       (IF(SUM(?qty) < 25, "low", "ok") AS ?level)
+       (?units * 1.1 AS ?padded)
+FROM <https://example.com/graphs/stock>
+FROM NAMED <https://example.com/graphs/suppliers>
+WHERE {
+  # ── Triple patterns ──
+  ?warehouse a ex:Warehouse ;
+             rdfs:label ?name ;
+             ex:holds ?item , ?other .
+  ?item ex:sku ?sku ;
+        ex:quantity ?qty ;
+        ex:price ?price .
+  ?item rdf:type/rdfs:subClassOf* ex:Product .
+  ?item (ex:madeBy|ex:suppliedBy) ?supplier .
+  ?item ^ex:holds ?holder .
+  ?item ex:related+ ?kin .
+  ?item ex:optionalRel? ?maybe .
+  ?item !(rdf:type|ex:hidden) ?anything .
+  <item/ABC-1> ex:inWarehouse :north .
+  [] ex:note "anonymous subject" .
+  [ ex:inner "nested" ; ex:count 3 ] ex:about ?item .
+  ( ?a ?b ?c ) ex:listed ?item .
+
+  # ── Literals ──
+  ?item ex:label "plain"
+      , "tagged"@en
+      , "regional"@en-GB
+      , 'single quoted'
+      , """triple
+double quoted"""
+      , '''triple
+single quoted'''
+      , "escapes \t \n \" \\ é"
+      , "typed"^^xsd:string
+      , "5"^^xsd:integer
+      , "2026-09-24"^^<http://www.w3.org/2001/XMLSchema#date> .
+  ?item ex:n 42 , -7 , +3 , 3.14 , -0.5 , 1.5e10 , 2E-3 , .5 , true , false .
+
+  # ── Filters ──
+  FILTER (?qty > 0 && ?price <= 100.0 || !BOUND(?maybe))
+  FILTER (LANG(?name) = "en" && LANGMATCHES(LANG(?name), "en-*"))
+  FILTER (REGEX(?sku, "^ABC-[0-9]+$", "i"))
+  FILTER (CONTAINS(LCASE(?name), "north") || STRSTARTS(?name, "A") || STRENDS(?name, "Z"))
+  FILTER (?qty IN (1, 2, 3) && ?qty NOT IN (4, 5))
+  FILTER (isIRI(?item) && !isBlank(?item) && isLiteral(?sku) && isNumeric(?qty))
+  FILTER (DATATYPE(?qty) = xsd:integer && STR(?item) != "")
+  FILTER (sameTerm(?a, ?b) || ?a = ?b || ?a != ?c)
+  FILTER (?qty * 2 + 1 - 3 / 4 > ABS(-1) + CEIL(1.2) + FLOOR(1.8) + ROUND(2.5))
+  FILTER (YEAR(NOW()) >= 2026 && STRLEN(?name) < 40 && SUBSTR(?name, 1, 3) = "Nor")
+
+  # ── Optional, union, minus, exists ──
+  OPTIONAL { ?warehouse ex:manager ?manager . FILTER (BOUND(?manager)) }
+  { ?item ex:status "active" } UNION { ?item ex:status "backorder" } UNION { ?item ex:status "new" }
+  MINUS { ?item ex:status "discontinued" }
+  FILTER EXISTS { ?item ex:supplier ?s }
+  FILTER NOT EXISTS { ?item ex:recalled true }
+
+  # ── Bindings ──
+  BIND (CONCAT(?name, " / ", STR(?qty)) AS ?display)
+  BIND (COALESCE(?maybe, "n/a") AS ?safe)
+  BIND (STRUUID() AS ?id)
+  BIND (IRI(CONCAT("https://example.com/item/", ENCODE_FOR_URI(?sku))) AS ?iri)
+  BIND (xsd:integer(?qty) AS ?intQty)
+  BIND (BNODE() AS ?node)
+  BIND (RAND() AS ?r)
+  BIND (MD5(?sku) AS ?hash)
+
+  # ── Values, service, graph, subquery ──
+  VALUES ?region { "north" "south" UNDEF }
+  VALUES (?code ?label) { ("N" "North") ("S" "South") (UNDEF "Unknown") }
+  SERVICE <https://example.com/sparql> { ?supplier foaf:name ?supplierName }
+  SERVICE SILENT <https://example.org/flaky> { ?supplier ex:rating ?rating }
+  GRAPH <https://example.com/graphs/suppliers> { ?supplier ex:country ?country }
+  GRAPH ?g { ?supplier ex:updated ?when }
+  {
+    SELECT ?supplier (COUNT(?x) AS ?supplied)
+    WHERE { ?x ex:suppliedBy ?supplier }
+    GROUP BY ?supplier
+    HAVING (COUNT(?x) > 1)
+  }
+}
+GROUP BY ?warehouse ?name
+HAVING (SUM(?qty) >= 10 && COUNT(?item) > 0)
+ORDER BY DESC(?units) ASC(?name) ?warehouse
+LIMIT 20
+OFFSET 40
+
+# ── CONSTRUCT ──
+CONSTRUCT {
+  ?item ex:needsReorder true ;
+        ex:reorderBy ?due .
+  _:note a ex:Note ; ex:about ?item .
+}
+WHERE {
+  ?item ex:quantity ?qty .
+  FILTER (?qty <= 25)
+  BIND (NOW() AS ?due)
+}
+
+# ── CONSTRUCT WHERE shorthand ──
+CONSTRUCT WHERE { ?s ex:sku ?o }
+
+# ── ASK ──
+ASK { ?item ex:sku "ABC-1" ; ex:quantity ?q . FILTER (?q > 0) }
+
+# ── DESCRIBE ──
+DESCRIBE <item/ABC-1> ?warehouse
+WHERE { ?warehouse ex:holds <item/ABC-1> }
+
+# ── Update: data ──
+INSERT DATA {
+  GRAPH <https://example.com/graphs/stock> {
+    :abc1 a ex:Product ; ex:sku "ABC-1" ; ex:quantity 12 .
+  }
+} ;
+
+DELETE DATA { :abc2 ex:quantity 3 } ;
+
+DELETE { ?item ex:quantity ?old }
+INSERT { ?item ex:quantity ?new }
+WHERE {
+  ?item ex:quantity ?old .
+  BIND (?old + 10 AS ?new)
+} ;
+
+WITH <https://example.com/graphs/stock>
+DELETE { ?item ex:status "new" }
+INSERT { ?item ex:status "active" }
+USING <https://example.com/graphs/stock>
+WHERE { ?item ex:status "new" } ;
+
+DELETE WHERE { ?item ex:recalled true } ;
+
+# ── Update: graph management ──
+LOAD <https://example.com/data/stock.ttl> INTO GRAPH <https://example.com/graphs/stock> ;
+LOAD SILENT <https://example.com/data/missing.ttl> ;
+CLEAR GRAPH <https://example.com/graphs/old> ;
+CLEAR SILENT ALL ;
+CLEAR DEFAULT ;
+CLEAR NAMED ;
+CREATE GRAPH <https://example.com/graphs/new> ;
+CREATE SILENT GRAPH <https://example.com/graphs/maybe> ;
+DROP GRAPH <https://example.com/graphs/old> ;
+DROP SILENT ALL ;
+COPY DEFAULT TO <https://example.com/graphs/backup> ;
+MOVE <https://example.com/graphs/a> TO <https://example.com/graphs/b> ;
+ADD SILENT <https://example.com/graphs/b> TO DEFAULT

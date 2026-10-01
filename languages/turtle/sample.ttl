@@ -1,0 +1,154 @@
+# Turtle (RDF): a warehouse inventory graph.
+# ── Directives ──────────────────────────────────────────────
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix ex:   <https://example.com/schema#> .
+@prefix :     <https://example.com/warehouse/> .
+@base <https://example.com/data/> .
+PREFIX dct: <http://purl.org/dc/terms/>
+BASE <https://example.com/data/>
+
+# TODO: link suppliers to purchase orders
+# FIXME: the bin capacities are placeholders
+
+# ── Ontology ────────────────────────────────────────────────
+ex:Item a owl:Class ;
+    rdfs:label "Item"@en, "Artikel"@de, "Article"@fr ;
+    rdfs:comment "A stocked product."@en .
+
+ex:Bin a owl:Class ;
+    rdfs:subClassOf [ a owl:Restriction ;
+                      owl:onProperty ex:capacity ;
+                      owl:minCardinality "1"^^xsd:nonNegativeInteger ] .
+
+ex:storedIn a owl:ObjectProperty ;
+    rdfs:domain ex:Item ;
+    rdfs:range ex:Bin .
+
+# ── Resources, typed literals and language tags ─────────────
+<widget-100> a ex:Item ;
+    ex:sku "WGT-100" ;
+    ex:name "Widget"@en ;
+    ex:quantity 12 ;
+    ex:price 4.50 ;
+    ex:weight 1.25e-1 ;
+    ex:ratio -3.5E+2 ;
+    ex:discontinued false ;
+    ex:active true ;
+    ex:received "2026-03-01"^^xsd:date ;
+    ex:updated "2026-03-01T09:30:00Z"^^xsd:dateTime ;
+    ex:reorderPoint "25"^^xsd:integer ;
+    ex:storedIn :bin-a1 ;
+    dct:modified "2026-03-02"^^xsd:date .
+
+:bin-a1 a ex:Bin ;
+    ex:capacity 500 ;
+    ex:label 'Aisle A, shelf 1' .
+
+# ── Strings: every quote form and escapes ───────────────────
+:notes a ex:Note ;
+    ex:short "double \"quoted\" with \t tab and \n newline" ;
+    ex:single 'single \'quoted\' text' ;
+    ex:unicode "caf\u00E9 \U0001F4E6 box" ;
+    ex:backslash "C:\\inventory\\items" ;
+    ex:long """A long string that
+spans several lines and may contain "quotes" freely.""" ;
+    ex:longSingle '''Another
+multi-line literal with 'quotes' inside.''' ;
+    ex:localised "Lagerbestand"@de-DE .
+
+# ── Blank nodes, collections and the `a` keyword ────────────
+:shipment-7 a ex:Shipment ;
+    ex:contains ( :widget-100 :gadget-200 :gizmo-300 ) ;
+    ex:to [ a ex:Address ;
+            ex:street "1 Dock Road" ;
+            ex:city "Portsmouth" ] ;
+    ex:tags ( "fragile" "priority" 3 4.5 true ) ;
+    ex:empty () ;
+    ex:anon [] .
+
+_:b1 a ex:Supplier ;
+    foaf:name "Acme Supply Co." ;
+    foaf:homepage <https://example.com/acme> ;
+    foaf:mbox <mailto:orders@example.com> .
+
+# ── Predicate and object lists ──────────────────────────────
+:gadget-200 a ex:Item, ex:Fragile ;
+    ex:sku "GDG-200" ;
+    ex:quantity 40 , 41 , 42 ;
+    ex:suppliedBy _:b1 ;
+    ex:name "Gadget"@en ; # trailing comment
+    .
+
+<../relative/path> <#fragment> <> .
+<http://example.com/ünïcode> ex:path <urn:isbn:0451450523> .
+</root-relative> ex:p ex:o .
+:gizmo-300 ex:note "last statement" .
+
+# ── Numeric forms, prefixed-name corner cases ───────────────
+:numbers ex:int 7 ;
+    ex:signedPlus +7 ;
+    ex:signedMinus -7 ;
+    ex:decimal 3.14 ;
+    ex:leadingDot .5 ;
+    ex:signedDecimal -0.5 ;
+    ex:double 1.0e0 ;
+    ex:doubleBare 1E10 ;
+    ex:doubleLeading .5e-3 ;
+    ex:boolTrue true ;
+    ex:boolFalse false .
+
+:names ex:percent ex:caf%C3%A9 ;
+    ex:escaped ex:a\~b\.c\-d ;
+    ex:underscore ex:_private ;
+    ex:digitStart ex:2026-report ;
+    ex:dotted ex:a.b.c ;
+    ex:colonInside ex:a:b ;
+    ex:emptyLocal ex: ;
+    ex:defaultEmpty : .
+
+: ex:selfPrefix : .
+ex: ex:selfNs ex: .
+
+# ── Blank nodes of every form ──────────────────────────────
+_:label1 ex:p _:label.with.dots, _:label-with-dash, _:_underscore, _:1digit .
+[] ex:p "anonymous subject" .
+[ ex:q "property list subject" ; ex:r 1 ] ex:p "with predicate list" .
+[ ex:q "only a node" ] .
+( 1 2 3 ) ex:p "collection subject" .
+() ex:p "empty collection subject" .
+
+# ── Nested structures ──────────────────────────────────────
+:order-9 ex:lines (
+        [ ex:sku "WGT-100" ; ex:qty 2 ]
+        [ ex:sku "GDG-200" ; ex:qty ( 1 2 ) ]
+        ( ( "nested" ) "lists" )
+    ) ;
+    ex:meta [ ex:by [ foaf:name "Sam Example" ; ex:team [ a ex:Team ] ] ] .
+
+# ── Long literals with edge cases ──────────────────────────
+:edge ex:empty1 "" ;
+    ex:empty2 '' ;
+    ex:empty3 """""" ;
+    ex:endsQuote """ends with a quote\"""" ;
+    ex:innerTriple """has "" two quotes and ' apostrophes""" ;
+    ex:longTyped """2026-03-01"""^^xsd:date ;
+    ex:longLang '''Mehrzeilig
+Text'''@de ;
+    ex:datatypeIri "x"^^<https://example.com/datatypes#custom> ;
+    ex:allEscapes "\t\b\n\r\f\"\'\\ and \u0041 \U0001D11E" ;
+    ex:rdfType a , ex:Thing ;
+    ex:variant "ok"@en-US-x-private , "ok"@zh-Hant-TW .
+
+# ── RDF 1.2 / RDF-star syntax ──────────────────────────────
+VERSION "1.2"
+@version "1.2" .
+<< :widget-100 ex:quantity 12 >> ex:assertedBy :audit-2026 ;
+    ex:confidence 0.9 .
+:widget-100 ex:quantity 12 {| ex:source :count-sheet ; ex:certainty 0.8 |} .
+:claim ex:says << :bin-a1 ex:holds :widget-100 >> .
+:ltr ex:text "Hello"@en--ltr , "مرحبا"@ar--rtl .
+:reified ex:about <<( :gadget-200 ex:quantity 40 )>> .

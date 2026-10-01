@@ -1,0 +1,259 @@
+@charset "UTF-8";
+/* ── Comments ── */
+/* Block comment
+   across lines. TODO: split into partials. FIXME: legacy prefixes. */
+
+/* ── At-rules ── */
+@import url("reset.css") layer(base);
+@import "theme.css" screen and (min-width: 600px);
+@namespace svg url(http://www.w3.org/2000/svg);
+@layer base, components, utilities;
+
+@font-face {
+  font-family: "Warehouse Sans";
+  src: url("fonts/ws.woff2") format("woff2"), url("fonts/ws.woff") format("woff");
+  font-weight: 100 900;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153;
+}
+
+@property --accent-hue {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 210deg;
+}
+
+@counter-style stock-bullets {
+  system: cyclic;
+  symbols: "▪" "▫";
+  suffix: " ";
+}
+
+@page :first {
+  size: A4 portrait;
+  margin: 2cm;
+}
+
+/* ── Custom properties ── */
+:root {
+  --brand-primary: #3B82F6;
+  --brand-accent: #ff6b35;
+  --brand-alpha: #3b82f680;
+  --short-hex: #fa0;
+  --space-unit: 8px;
+  --max-width: 1200px;
+  --font-stack: "Inter", "Helvetica Neue", sans-serif;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.2), 0 4px 12px hsl(220 20% 10% / 15%);
+  --empty:;
+  --json: { "a": 1 };
+  color-scheme: light dark;
+}
+
+/* ── Selectors ── */
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { font: 16px/1.5 var(--font-stack, sans-serif); color: #1a1a1a; }
+h1, h2, h3 { font-weight: 700; }
+.container { max-width: var(--max-width); margin-inline: auto; }
+#warehouse-main { padding: calc(var(--space-unit) * 2); }
+nav > ul > li + li ~ li { margin-left: 4px; }
+a:hover, a:focus-visible, a:not([href^="http"]) { text-decoration: underline; }
+li:nth-child(2n + 1), li:nth-of-type(odd), li:nth-last-child(-n + 3) { background: #f5f5f5; }
+li:first-child::before, li:last-child::after { content: "\2022\00a0"; }
+input[type="text"], input[data-sku], a[href$=".pdf" i], a[href*="stock"], [lang|="en"], [class~="bin"] {
+  border: 1px solid currentColor;
+}
+p::first-line, p::first-letter, ::selection, ::placeholder, ::marker { color: tomato; }
+:is(h1, h2):where(.title, .heading) > :has(+ img) { margin: 0; }
+:root:not(.dark) :focus-within { outline: 2px solid Highlight; }
+svg|rect, *|*, |circle { fill: none; }
+.card:is(:hover, :active)::after { content: attr(data-label) " (" counter(items) ")"; }
+
+/* ── Nesting ── */
+.table {
+  border-collapse: collapse;
+  & th, & td { padding: .5rem 1rem; }
+  &:hover { background: color-mix(in srgb, var(--brand-primary) 10%, white); }
+  .dense & { padding: 0; }
+  @media (width < 600px) { display: block; }
+}
+
+/* ── Values and units ── */
+.values {
+  width: 100%; height: 50vh; min-height: 10rem; max-width: 65ch;
+  margin: -1.5em 0 +2px 0.5e1px;
+  padding: 1e3px 1E-2em;
+  font-size: clamp(1rem, 2.5vw + 0.5rem, 2rem);
+  line-height: 1.2;
+  border-radius: 50% / 10%;
+  transform: translate(-50%, -50%) rotate(45deg) scale(1.1, 0.9) skewX(10deg);
+  transition: opacity 0.3s ease-in-out, transform 200ms cubic-bezier(0.4, 0, 0.2, 1) 50ms;
+  animation: slide 2s steps(4, end) infinite alternate both;
+  background:
+    linear-gradient(to right, rgba(255, 255, 255, 0.96) 0%, transparent 100%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'/>") no-repeat center / cover,
+    radial-gradient(circle at 30% 20%, hsl(210deg 80% 50%), hwb(200 10% 10%)),
+    conic-gradient(from 90deg, red, #0f0, rgb(0, 0, 255)),
+    oklch(70% 0.15 200);
+  width: calc(100% - (2 * var(--space-unit)) + min(10px, 2vw) * max(1, 2));
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) [end];
+  grid-template-areas: "header header" "sidebar main";
+  aspect-ratio: 16 / 9;
+  color: RebeccaPurple;
+  resolution: 2dppx;
+  rotate: 0.25turn;
+  angle: 100grad;
+  time: 1.5s;
+  freq: 10kHz;
+  content: "quote \" and \\ backslash and \A newline";
+  quotes: "«" "»" '‹' '›';
+  unicode: U+26;
+  font-family: system-ui, -apple-system, 'Segoe UI';
+  width: 10Q;
+  margin: 1cqw 2cqh 3svh 4dvw;
+}
+
+/* ── Important, vendor prefixes, hacks ── */
+.legacy {
+  display: none !important;
+  -webkit-appearance: none;
+  -moz-osx-font-smoothing: grayscale;
+  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=50)";
+  *zoom: 1;
+  filter: blur(2px) drop-shadow(0 0 4px #0008);
+}
+
+/* ── At-rules with blocks ── */
+@media screen and (min-width: 768px) and (max-width: 1199.98px), print and (orientation: landscape) {
+  .container { padding: 16px; }
+}
+@media (prefers-color-scheme: dark) and (hover: hover), not all and (monochrome) {
+  :root { --brand-primary: #60a5fa; }
+}
+@media (400px <= width <= 700px) { .narrow { display: block; } }
+@supports (display: grid) and (not (display: inline-grid)) { .grid { display: grid; } }
+@supports selector(:has(a)) { .has { color: red; } }
+@container sidebar (min-width: 400px) { .card { display: flex; } }
+@container (inline-size > 30em) { .card { gap: 1rem; } }
+@scope (.card) to (.content) { img { border: 1px solid; } }
+@starting-style { .popover { opacity: 0; } }
+
+@layer components {
+  .button {
+    display: inline-flex;
+    padding: 0.5em 1em;
+  }
+}
+
+@keyframes slide {
+  from { transform: translateX(0); }
+  50%  { transform: translateX(50px); opacity: 0.5; }
+  to   { transform: translateX(100px); }
+}
+
+@-webkit-keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ── Functions and environment ── */
+.fn {
+  padding: env(safe-area-inset-top, 0px);
+  background: image-set("a.png" 1x, "b.png" 2x);
+  width: fit-content(20em);
+  font-variation-settings: "wght" 650, "wdth" 85;
+  counter-increment: items 2;
+  grid-area: 1 / 2 / span 2 / -1;
+  mask: url(#mask) no-repeat;
+  src: local("Warehouse"), url(font.woff2);
+}
+
+/* ── Further constructs ── */
+<!-- CDO and CDC tokens are legal in stylesheets -->
+@import url(unquoted.css) supports(display: grid) layer(theme);
+@font-feature-values "Warehouse Sans" {
+  @styleset { nice-style: 12; }
+  @character-variant { alt-a: 1; }
+}
+@position-try --flip { top: anchor(bottom); }
+@view-transition { navigation: auto; }
+@media (prefers-reduced-motion: reduce), (prefers-contrast: more) and (forced-colors: active) {
+  * { animation: none !important; }
+}
+@media (min-resolution: 2dppx), (-webkit-min-device-pixel-ratio: 2) { .hi-dpi { image-rendering: crisp-edges; } }
+@media only screen and (min-aspect-ratio: 16/9) and (max-height: 40em) { .wide { display: flex; } }
+@media not print { .screen-only { display: block; } }
+@custom-media --narrow (max-width: 30em);
+@custom-selector :--heading h1, h2, h3;
+@tailwind base;
+@apply font-bold py-2;
+
+/* Shadow DOM and web components */
+:host, :host(.active), :host-context(.dark) { display: block; }
+::slotted(span), ::part(label), ::cue(b), ::backdrop, ::file-selector-button, ::view-transition-old(root) { color: inherit; }
+my-element::part(button):hover { background: LinkText; }
+
+/* More selectors */
+:lang(en), :dir(rtl), :nth-child(2n of .visible), :nth-last-of-type(even) { quotes: "“" "”"; }
+:target, :checked, :disabled, :enabled, :indeterminate, :required, :optional, :read-only, :read-write { opacity: 1; }
+:root:is(:fullscreen, :modal, :popover-open, :picture-in-picture) { overflow: hidden; }
+:user-valid, :user-invalid, :autofill, :placeholder-shown, :default, :in-range, :out-of-range { outline: 0; }
+:link, :visited, :any-link, :local-link, :empty, :only-child, :only-of-type, :first-of-type, :last-of-type { color: LinkText; }
+:state(open), :defined, :scope, :current, :past, :future, :playing, :paused { content: ""; }
+a[href^='http' s], a[title="a\"b"], [data-x=unquoted], [data-n="1"][data-m] { border: 0; }
+.a.b.c#id, .\31 0, .esc\:aped, .sm\:flex, .w-1\/2, #\#hash { margin: 0; }
+.ünïcode-class, .日本語 { margin: 0; }
+div > p ~ span + em  strong { margin: 0; }
+.parent:has(> img:not([alt])) .child:nth-child(odd):not(:last-child)::after { content: "\201C"; }
+a || b, a >> b { color: red; }
+
+/* Colors and color functions */
+.colors {
+  color: red; color: transparent; color: currentColor; color: CanvasText; color: ButtonFace;
+  color: #abc; color: #abcd; color: #aabbcc; color: #aabbccdd;
+  color: rgb(255 0 0 / 50%); color: rgba(255, 0, 0, .5); color: rgb(100% 0% 0%);
+  color: hsl(120deg 100% 50%); color: hsla(120, 100%, 50%, 0.3);
+  color: hwb(194 0% 0%); color: lab(52% 40 59); color: lch(52% 72 56); color: oklab(59% 0.1 0.1);
+  color: oklch(60% 0.15 50); color: color(display-p3 1 0.5 0); color: color(srgb-linear 0.2 0.3 0.4);
+  color: color-mix(in oklab, red 30%, blue); color: light-dark(#111, #eee);
+  color: rgb(from var(--brand-primary) r g b / 50%); color: color(from red srgb r g b);
+}
+
+/* Math, keywords, unusual values */
+.math {
+  width: calc(100% - 2rem); height: calc((1px + 2em) * 3 / 4);
+  margin: min(5vw, 40px) max(1rem, 2vh) clamp(1px, 2vw, 3px) round(up, 7px, 5px);
+  padding: mod(18px, 5px) rem(-18px, 5px);
+  transform: rotate(calc(sin(30deg) * 1turn)) translate(calc(pow(2, 3) * 1px), calc(sqrt(16) * 1px));
+  line-height: calc(1 + hypot(3, 4)); top: calc(abs(-5px) + sign(-2) * 1px);
+  width: calc(infinity * 1px); flex: 1 1 0%; order: -1; z-index: 2147483647;
+  font: italic small-caps bold condensed 16px/2 "Helvetica Neue", Arial, sans-serif;
+  grid-column: 1 / -1; grid-row: span 2 / auto; inset: 0 auto auto 0;
+  background-position: right 10px bottom 20px; transition: all .2s;
+  all: unset; display: contents; display: flow-root; display: grid;
+  width: stretch; height: fit-content; inline-size: min-content; block-size: max-content;
+  font-size: xx-large; font-size: larger; font-weight: bolder; font-stretch: 75%;
+  cursor: url(cursor.png) 4 12, auto; list-style: "– "; counter-reset: a 1 b 2;
+  content: counter(item, upper-roman) ". " open-quote attr(title) close-quote;
+  will-change: transform, opacity; contain: layout paint; scroll-snap-type: x mandatory;
+  anchor-name: --anchor; position-anchor: --anchor; inset-area: top span-right;
+  field-sizing: content; text-wrap: balance; interpolate-size: allow-keywords;
+  animation-timeline: scroll(root block); view-timeline: --section block;
+  --custom: calc(1px + 2px); --str: 'string'; --url: url(x.png); --num: 3.5; --ident: foo;
+  --nested: { a: { b: c } }; --important: red !important;
+  unknown-property: unknown-value; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+}
+
+/* Escapes and odd strings */
+.esc::before { content: "\f101 \"quoted\" \
+continued line \\ backslash '\''"; }
+.uni::after { content: '\1F4E6 caf\E9'; }
+@media print { @page { size: letter; @top-center { content: "Stock"; } } }
+@font-palette-values --warm { font-family: "Warehouse Sans"; base-palette: 1; override-colors: 0 red; }
+@layer reset, base;
+@layer reset { *, *::before, *::after { box-sizing: border-box; } }
+@property --angle { syntax: "<angle> | <percentage>"; inherits: true; initial-value: 0deg; }
+@container style(--theme: dark) { .card { color: white; } }
+@scope { :scope > p { margin: 0; } }
+@media (width >= 600px) and (width <= 900px), (height > 200px) { .range { display: none; } }
+@import "print.css" print;

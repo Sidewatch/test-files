@@ -1,0 +1,269 @@
+---
+title: "Warehouse revenue report"
+subtitle: "Quarto syntax showcase"
+author:
+  - name: "Acme Reports Team"
+    affiliation: "Acme Logistics"
+    email: reports@example.com
+date: 2026-09-24
+date-format: long
+abstract: |
+  A multi-line abstract in YAML.
+  It describes the weekly revenue and stock position.
+keywords: [inventory, revenue, warehouse]
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: true
+    theme: [cosmo, custom.scss]
+    number-sections: true
+  pdf:
+    documentclass: article
+    papersize: a4
+  revealjs:
+    slide-number: true
+execute:
+  echo: false
+  warning: false
+bibliography: references.bib
+csl: apa.csl
+lang: en-GB
+params:
+  warehouse: "north"
+  threshold: 25
+editor: visual
+---
+
+<!-- An HTML comment: not rendered. TODO: add the regional breakdown. -->
+
+# Introduction {#sec-intro}
+
+This is a **Quarto** document: *emphasis*, **strong**, ***both***, ~~strikethrough~~,
+`inline code`, ^superscript^, ~subscript~, [small caps]{.smallcaps}, and [a span]{.highlight #id key="value"}.
+
+Revenue for the week ending `r format(Sys.Date(), "%d %B")` and `{python} 1 + 1` inline.
+Cross-references: see @sec-intro, @fig-revenue, @tbl-stock, and @eq-total. Citations: [@smith2020; @jones2021, p. 12], @smith2020 says, [-@jones2021].
+
+## Lists {#sec-lists}
+
+- Unordered item
+  - Nested item
+    - Deeper item
+* Another bullet style
++ A third bullet style
+
+1. Ordered item
+2. Another
+   1. Nested ordered
+   2. Another nested
+(@) Example-numbered item
+(@) Second example
+
+- [ ] Task not done
+- [x] Task done
+
+Term
+: Definition list item
+
+Second term
+: Another definition
+
+### Level three heading
+
+#### Level four heading
+
+##### Level five heading
+
+###### Level six heading
+
+Setext heading
+==============
+
+Smaller setext heading
+----------------------
+
+## Links, images and footnotes
+
+[Inline link](https://example.com "Title") and <https://example.com> and [reference link][ref].
+![Alt text for the logo](logo.png){#fig-logo fig-alt="Company logo" width=40%}
+
+![A figure caption](chart.png){#fig-chart}
+
+Here is a footnote reference.[^1] And an inline footnote.^[Inline footnotes are written like this.]
+
+[^1]: The footnote body, which may
+    span multiple indented lines.
+
+[ref]: https://example.com/reference "Reference title"
+
+## Quotes, rules and code
+
+> A block quote
+> spanning two lines.
+>
+> > A nested quote.
+
+---
+
+***
+
+    An indented code block.
+
+```
+A fenced block without a language.
+```
+
+```python
+print("fenced block with a language")
+```
+
+~~~bash
+echo "tilde fence"
+~~~
+
+## Computations
+
+```{r}
+#| label: load-data
+#| message: false
+#| echo: true
+#| fig-cap: "Revenue by day"
+#| output: asis
+library(dplyr)
+orders <- read.csv("orders.csv")
+paid <- orders |> filter(status == "paid")
+cat("Rows:", nrow(paid), "\n")
+```
+
+```{python}
+#| label: fig-revenue
+#| fig-cap: "Daily revenue"
+#| fig-width: 6
+#| code-fold: false
+import matplotlib.pyplot as plt
+plt.plot([1, 2, 3], [120.5, 98.0, 143.2])
+plt.title("Daily revenue")
+plt.show()
+```
+
+```{julia}
+#| label: julia-cell
+using Statistics
+mean([120.5, 98.0, 143.2])
+```
+
+```{ojs}
+//| echo: false
+Plot.lineY([1, 2, 3]).plot()
+```
+
+```{bash}
+#| eval: false
+ls -la
+```
+
+```{=html}
+<div class="raw">Raw HTML block</div>
+```
+
+```{=latex}
+\newpage
+```
+
+`r nrow(paid)` rows, `{r} sum(paid$total)` pounds.
+
+## Tables {#tbl-stock}
+
+| SKU     | Qty | Price  | Notes        |
+|:--------|----:|:------:|--------------|
+| AC-1001 |  25 | 19.99  | **new**      |
+| AC-1002 |   3 |  5.00  | low stock    |
+
+: Stock levels {#tbl-stock tbl-colwidths="[20,10,10,60]"}
+
++---------+-----+
+| SKU     | Qty |
++=========+=====+
+| AC-1001 | 25  |
++---------+-----+
+
+## Math {#sec-math}
+
+Inline math $E = mc^2$ and display math:
+
+$$
+\text{Total} = \sum_{i=1}^{n} q_i \cdot p_i
+$$ {#eq-total}
+
+## Callouts, divs and layout
+
+::: {.callout-note}
+Cancelled orders are excluded before totalling.
+:::
+
+::: {.callout-warning title="Low stock" collapse="true"}
+Fewer than `{python} 25` units remain.
+:::
+
+::: {.callout-tip}
+## A tip with a heading
+Use `quarto preview` while writing.
+:::
+
+::: {layout-ncol=2}
+![First](a.png)
+
+![Second](b.png)
+:::
+
+::: {.panel-tabset}
+## Tab one
+Content of the first tab.
+
+## Tab two
+Content of the second tab.
+:::
+
+:::: {.columns}
+::: {.column width="60%"}
+Left column.
+:::
+::: {.column width="40%"}
+Right column.
+:::
+::::
+
+## Shortcodes and includes
+
+{{< include _intro.qmd >}}
+
+{{< pagebreak >}}
+
+{{< video https://example.com/demo.mp4 >}}
+
+{{< meta title >}} and {{< var warehouse.name >}} and {{< env HOME >}}
+
+## Special characters and line blocks
+
+| Line blocks keep
+| line breaks as written.
+
+Hard line break at the end of this line\
+and an em-dash --- plus an en-dash -- and ellipsis...
+
+Escapes: \* \_ \# \` \\ and a non-breaking\ space.
+
+Horizontal rule with attributes follows.
+
+::: {.content-visible when-format="html"}
+Visible only in HTML.
+:::
+
+::: {.content-hidden when-format="pdf"}
+Hidden in PDF.
+:::
+
+## Appendix {.appendix .unnumbered}
+
+[^2]: Another footnote defined late.

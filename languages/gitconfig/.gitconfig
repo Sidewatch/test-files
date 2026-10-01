@@ -1,0 +1,327 @@
+# ── Comments ──
+# Personal git configuration: every syntactic form.
+; Semicolon comments work too.
+
+[user]
+	name = Jane Example
+	email = jane@example.com
+	signingkey = example-not-a-real-key
+	useConfigOnly = true
+
+[core]
+	editor = code --wait
+	autocrlf = input
+	excludesfile = ~/.gitignore_global
+	pager = less -FRX
+	fsmonitor = true
+	untrackedCache = true
+	hooksPath = ~/.config/git/hooks
+	quotepath = false
+	whitespace = trailing-space,space-before-tab
+
+# ── Value forms: booleans, numbers, strings, quoting, escapes ──
+[forms]
+	flagOnly
+	explicitTrue = true
+	explicitFalse = false
+	yes = yes
+	no = no
+	on = on
+	off = off
+	number = 42
+	negative = -5
+	size = 1k
+	bigSize = 512m
+	hugeSize = 2g
+	empty =
+	quoted = "a value with spaces  and ; semicolon # and hash"
+	partial = unquoted "quoted part" unquoted again
+	escapes = "tab\there, newline\nthere, quote \" and backslash \\"
+	continued = first part \
+		second part
+	trailing = value ; comment after the value
+	trailing2 = value # another comment
+	path = ~/projects/warehouse
+	pathAbs = /usr/local/bin/tool
+	url = https://example.com/path?x=1&y=2
+	MixedCaseKey = Value
+	key-with-dash = 1
+	multi = one
+	multi = two
+	multi = three
+
+[alias]
+	st = status -sb
+	lg = log --oneline --graph --decorate -20
+	amend = commit --amend --no-edit
+	undo = reset --soft HEAD~1
+	co = checkout
+	br = branch -vv
+	unstage = reset HEAD --
+	last = log -1 HEAD --stat
+	wip = !git add -A && git commit -m \"wip\"
+	sh = !sh -c 'git log --oneline | head -n ${1:-10}' -
+	graph = log --graph --format='%C(yellow)%h%C(reset) %s %C(green)(%cr)%C(reset)'
+	root = rev-parse --show-toplevel
+	aliases = config --get-regexp ^alias\\.
+
+[commit]
+	gpgsign = true
+	template = ~/.gitmessage
+	verbose = true
+
+[pull]
+	rebase = true
+	ff = only
+
+[push]
+	default = current
+	autoSetupRemote = true
+	followTags = true
+
+[fetch]
+	prune = true
+
+[merge]
+	ff = false
+	conflictstyle = zdiff3
+	tool = vimdiff
+
+[mergetool "vimdiff"]
+	cmd = vim -d \"$LOCAL\" \"$REMOTE\" \"$MERGED\"
+	trustExitCode = true
+
+[diff]
+	algorithm = histogram
+	colorMoved = default
+	tool = vimdiff
+	renames = copies
+
+[difftool]
+	prompt = false
+
+[rebase]
+	autoStash = true
+	autoSquash = true
+
+[init]
+	defaultBranch = main
+
+[color]
+	ui = auto
+
+[color "status"]
+	added = green
+	changed = yellow bold
+	untracked = red
+
+[color "diff"]
+	meta = 11
+	frag = magenta bold
+	old = red reverse
+	new = "#00aa00" ul
+
+[branch]
+	autosetuprebase = always
+
+[branch "main"]
+	remote = origin
+	merge = refs/heads/main
+
+[remote "origin"]
+	url = git@example.com:acme/warehouse.git
+	fetch = +refs/heads/*:refs/remotes/origin/*
+	pushurl = https://example.com/acme/warehouse.git
+
+[submodule "vendor/lib"]
+	url = https://example.com/acme/lib.git
+	update = merge
+
+[url "git@example.com:"]
+	insteadOf = https://example.com/
+	pushInsteadOf = example:
+
+[credential]
+	helper = osxkeychain
+
+[credential "https://example.com"]
+	username = jane
+	helper = cache --timeout=3600
+
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+
+[http "https://example.com/"]
+	sslVerify = true
+	postBuffer = 524288000
+
+[gpg]
+	format = ssh
+
+[gpg "ssh"]
+	allowedSignersFile = ~/.ssh/allowed_signers
+
+[sendemail]
+	smtpServer = smtp.example.com
+	smtpServerPort = 587
+
+[includeIf "gitdir:~/work/"]
+	path = ~/.gitconfig-work
+
+[includeIf "gitdir/i:~/Work/"]
+	path = ~/.gitconfig-work
+
+[includeIf "onbranch:release/**"]
+	path = ~/.gitconfig-release
+
+[includeIf "hasconfig:remote.*.url:git@example.com:acme/**"]
+	path = ~/.gitconfig-acme
+
+[include]
+	path = ~/.gitconfig-local
+
+[safe]
+	directory = *
+
+# Subsection with a dot, uppercase and an escaped quote
+[section "Sub.Section \"quoted\" \\ name"]
+	key = value
+
+# Legacy dotted-section syntax
+[branch.legacy]
+	remote = origin
+
+# Unicode: café ☕ 日本語
+
+# ── Aliases with shell functions and special quoting ──
+[alias]
+	fn = "!f() { git log --oneline -n ${1:-5}; }; f"
+	quoted = "!echo \"quoted \\\" inside\""
+	spaces = log --pretty=format:'%h %s'
+	backspace = !echo "a\bb"
+	tabs = !printf 'a\tb\n'
+	continued = log --oneline \
+		--graph \
+		-10
+	ext = !git-ext
+	cmt = commit -v
+
+# ── Remaining common sections ──
+[advice]
+	detachedHead = false
+	statusHints = false
+
+[apply]
+	whitespace = fix
+
+[blame]
+	ignoreRevsFile = .git-blame-ignore-revs
+	markIgnoredLines = true
+
+[column]
+	ui = auto
+
+[diff "sqlite"]
+	textconv = sqlite3 \"$1\" .dump
+	binary = true
+
+[diff "image"]
+	command = compare-images
+
+[gc]
+	auto = 256
+	pruneExpire = 2.weeks.ago
+
+[help]
+	autocorrect = prompt
+
+[lfs]
+	activitytimeout = 60
+	concurrenttransfers = 8
+
+[log]
+	date = iso
+	decorate = short
+	abbrevCommit = true
+
+[maintenance]
+	auto = false
+	strategy = incremental
+
+[merge "ours"]
+	driver = true
+	name = Keep ours
+
+[merge "union-driver"]
+	driver = git merge-file --union %A %O %B
+	recursive = binary
+
+[mergetool]
+	keepBackup = false
+	prompt = false
+
+[protocol "file"]
+	allow = user
+
+[rerere]
+	enabled = true
+	autoupdate = true
+
+[status]
+	showUntrackedFiles = all
+	submoduleSummary = true
+
+[stash]
+	showPatch = true
+
+[tag]
+	sort = -version:refname
+	gpgSign = true
+
+[trailer "ack"]
+	key = Acked-by
+	ifExists = addIfDifferent
+
+[transfer]
+	fsckObjects = true
+
+[uploadpack]
+	allowFilter = true
+
+[web]
+	browser = open
+
+[worktree]
+	guessRemote = true
+
+[branch "feature/x-1"]
+	remote = origin
+	merge = refs/heads/feature/x-1
+	rebase = interactive
+
+[remote "upstream"]
+	url = https://example.com/upstream/warehouse.git
+	fetch = +refs/heads/*:refs/remotes/upstream/*
+	tagOpt = --no-tags
+	prune = true
+
+[user]
+	name = "Quoted, Name; with # specials"
+	email = "jane@example.com"
+
+[core]
+	sshCommand = ssh -i ~/.ssh/example_key -o IdentitiesOnly=yes
+	attributesFile = ~/.gitattributes_global
+	askPass =
+	filemode = false
+	ignorecase = true
+	precomposeunicode = true
+	longpaths = true
+	commentChar = auto
+	abbrev = 12
+	compression = -1
+	bigFileThreshold = 512m
+	preloadindex = true

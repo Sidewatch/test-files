@@ -1,0 +1,110 @@
+<%# ── Comments ── EJS comment tag: renders nothing. TODO: paginate. FIXME: escape notes. %>
+<%# Warehouse stock page rendered by Express; `bins`, `user`, `flash` come from the route. %>
+<%_ /* underscore-trimmed scriptlet: strips preceding whitespace */ _%>
+<%
+  // Scriptlet: plain JavaScript, no output
+  const LOW_STOCK = 5;
+  const fmt = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' });
+  let totalValue = 0;
+  /* block comment inside a scriptlet */
+  function badge(qty) {
+    if (qty === 0) return 'out';
+    return qty < LOW_STOCK ? 'low' : 'ok';
+  }
+%>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= user.name %> — Stock</title>
+  <%- include('partials/head', { css: ['stock.css', 'print.css'], title: 'Stock' }) %>
+  <%- include('partials/analytics') -%>
+  <style>
+    .low { color: #b45309; }
+    .out { color: #b91c1c; text-decoration: line-through; }
+    .row-<%= user.theme %> { background: <%= user.theme === 'dark' ? '#111' : '#fff' %>; }
+  </style>
+</head>
+<body class="<%= user.theme %>" data-user='<%- JSON.stringify({ id: user.id, name: user.name }) %>'>
+  <% if (flash && flash.message) { %>
+    <div class="flash flash-<%= flash.level %>" role="alert"><%= flash.message %></div>
+  <% } %>
+
+  <h1>Stock for <%= user.name %></h1>
+  <p>Escaped: <%= '<b>not bold</b>' %> &mdash; raw: <%- '<b>bold</b>' %></p>
+  <p>Literal tag: <%% not a scriptlet %></p>
+
+  <% if (bins.length === 0) { %>
+    <p class="muted">No bins yet.</p>
+  <% } else if (bins.length === 1) { %>
+    <p>One bin.</p>
+  <% } else { %>
+    <table>
+      <thead>
+        <tr><th>Bin</th><th>Items</th><th>Value</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+      <% bins.forEach(function (bin, index) { %>
+        <% let binValue = bin.items.reduce((sum, it) => sum + it.qty * it.price, 0); totalValue += binValue; %>
+        <tr class="<%= index % 2 ? 'odd' : 'even' %>">
+          <td><a href="/bins/<%= encodeURIComponent(bin.code) %>"><%= bin.code %></a></td>
+          <td><%= bin.items.length %></td>
+          <td><%= fmt.format(binValue) %></td>
+          <td class="<%= badge(bin.qty) %>"><%= badge(bin.qty).toUpperCase() %></td>
+        </tr>
+        <% for (const item of bin.items) { %>
+          <% if (item.discontinued) continue; %>
+          <tr class="item">
+            <td colspan="4">
+              <%= item.sku %> &times; <%= item.qty %>
+              <%- item.notes ? '<em>' + item.notes + '</em>' : '' %>
+            </td>
+          </tr>
+        <% } %>
+      <% }); %>
+      </tbody>
+      <tfoot>
+        <tr><td colspan="3">Total</td><td><%= fmt.format(totalValue) %></td></tr>
+      </tfoot>
+    </table>
+  <% } %>
+
+  <%_ for (let i = 0; i < 3; i++) { _%>
+    <span class="dot dot-<%= i %>"></span>
+  <%_ } _%>
+
+  <%
+    let n = 3;
+    while (n-- > 0) {
+  %>
+    <i><%= n %></i>
+  <% } %>
+
+  <% switch (user.role) {
+       case 'admin': %>
+    <a href="/admin">Admin</a>
+  <%   break;
+       default: %>
+    <span>Member</span>
+  <% } %>
+
+  <% try { %>
+    <%- include('partials/optional', { data: bins }) %>
+  <% } catch (err) { %>
+    <p class="error"><%= err.message %></p>
+  <% } %>
+
+  <script>
+    const bins = <%- JSON.stringify(bins.map(b => b.code)) %>;
+    const user = { id: <%= user.id %>, name: "<%= user.name %>" };
+    document.querySelectorAll('.low').forEach((el) => el.classList.add('warn'));
+    console.log(`Loaded ${bins.length} bins for <%= user.name %>`);
+  </script>
+
+  <footer>
+    &copy; <%= new Date().getFullYear() %> Acme Inc. &middot; <%- footerHtml %>
+    <%= locals.version || 'dev' %> <%- typeof extra !== 'undefined' ? extra : '' -%>
+  </footer>
+</body>
+</html>

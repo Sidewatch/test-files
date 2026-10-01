@@ -1,0 +1,88 @@
+/* ── Comments ──
+   Localizable.strings — English. Keys are stable identifiers; values are what users see.
+   A block comment can span several lines and precede any entry.
+   TODO: ask translators to review the plural forms.
+   FIXME: "orders.count" should move to a .stringsdict. */
+
+// Line comments are accepted by the parser too.
+
+/* Window titles */
+"window.title" = "Inventory";
+"window.title.with.warehouse" = "Inventory — %@";
+
+/* Plain values */
+"orders.title" = "Orders for %@";
+"orders.empty" = "No orders yet.";
+"orders.count" = "%d orders";
+
+/* Buttons */
+"button.cancel" = "Cancel";
+"button.retry" = "Try Again";
+"button.ok" = "OK";
+
+/* Format specifiers: object, integer, long, float, character, C string, hex, octal, percent */
+"format.object" = "Name: %@";
+"format.integer" = "Count: %d";
+"format.integer.i" = "Count: %i";
+"format.unsigned" = "Unsigned: %u";
+"format.long" = "Long: %ld, unsigned long long: %llu";
+"format.float" = "Price: %.2f";
+"format.exponent" = "Scientific: %e";
+"format.general" = "General: %g";
+"format.char" = "Character: %c";
+"format.cstring" = "C string: %s";
+"format.hex" = "Hex: %x and %X";
+"format.octal" = "Octal: %o";
+"format.pointer" = "Pointer: %p";
+"format.percent" = "Discount: %d%%";
+"format.padded" = "Padded: %05d and %-8s|";
+"format.width" = "Width: %10.3f";
+
+/* Positional arguments let translators reorder values */
+"format.positional" = "%2$@ shipped %1$d units";
+"format.positional.mixed" = "%1$@ has %2$d of %3$.1f%% capacity";
+"format.star" = "Column: %*d";
+
+/* Escapes */
+"error.gateway" = "The payment gateway said \"try later\".\nYour card was not charged.";
+"escape.tab" = "Column one\tColumn two";
+"escape.backslash" = "C:\\Warehouse\\Stock";
+"escape.return" = "First line\rSecond line";
+"escape.unicode" = "Unicode escape: \U00E9 and \U2713";
+"escape.octal" = "Octal escape: \101";
+"escape.apostrophe" = "It\'s fine";
+
+/* Non-ASCII text is written directly */
+"greeting.german" = "Willkommen im Lager — Größe ändern";
+"greeting.japanese" = "在庫管理へようこそ";
+"greeting.arabic" = "مرحبا بك في المستودع";
+"greeting.emoji" = "Stock ✓ low ⚠️ out ❌ 🏭";
+
+/* Multi-line values may contain real newlines */
+"help.message" = "Select a warehouse from the sidebar.
+Then choose an item to see its stock history.";
+
+/* Keys without special characters may be unquoted */
+status.paid = "Paid";
+status.pending = "Pending";
+status.cancelled = "Cancelled";
+Plain_Key-1 = "Unquoted keys allow letters, digits, dots, dashes and underscores";
+
+/* Keys with spaces and punctuation must be quoted */
+"Sort by name" = "Sort by name";
+"Are you sure you want to delete %@?" = "Are you sure you want to delete “%@”?";
+"key with = equals" = "equals sign inside a quoted key";
+"key with ; semicolon" = "semicolon inside a quoted key";
+"" = "empty key";
+
+/* Empty and whitespace values */
+"value.empty" = "";
+"value.space" = " ";
+
+/* Comments between key and value are tolerated */
+"commented.entry" /* inline block comment */ = /* another */ "Value after comments";
+
+/* Markup inside values is plain text to the parser */
+"markup.bold" = "<b>Bold</b> &amp; <i>italic</i>";
+"markup.markdown" = "**Bold** and _italic_ with a [link](https://example.com)";
+"markup.url" = "https://example.com/help?topic=stock&lang=en";

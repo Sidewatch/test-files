@@ -1,0 +1,9 @@
+{
+  // Editor hints for the plain-JavaScript admin panel.
+  "compilerOptions": {
+    "checkJs": true,
+    "baseUrl": ".",
+    "paths": { "~/*": ["./admin/*"] },
+  },
+  "exclude": ["node_modules"],
+}

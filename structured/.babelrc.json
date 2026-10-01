@@ -1,0 +1,9 @@
+{
+  // Babel reads JSON5 here; this one stays within JSONC.
+  "presets": [
+    ["@babel/preset-env", { "targets": "defaults", "useBuiltIns": "usage", "corejs": 3 }],
+    "@babel/preset-typescript",
+  ],
+  "plugins": [],
+  "comments": false,
+}

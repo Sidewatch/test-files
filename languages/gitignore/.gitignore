@@ -1,0 +1,212 @@
+# ── Comments ──
+# Git ignore: every pattern form for a warehouse project.
+# A line starting with # is a comment; blank lines are skipped.
+
+# TODO: split this file per package.
+\#literal-hash-file
+\!literal-bang-file
+
+# ── Build products ──
+.build/
+build/
+DerivedData/
+dist/
+out/
+target/
+*.o
+*.obj
+*.a
+*.so
+*.dylib
+*.dSYM/
+*.class
+*.pyc
+__pycache__/
+
+# ── Dependencies ──
+node_modules/
+vendor/
+!vendor/patches/
+!vendor/patches/**
+Pods/
+Carthage/Build/
+
+# ── Editor and OS noise ──
+.DS_Store
+._*
+Thumbs.db
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+\#*#
+.#*
+
+# ── Secrets: never commit these ──
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+credentials.json
+
+# ── Logs and caches ──
+logs/
+*.log
+!sample.log
+.cache/
+.tmp/
+tmp/
+npm-debug.log*
+yarn-error.log
+
+# ── Wildcards: star, question mark, character class ──
+*.tmp
+temp?.txt
+report-[0-9][0-9].csv
+file[!a-z].dat
+backup-[A-Za-z]*.tar
+data-[[:digit:]].bin
+
+# ── Anchored to this directory ──
+/TODO
+/config/local.yml
+/build-output
+/*.generated
+
+# ── Directory only (trailing slash) vs file or directory ──
+cache/
+cache
+docs/build/
+
+# ── Double asterisk forms ──
+**/foo
+**/foo/bar
+foo/**
+a/**/b
+**/generated/**
+**/*.min.js
+docs/**/*.tmp
+src/**/__snapshots__/
+
+# ── Negation and re-inclusion ──
+*.zip
+!important.zip
+/logs/*
+!/logs/.gitkeep
+bin/*
+!bin/run.sh
+!bin/*.md
+
+# ── Escapes and special characters ──
+file\ with\ space.txt
+trailing-space-escaped\ 
+\*literal-star
+\?literal-question
+name[with]brackets.txt
+unicode-café.txt
+日本語.txt
+
+# ── Platform specifics ──
+*.exe
+*.dll
+*.pdb
+*.ilk
+Desktop.ini
+$RECYCLE.BIN/
+.Trash-*
+.fuse_hidden*
+.nfs*
+
+# ── Data and databases ──
+*.sqlite
+*.sqlite3
+*.db
+!fixtures/*.db
+*.sql.gz
+coverage/
+.coverage
+.nyc_output/
+*.lcov
+
+# ── More pattern forms ──
+[Bb]in/
+[Oo]bj/
+*.py[cod]
+*.[Cc]ache
+*.[!a-z]
+[!0-9]*.tmp
+[^a-z]*.bak
+\[brackets\].txt
+\!important-literal
+\ leading-space.txt
+/**/deep-temp
+**/temp-*/
+!**/keep
+!/docs/**/*.md
+a/b/**/c/d
+**/
+/*/
+foo/*/bar
+foo/**/
+*.[ch]
+*.{not-brace-expansion}
+~$*
+*#
+#*#
+.#*
+*.orig
+*.rej
+*.BACKUP.*
+*.BASE.*
+*.LOCAL.*
+*.REMOTE.*
+.history
+.ionide
+.fake
+.terraform/
+*.tfstate
+*.tfstate.*
+.vagrant/
+.gradle/
+.mvn/wrapper/maven-wrapper.jar
+!gradle/wrapper/gradle-wrapper.jar
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+env/
+.tox/
+*.egg-info/
+.eggs/
+.bundle/
+Gemfile.lock
+.sass-cache/
+.next/
+.nuxt/
+.parcel-cache/
+.turbo/
+.angular/
+.dart_tool/
+.pub-cache/
+.packages
+*.iml
+*.ipr
+*.iws
+xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcscmblueprint
+*.hmap
+*.ipa
+*.dSYM.zip
+.swiftpm/
+Package.resolved
+.build/
+.netrwhist
+*.sublime-workspace
+.history/

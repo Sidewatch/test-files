@@ -1,0 +1,610 @@
+// A single-line comment: TODO tidy the includes before release.
+////
+A block comment
+spanning several lines.
+////
+= Warehouse Operations Handbook
+Jane Roe <jane.roe@example.com>; Sam Poe <sam.poe@example.com>
+v3.2, 2026-01-15: Revised receiving procedures
+:doctype: book
+:toc: left
+:toclevels: 3
+:sectnums:
+:sectanchors:
+:icons: font
+:source-highlighter: rouge
+:experimental:
+:imagesdir: images
+:warehouse: Acme Central
+:reorder-point: 25
+:!sectids:
+:description: How goods move through {warehouse}.
+:keywords: inventory, warehouse, receiving
+:attribute-missing: warn
+
+[abstract]
+This handbook describes how stock is received, stored, picked and shipped at {warehouse}.
+
+[preface]
+== Preface
+
+Welcome. Read this before your first shift.
+
+= Part One: Receiving
+
+== Inbound goods
+
+=== Dock scheduling
+
+==== Appointment windows
+
+===== Late arrivals
+
+====== Refused loads
+
+Paragraph with *strong*, _emphasis_, `monospace`, +passthrough+, #highlight#,
+^superscript^, ~subscript~, "`double curved`", '`single curved`', and
+**un**constrained *_nested strong emphasis_* marks. A hard line break +
+follows here. Typographic: (C) (R) (TM) -- dash ... ellipsis -> arrow <= <-.
+Escaped \*not bold\* and {warehouse} with attribute {reorder-point}.
+Footnote reference.footnote:[Counts exclude damaged items.] Named footnote
+footnote:count[Counts are taken at shift start.] reused footnote:count[].
+Inline anchor [[inline-anchor]]target and cross reference <<inline-anchor>>.
+Kbd macro kbd:[Ctrl+Shift+N], button btn:[Save], menu menu:File[Open Recent > stock.csv].
+Index term ((visible term)) and (((hidden term))). Stem inline stem:[sqrt(4) = 2].
+Link https://example.com[Example site^] and mailto:ops@example.com[Operations].
+Image inline image:icon.png[Icon,16,16]. Quoted [.underline]#underlined# and [.big]*big*.
+
+.Principles
+* Count twice
+* Move once
+** Nested bullet
+*** Deeper bullet
+**** Level four
+* Label everything
+
+. First step
+. Second step
+.. Sub-step a
+.. Sub-step b
+... Sub-sub-step
+. Third step
+
+[start=4]
+. Fourth step
+
+[square]
+- Dash list
+- Another dash item
+
+* [x] Done task
+* [ ] Open task
+* [*] Starred task
+
+Terminal:: The loading dock
+Reefer:: A refrigerated container
+Pallet::: Nested definition
+[horizontal]
+Qty:: Quantity on hand
+SKU:: Stock keeping unit
+
+Question or topic;; Answer follows
+Another term::
+Description on the next line.
+
+[qanda]
+What is a SKU?::
+A stock keeping unit.
+
+<1> Callout item one
+<2> Callout item two
+
+== Blocks
+
+.Admonitions
+NOTE: A note paragraph.
+
+TIP: A tip paragraph.
+
+IMPORTANT: Important paragraph.
+
+WARNING: Warning paragraph.
+
+CAUTION: Caution paragraph.
+
+[NOTE]
+====
+A delimited admonition block
+with several lines.
+====
+
+[quote, Anonymous, Warehouse Proverb]
+____
+Measure twice, pick once.
+____
+
+[quote]
+A short quote paragraph.
+
+"I never knew a warehouse so tidy."
+-- Visitor, Guest Book
+
+[verse, Poet, Ode to Inventory]
+____
+Boxes stacked high,
+labels line by line.
+____
+
+[sidebar]
+.Sidebar title
+****
+Sidebars hold tangential information.
+****
+
+.Example title
+====
+An example block.
+====
+
+[example]
+Example paragraph style.
+
+[%collapsible]
+.Click to expand
+====
+Hidden content.
+====
+
+....
+A literal block.
+  Indentation preserved.
+....
+
+ An indented literal paragraph.
+
+[literal]
+Literal paragraph style.
+
+++++
+<div class="raw">Passthrough block</div>
+++++
+
+[pass]
+<b>Passthrough paragraph</b>
+
+--
+An open block.
+--
+
+[abstract]
+--
+An abstract open block.
+--
+
+[%hardbreaks]
+Line one
+Line two
+Line three
+
+'''
+
+<<<
+
+== Listings and source
+
+[source,bash,linenums]
+----
+#!/usr/bin/env bash
+for sku in A-100 B-200; do   # <1>
+  echo "checking $sku"       # <2>
+done
+----
+<1> Loop over SKUs
+<2> Print each one
+
+[source,python,highlight=2]
+----
+def low_stock(items, point=25):
+    return [i for i in items if i["qty"] < point]
+----
+
+[source,json]
+----
+{ "sku": "A-100", "qty": 12, "tags": ["fragile", "heavy"], "ok": true, "x": null }
+----
+
+[source,sql,subs="attributes+"]
+----
+SELECT sku, qty FROM stock WHERE qty < {reorder-point};
+----
+
+[source%nowrap,js]
+----
+const total = items.reduce((sum, { qty, price }) => sum + qty * price, 0);
+----
+
+[listing]
+Listing paragraph style.
+
+----
+A plain listing block, no language.
+----
+
+[source,ruby]
+.Include example
+----
+include::scripts/report.rb[tags=main,lines=1..10]
+----
+
+include::chapters/shipping.adoc[leveloffset=+1]
+
+== Tables
+
+.Stock levels
+[cols="1,2,^1,>1", options="header,footer", frame=all, grid=rows, width=80%]
+|===
+| SKU | Description | Qty | Price
+
+| A-100
+| Widget, blue
+| 12
+| 4.50
+
+| B-200
+| Gadget with a | pipe escaped as \|
+| 40
+| 1.25
+
+3+| Spanning three columns
+| 9.99
+
+.2+| Spanning two rows
+| Row one | 1 | 2
+| Row two | 3 | 4
+
+a|
+* A list inside a cell
+* Another item
+
+l|
+Literal
+cell
+
+e| Emphasis cell
+s| Strong cell
+m| Monospace cell
+h| Header cell
+| Total | | 52 | 15.74
+|===
+
+[format=csv, options="header"]
+|===
+SKU,Qty
+A-100,12
+B-200,40
+|===
+
+,===
+SKU,Qty
+C-300,3
+,===
+
+:===
+SKU:Qty
+D-400:7
+:===
+
+== Images, media and links
+
+image::warehouse-floor.png[Warehouse floor, 640, 480, title="Main floor", link="https://example.com/floor"]
+
+.Dock plan
+[#dock-plan.featured, link=dock.png]
+image::dock.png[Dock plan,align=center,role=thumb]
+
+video::loading-dock.mp4[width=640,start=60,opts=autoplay]
+
+video::rHJlnYl6cv8[youtube]
+
+audio::alarm.ogg[options="loop"]
+
+toc::[]
+
+== Math and diagrams
+
+[stem]
+++++
+sqrt(4) = 2
+++++
+
+[latexmath]
+++++
+\sum_{i=1}^{n} q_i \times p_i
+++++
+
+[asciimath]
+++++
+sum_(i=1)^n q_i xx p_i
+++++
+
+[plantuml, dock-flow, svg]
+....
+@startuml
+Truck -> Dock : arrive
+Dock -> Stock : unload
+@enduml
+....
+
+== Cross references and anchors
+
+[[sec-ref]]
+=== Referenceable section
+
+[#custom-id.role1.role2%option1]
+=== Section with shorthand attributes
+
+See <<sec-ref>>, <<sec-ref,custom text>>, xref:sec-ref[], xref:other.adoc#anchor[another document].
+Also <<custom-id>> and the glossary term.
+
+[glossary]
+== Glossary
+
+[glossary]
+SKU:: Stock keeping unit.
+FIFO:: First in, first out.
+
+[appendix]
+== Appendix: Forms
+
+[bibliography]
+== References
+
+- [[[knuth84]]] Alex Q. Author. _Literate Programming_. 1984.
+- [[[sicp]]] Alder & Sumner. _Structure and Interpretation_. 1996.
+
+[index]
+== Index
+
+ifdef::backend-html5[]
+Shown only for HTML output.
+endif::[]
+
+ifndef::env-github[]
+Not rendered on GitHub.
+endif::[]
+
+ifeval::[{reorder-point} > 10]
+The reorder point is above ten.
+endif::[]
+
+ifdef::warehouse,reorder-point[Either attribute set.]
+
+== Further constructs
+
+// Attribute entries of every form
+:leveloffset: 0
+:nofooter:
+:linkcss!:
+:experimental!:
+:table-caption: Table
+:figure-caption: Figure
+:xrefstyle: short
+:hardbreaks-option:
+:sectlinks:
+:idprefix: id_
+:idseparator: -
+:stylesheet: custom.css
+:data-uri:
+:lang: en
+:compat-mode:
+:pp: {plus}{plus}
+:two-words: Value with spaces \
+continued onto the next line
+
+{set:status:draft}
+{counter:figure-number}
+{counter2:hidden-number}
+{empty}{nbsp}{zwsp}{wj}{apos}{quot}{lt}{gt}{amp}{startsb}{endsb}{caret}{asterisk}{tilde}{backslash}{blank}{vbar}{plus}{backtick}{deg}{pp}
+{docdate} {doctime} {localdate} {localtime} {asciidoctor-version} {doctitle} {author} {email} {revnumber} {revdate} {revremark}
+{sys:echo hello} {sys2:date} {eval:1+2}
+{attribute-undefined}
+
+// Inline formatting of every kind
+*bold* **un**bold _italic_ __un__italic `mono` ``un``mono +++passthrough <b>raw</b>+++ $$special <chars>$$ #mark# ##un##mark##
+[.red]#red text# [.line-through]#struck# [.underline]#under# [.big]#big# [.small]#small#
+latexmath:[\alpha + \beta] asciimath:[a^2 + b^2] stem:[x^2]
+pass:[<u>underline</u>] pass:q[*quoted* subs] pass:c,a[{warehouse}]
+indexterm:[primary,secondary,tertiary] indexterm2:[visible]
+anchor:custom-anchor[Label] [[block-anchor,Reftext]]
+link:file.pdf[A file^,role=external,window=_blank] https://example.com[Example^]
+<https://example.com> mailto:ops@example.com[Mail ops,Subject,Body text]
+irc://irc.example.com/#warehouse
+xref:chapter.adoc#sec[Chapter section] <<chapter.adoc#sec,Same via shorthand>>
+footnoteref:[ref1,Reusable footnote text] footnoteref:[ref1]
+image:inline.png[alt=Inline,width=20,link=https://example.com]
+icon:heart[2x] icon:check[role=green] 
+kbd:[Ctrl+Alt+Del] kbd:[F11] btn:[OK] menu:Edit[Preferences > Warehouse > Reorder]
+&#169; &copy; &#x2014; &mdash; &amp;
+Em--dash, ellipsis..., right arrow -> left arrow <- double arrow => <=
+(C) (R) (TM) 1/2 1/4 3/4
+
+// Block attributes, roles, IDs, options
+[#intro.lead%collapsible,reftext="Intro"]
+Opening paragraph with an ID, role, and option.
+
+[.lead]
+Lead paragraph styled by role.
+
+[discrete]
+===== A discrete heading
+
+[float]
+==== A floating heading
+
+[partintro]
+Part introduction paragraph.
+
+[role="text-center",options="nowrap"]
+Centered text.
+
+// Lists, again with every marker and attribute
+* Item with continuation
++
+A continued paragraph attached to the item.
++
+----
+a listing attached to the item
+----
+
+* Another item
+** Child item
+*** Grandchild
+- Hyphen item
+-- Double hyphen not a list
+
+1. Explicit arabic
+2. Second arabic
+a. Lower alpha
+b. Second alpha
+A. Upper alpha
+i) Lower roman
+ii) Second roman
+I) Upper roman
+
+[arabic]
+. Arabic style
+[loweralpha]
+. Alpha style
+[upperalpha]
+. Upper alpha style
+[lowerroman]
+. Roman style
+[upperroman]
+. Upper roman style
+[lowergreek]
+. Greek style
+[decimal]
+. Decimal style
+[disc]
+* Disc bullet
+[circle]
+* Circle bullet
+[none]
+* No bullet
+[bibliography]
+- [[[ref1]]] A bibliographic entry
+
+CPU:: Central processing unit
+  Indented description
+Term with spaces;; Level-two term
+  Its description
+Another::: Level-three
+Deepest:::: Level-four
+
+[%interactive]
+* [ ] Unchecked
+* [x] Checked
+
+// Tables with every cell style and spec
+[cols="<.<1a,^.^2e,>.>3h,4m,5s,6l,7v", options="header", separator=¦]
+|===
+¦ Left a ¦ Center e ¦ Right h ¦ Mono m ¦ Strong s ¦ Literal l ¦ Verse v
+¦ cell ¦ cell ¦ cell ¦ cell ¦ cell ¦ cell ¦ cell
+|===
+
+[cols="3*", options="autowidth,noheader", stripes=even, caption="Table A. "]
+|===
+|One |Two |Three
+|1 |2 |3
+|===
+
+[%header%footer%autowidth.stretch,cols="2,1"]
+|===
+|Name |Count
+|Alpha |1
+|Beta |2
+|Total |3
+|===
+
+[cols="1,1"]
+|===
+2*|Duplicated cell
+.3+^.^|Spanning rows and aligned
+|x
+|y
+|z
+|===
+
+// Block macros and miscellaneous
+include::partial.adoc[]
+include::code.rb[lines=1;3..5;7..-1,indent=0,encoding=utf-8]
+include::https://example.com/remote.adoc[opts=optional]
+include::{includedir}/part.adoc[tag=intro]
+// tag::intro[]
+Tagged region content.
+// end::intro[]
+
+image::diagram.svg[opts=inline,width=300,height=200,format=svg]
+image::sunset.jpg[Sunset,role=right,float=left,scaledwidth=50%,pdfwidth=2in,alt="A sunset",caption="Fig. 1"]
+video::clip.mp4[poster=poster.png,options="nocontrols"]
+video::123456[vimeo]
+audio::chime.mp3[start=2,end=5,options="autoplay,nocontrols"]
+
+:imagesdir!:
+toc::[levels=2,title="Contents",class=toc2]
+[[anchor-before-heading]]
+== Heading preceded by anchor
+
+.A block title
+[[block-id]]
+****
+Sidebar content with a title and an anchor.
+****
+
+[comment]
+This paragraph is a comment.
+
+////
+Another block comment with // inside.
+////
+
+ifdef::env-github,env-browser[]
+Either environment.
+endif::[]
+
+ifndef::backend-pdf+backend-html5[]
+Neither of both.
+endif::[]
+
+ifeval::["{lang}" == "en"]
+English.
+endif::[]
+
+ifeval::[{sectnumlevels} >= 3]
+Deep numbering.
+endif::[]
+
+[bibliography]
+=== Further reading
+
+* [[[gtd]]] Alex Author. Getting Things Counted. 2001.
+
+[glossary]
+=== Terms
+
+[glossary]
+Pick:: Retrieve items for an order.
+Putaway:: Store received goods.
+
+[colophon]
+=== Colophon
+
+Produced with Asciidoctor.
+
+[dedication]
+=== Dedication
+
+To everyone who counts twice.
+
+[index]
+=== Index

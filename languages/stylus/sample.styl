@@ -1,0 +1,326 @@
+// ── Comments ──
+// Line comment: warehouse UI tokens in Stylus.
+/* Multi-line comment
+   kept in the output */
+/*! Important comment, always kept */
+// TODO: generate the palette from a single hue
+// FIXME: .badge contrast in dark mode
+
+// ── Imports ──
+@import 'normalize'
+@import "mixins/*"
+@require 'helpers.styl'
+@charset "UTF-8"
+
+// ── Variables ──
+primary = #336699
+accent = #f90
+radius = 4px
+spacing = 0.75rem
+font-stack = "Helvetica Neue", Arial, sans-serif
+enabled = true
+disabled = false
+nothing = null
+ratio = 16 / 9
+sizes = { small: 0.875rem, base: 1rem, large: 1.25rem }
+breakpoints = small 480px, medium 768px, large 1200px
+colours = red green blue
+$legacy-name = 10px
+@scale = 1.5
+base-line-height ?= 1.5
+base-line-height ?= 2
+counter += 1
+width -= 2px
+gap *= 2
+total /= 4
+flag ||= true
+plain-literals = 42 -7 +3 3.14 .5 1e3 2.5E-2 50% 10px 2em 1.5rem 90deg 200ms 0.3s 100vh
+hex-short = #fff
+hex-long = #336699
+hex-alpha = #33669980
+named = rebeccapurple
+fn-colours = rgb(51, 102, 153) rgba(51, 102, 153, .5) hsl(210, 50%, 40%) hsla(210, 50%, 40%, .8)
+quoted = 'single' "double \"escaped\" quote"
+url-val = url('images/logo.png')
+
+// ── Functions ──
+double(n)
+  n * 2
+
+add(a, b = 10)
+  a + b
+
+stock-label(n)
+  if n <= 0
+    'out'
+  else if n < 10
+    'low'
+  else
+    'ok'
+
+pad(n, unit = 'px')
+  unit(n, unit)
+
+sum()
+  n = 0
+  for num in arguments
+    n += num
+  n
+
+rem(px, base = 16px)
+  (px / base) * 1rem
+
+typed(v)
+  if v is a 'unit'
+    'unit'
+  else if v is a 'ident'
+    'ident'
+  else if v is defined
+    'other'
+  else
+    'undefined'
+
+// ── Mixins (transparent) ──
+rounded(r = radius)
+  -webkit-border-radius r
+  border-radius r
+
+flex(dir = row, gap = 0)
+  display flex
+  flex-direction dir
+  gap gap
+
+vendor(prop, args)
+  -webkit-{prop} args
+  -moz-{prop} args
+  {prop} args
+
+transition()
+  vendor('transition', arguments)
+
+respond-to(bp)
+  if bp is small
+    @media (max-width: 480px)
+      {block}
+  else
+    @media (min-width: 768px)
+      {block}
+
+button-variant(bg, fg = white)
+  background bg
+  color fg
+  &:hover
+    background darken(bg, 10%)
+  {block}
+
+// ── Placeholders and extend ──
+$card-base
+  rounded()
+  padding spacing
+
+@extend-placeholder
+  opacity .6
+
+// ── Selectors and nesting ──
+:root
+  --brand primary
+  --gap spacing
+
+html, body
+  margin 0
+  font 400 1rem/1.5 font-stack
+
+.card
+  @extend $card-base
+  flex(column, spacing)
+  color primary
+  background lighten(primary, 40%)
+  border 1px solid rgba(primary, .3)
+  width "calc(100% - %s)" % (spacing * 2)
+  margin-top: 1px
+  margin-bottom 2px;
+  font-family: font-stack;
+  transition(opacity .3s ease, transform .3s ease)
+
+  &:hover
+    border-color darken(primary, 10%)
+
+  &:not(.disabled):nth-child(2n+1)::before
+    content "\201C"
+
+  &--active
+    box-shadow 0 0 0 2px primary !important
+
+  &__title
+    font-size 1.25rem   /* inline block comment */
+
+  & + &
+    margin-top 1px
+
+  > .child ~ .sibling
+    color red
+
+  .dark-theme &
+    color white
+
+  ^[0]:hover &
+    color blue
+
+  /.sub
+    color green
+
+  {selector()}-suffix
+    color orange
+
+  +respond-to(small)
+    padding spacing * 2
+
+  button-variant(primary, white)
+    border-color accent
+
+a[href^="https://"]:not([rel~="nofollow"]),
+input[type="checkbox"]:checked + label::after,
+ul > li:is(.a, .b)
+  text-decoration underline
+
+// ── Interpolation ──
+prop-name = 'margin'
+side = 'left'
+.interpolated
+  {prop-name}-{side} 10px
+  background-image url("img/{side}.png")
+  width "calc(100% - %spx)" % 20
+  content "Stock: %s" % stock-label(5)
+
+.text-{side}
+  text-align side
+
+// ── Conditionals ──
+.conditional
+  if enabled and not disabled
+    display block
+  else if enabled or nothing
+    display inline
+  else
+    display none
+
+  color primary unless disabled
+  width 100% if enabled is defined
+  height (ratio > 1) ? 50px : 100px
+
+  unless disabled
+    cursor pointer
+
+// ── Loops ──
+for name, size in sizes
+  .text-{name}
+    font-size size
+
+for colour in colours
+  .bg-{colour}
+    background colour
+
+for i in 1..3
+  .col-{i}
+    width (i / 3) * 100%
+
+for i in 1...4
+  .gap-{i}
+    gap i * 4px
+
+for i in (3..1)
+  .rev-{i}
+    order i
+
+for key, value in breakpoints
+  .bp-{key}
+    min-width value
+
+for item, index in colours
+  .indexed-{index}
+    z-index index
+
+// ── Hash and list operations ──
+.ops
+  a 1 + 2 - 3 * 4
+  b 10 / 4
+  c 10 % 3
+  d 2 ** 3
+  e (1 < 2) and (2 >= 1) or not (3 == 4)
+  f 'a' + 'b'
+  g -spacing
+  h sizes.base
+  i sizes['large']
+  j colours[0]
+  k colours[-1]
+  l length(colours)
+  m (1px 2px 3px)[1]
+  n 'a' in colours
+  o 5 in 1..10
+  p unquote('raw')
+  q s('%s-%s', 'a', 'b')
+  r join(', ', colours)
+  s lookup('primary')
+  t convert('10px')
+  u opposite-position(left)
+  v @block { color red }
+
+// ── At-rules ──
+@media screen and (min-width: 600px) and (max-width: 1200px), print
+  .card
+    padding spacing * 0.5
+
+@media (max-width: breakpoints.small)
+  .card
+    display none
+
+@supports (display: grid) and (not (display: inline-grid))
+  .grid
+    display grid
+    grid-template-columns repeat(auto-fill, minmax(10rem, 1fr))
+
+@font-face
+  font-family "Inventory Sans"
+  src url("fonts/inv.woff2") format("woff2"), url("fonts/inv.woff") format("woff")
+  font-display swap
+
+@keyframes pulse
+  from
+    opacity 1
+  50%
+    opacity .5
+  to
+    opacity 1
+
+@-webkit-keyframes spin
+  to
+    transform rotate(360deg)
+
+@css {
+  .literal-css { color: red; }
+}
+
+@page :first
+  margin 1in
+
+// ── Misc built-ins ──
+.builtins
+  a lighten(primary, 10%)
+  b darken(primary, 10%)
+  c saturate(primary, 20%)
+  d desaturate(primary, 20%)
+  e mix(primary, white, 40%)
+  f red(primary) green(primary) blue(primary) alpha(primary)
+  g hue(primary) saturation(primary) lightness(primary)
+  h abs(-5) ceil(1.2) floor(1.8) round(2.5) min(1, 2) max(1, 2)
+  i percentage(0.5)
+  j unit(10px, em)
+  k image-size('logo.png')[0]
+  l selector()
+  m selectors()
+  n current-property()
+  o warn('careful')
+  p error('stop')
+  q trace()
+  r json('data.json', { hash: true })
+  s use('plugin.js')

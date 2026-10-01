@@ -1,0 +1,230 @@
+{% comment %}
+  Liquid: a storefront product-grid template exercising the whole language.
+  TODO: paginate collections. FIXME: sold-out badge.
+{% endcomment %}
+{%- # Inline comment tag (single line) -%}
+{% doc %}
+  @param {Product} product - the product to render
+  @param {string} [heading] - optional heading
+{% enddoc %}
+
+{%- liquid
+  # Liquid tag: multiple statements without delimiters
+  assign on_sale = collection.products | where: "compare_at_price"
+  assign heading = collection.title | default: "Products" | upcase
+  if on_sale.size > 0
+    echo "sale"
+  endif
+-%}
+
+{% assign integer = 42 %}
+{% assign negative = -17 %}
+{% assign float = 3.14159 %}
+{% assign yes = true %}
+{% assign no = false %}
+{% assign nothing = nil %}
+{% assign other_nothing = null %}
+{% assign empty_check = blank %}
+{% assign text = 'single "quoted" string' %}
+{% assign text2 = "double 'quoted' string with unicode: Zürich → 東京 ✓" %}
+{% assign range = (1..5) %}
+{% assign range_var = (1..product.variants.size) %}
+{% assign array = "a,b,c" | split: "," %}
+{% capture banner %}
+  Welcome to {{ shop.name }} — {{ "now" | date: "%Y-%m-%d %H:%M" }}
+{% endcapture %}
+{% increment counter %}
+{% decrement counter %}
+
+<h1>{{ heading }}</h1>
+<p class="{{ settings.class | default: 'plain' }}">{{ banner | strip | escape }}</p>
+
+{% if on_sale.size > 0 %}
+  <p>{{ on_sale.size }} on sale — up to {{ on_sale | map: "discount_percent" | sort | last }}% off</p>
+{% elsif collection.products.size == 0 %}
+  <p>Nothing here</p>
+{% else %}
+  <p>No sale</p>
+{% endif %}
+
+{% if product.title contains "Widget" and product.price >= 1000 or product.tags contains 'new' %}
+  <span>match</span>
+{% endif %}
+{% if product.vendor != "Acme" and product.price <= 5000 and product.type == empty %}x{% endif %}
+{% if product.price < 100 and product.price > 10 and product.compare_at_price == nil %}y{% endif %}
+{% if collection.title == blank %}z{% endif %}
+
+{% unless product.available %}
+  <span class="badge">Sold out</span>
+{% else %}
+  <span class="badge">In stock</span>
+{% endunless %}
+
+{% case product.type %}
+  {% when "shirt", "top" %}Clothing
+  {% when 'mug' or 'cup' %}Kitchen
+  {% else %}Other
+{% endcase %}
+
+<ul class="grid">
+  {% for product in collection.products limit: 12 offset: 2 reversed %}
+    <li class="{% cycle 'odd', 'even' %} {% cycle 'group': 'a', 'b', 'c' %}">
+      {%- if forloop.first %}<!-- first -->{% endif -%}
+      <a href="{{ product.url | within: collection }}">
+        <img src="{{ product.featured_image | img_url: '300x300', crop: 'center' }}" alt="{{ product.title | escape }}">
+        {{ forloop.index }}/{{ forloop.length }} ({{ forloop.index0 }}, {{ forloop.rindex }}, {{ forloop.rindex0 }})
+        {{ product.title | truncate: 30, "…" }} — {{ product.price | money_with_currency }}
+      </a>
+      {% unless product.available %}<span class="badge">Sold out</span>{% endunless %}
+      {% if forloop.last %}<!-- last -->{% endif %}
+      {% if product.hidden %}{% continue %}{% endif %}
+      {% if forloop.index > 20 %}{% break %}{% endif %}
+    </li>
+  {% else %}
+    <li>No products yet.</li>
+  {% endfor %}
+</ul>
+
+{% for i in (1..3) %}{{ i }}{% unless forloop.last %}, {% endunless %}{% endfor %}
+{% for item in array %}{{ item }}{% endfor %}
+
+{% tablerow product in collection.products cols: 3 limit: 6 %}
+  {{ product.title }} {{ tablerowloop.col }} {{ tablerowloop.row }} {{ tablerowloop.col_first }} {{ tablerowloop.col_last }}
+{% endtablerow %}
+
+{% paginate collection.products by 12 %}
+  {{ paginate.current_page }} of {{ paginate.pages }}
+{% endpaginate %}
+
+{% form 'contact', class: 'contact-form', id: "contact" %}
+  <input type="email" name="contact[email]" value="{{ form.email }}">
+{% endform %}
+
+{% style %}
+  .brand { color: {{ settings.brand_color }}; }
+{% endstyle %}
+{% stylesheet %}
+  .grid { display: grid; }
+{% endstylesheet %}
+{% javascript %}
+  console.log("{{ shop.name | escape }}");
+{% endjavascript %}
+{% schema %}
+{ "name": "Product grid", "settings": [{ "type": "range", "id": "limit", "min": 1, "max": 24, "default": 12 }] }
+{% endschema %}
+
+{% raw %}{{ not rendered }} {% not a tag %}{% endraw %}
+
+{% render 'pagination', paginate: paginate, label: "Pages" %}
+{% render 'product-card' for collection.products as product %}
+{% render 'icon' with 'arrow' %}
+{% include 'legacy-snippet' %}
+{% section 'header' %}
+{% layout none %}
+{% sections 'footer-group' %}
+{% content_for 'blocks' %}
+
+{{ 'a-very-long-string' | append: '-suffix' | prepend: 'prefix-' | replace: 'long', 'short' | remove: 'a-' | remove_first: '-' | replace_first: 'x', 'y' | slice: 1, 4 | upcase | downcase | capitalize | strip_html | strip_newlines | newline_to_br | url_encode | url_decode | escape_once | json }}
+{{ 10 | plus: 5 | minus: 2 | times: 3 | divided_by: 4 | modulo: 3 | round: 2 | ceil | floor | abs | at_least: 1 | at_most: 100 }}
+{{ array | join: ", " | split: ", " | first | last | size }}
+{{ array | concat: other | reverse | sort | sort_natural | uniq | compact | sum | map: "title" | where: "available", true | find: "id", 1 | reject: "hidden" | has: "x" }}
+{{ "2026-01-31" | date: "%A, %B %-d, %Y" }} {{ 'now' | date: '%s' }}
+{{ product.metafields.custom.size.value | default: "n/a", allow_false: true }}
+{{ product.price | money }} {{ product.price | money_without_currency }} {{ 'logo.png' | asset_url }} {{ 'x.css' | asset_url | stylesheet_tag }}
+{{ 'hello' | t: name: shop.name }} {{ 'general.title' | t }} {{ product | json }}
+{{ product.variants[0].title }} {{ product["title"] }} {{ array[-1] }} {{ array.first }} {{ array.size }} {{ settings.colors.primary }}
+{{ "\n" }} {{ 'single' }} {{ "tab\t" }} {{ "192.0.2.10" }} {{ 3.0 }}
+{{- shop.name -}}
+
+{%- comment -%}Rare constructs{%- endcomment -%}
+{% # single-line comment tag with {{ ignored }} and %} stuff
+{%- assign r1 = 1 | plus: 1 -%}
+{%- assign flt = 1.5e3 -%}
+{%- assign neg_range = (-3..3) -%}
+{%- assign var_range = (start..finish) -%}
+{%- assign empty_str = '' -%}
+{%- assign esc_str = "tab\t newline\n quote \" apostrophe ' backslash \\" -%}
+{%- assign nil_check = nil == null -%}
+
+{% ifchanged %}{{ product.type }}{% endifchanged %}
+{% for p in products %}{% ifchanged p.vendor %}<h3>{{ p.vendor }}</h3>{% endifchanged %}{% endfor %}
+{% for i in (1..5) reversed offset: continue limit: 2 %}{{ i }}{% endfor %}
+{% for i in (1..5) offset: 2 limit: 2 %}{{ forloop.parentloop.index }}{% endfor %}
+{% for char in "hello" | split: "" %}{{ char }}{% endfor %}
+{% tablerow i in (1..6) cols: 3 offset: 1 limit: 4 %}{{ tablerowloop.index }} {{ tablerowloop.index0 }} {{ tablerowloop.rindex }} {{ tablerowloop.rindex0 }} {{ tablerowloop.first }} {{ tablerowloop.last }} {{ tablerowloop.length }} {{ tablerowloop.row }} {{ tablerowloop.col0 }} {{ tablerowloop.col_first }} {{ tablerowloop.col_last }}{% endtablerow %}
+{% cycle 1, 2, 3 %}{% cycle "name": "a", "b" %}{% cycle group_var: x, y %}
+{% if a == b %}={% elsif a != b %}!={% elsif a <> b %}<>{% elsif a < b %}<{% elsif a > b %}>{% elsif a <= b %}<={% elsif a >= b %}>={% endif %}
+{% if a contains "x" and b contains 1 or c == empty and d != blank and e == nil and f == true and g == false %}ok{% endif %}
+{% if (a and b) or c %}parens{% endif %}
+{% if a and b or c and d %}precedence{% endif %}
+{% if product.tags contains "sale" %}{% unless product.price > 100 %}cheap{% else %}pricey{% endunless %}{% endif %}
+{% case x %}{% when 1, 2, 3 %}small{% when "a" or "b" %}letters{% when nil %}nil{% when true %}t{% else %}other{% endcase %}
+{% case x %}{% when 1 %}a{% endcase %}
+{% capture long_name %}{{ a }}-{{ b | upcase }}{% endcapture %}
+{% assign t = "now" | date: "%Y" | plus: 0 %}
+{% increment my_counter %}{% increment my_counter %}{% decrement my_counter %}
+{% echo "echo tag " | append: x %}
+{% liquid
+  assign x = 1
+  # a comment inside the liquid tag
+  for i in (1..3)
+    echo i | plus: x
+    if i == 2
+      break
+    endif
+  endfor
+  case x
+    when 1
+      echo "one"
+    else
+      echo "other"
+  endcase
+  capture c
+    echo "captured"
+  endcapture
+  render "snippet", a: x
+  unless false
+    echo "unless"
+  endunless
+  cycle "a", "b"
+  tablerow j in (1..2)
+    echo j
+  endtablerow
+%}
+{% render "card", product: product, show_price: true, count: 3, label: "Label", items: collection.products %}
+{% render "card" with product as item %}
+{% render "card" for products as item %}
+{% render 'icon-' | append: name %}
+{% include "legacy" with product %}
+{% include "legacy" for products %}
+{% include "legacy", a: 1, b: "two" %}
+{% section "header" %}{% sections "header-group" %}{% layout "theme" %}{% layout none %}
+{% form "customer_login", return_to: routes.account_url %}{{ form.errors | default_errors }}{% endform %}
+{% paginate collection.products by 24, window_size: 3 %}{{ paginate | default_pagination }}{% endpaginate %}
+{% javascript %}var a = "{{ x }}";{% endjavascript %}
+{% style %}.x { color: {{ c }}; }{% endstyle %}
+{% stylesheet %}.y { top: 0; }{% endstylesheet %}
+{% schema %}{"name":"Section","settings":[{"id":"t","type":"text","label":"Title","default":"Hi"}],"blocks":[{"type":"b","name":"B"}],"presets":[{"name":"P"}]}{% endschema %}
+{% raw %}{% if %}{{ unterminated {% endraw %}
+{% comment %}{% if unbalanced %}{% endcomment %}
+{% content_for "blocks" %}{% content_for "block", type: "text", id: "t1" %}
+
+{{ x | abs | at_least: 1 | at_most: 9 | ceil | floor | round | round: 2 | divided_by: 2 | divided_by: 2.0 | minus: 1 | plus: 1 | times: 2 | modulo: 3 }}
+{{ s | append: "a" | prepend: "b" | capitalize | downcase | upcase | escape | escape_once | lstrip | rstrip | strip | newline_to_br | remove: "a" | remove_first: "a" | remove_last: "a" | replace: "a", "b" | replace_first: "a", "b" | replace_last: "a", "b" | slice: 1 | slice: 1, 2 | slice: -3, 2 | split: "," | strip_html | strip_newlines | truncate: 5 | truncate: 5, "" | truncatewords: 3 | truncatewords: 3, "..." | url_decode | url_encode | base64_encode | base64_decode | base64_url_safe_encode | base64_url_safe_decode }}
+{{ a | compact | concat: b | first | last | join: "," | map: "k" | reverse | size | sort | sort: "k" | sort_natural | sort_natural: "k" | sum | sum: "k" | uniq | uniq: "k" | where: "k" | where: "k", "v" | reject: "k", "v" | find: "k", "v" | find_index: "k", "v" | has: "k", "v" | default: "x" | default: "x", allow_false: true | json }}
+{{ "now" | date: "%a %A %b %B %c %d %e %H %I %j %m %M %p %S %U %W %w %x %X %y %Y %Z %% %-d %-m %_d %^b %s %L %z %:z" }}
+{{ "2026-01-31" | date: "%d/%m/%Y" }} {{ 0 | date: "%s" }} {{ article.published_at | date: format: "date" }}
+{{ page.url | absolute_url | relative_url }} {{ content | markdownify | strip_html | number_of_words }} {{ title | slugify: "pretty" | xml_escape | cgi_escape | uri_escape | jsonify | inspect }}
+{{ site.posts | where_exp: "p", "p.year == 2026" | group_by: "category" | group_by_exp: "p", "p.year" | sort: "date" | reverse | sample: 2 | push: x | pop | shift | unshift: x | array_to_sentence_string: "or" | find_exp: "p", "p.a" }}
+{{ x | to_integer }} {{ d | date_to_xmlschema | date_to_rfc822 | date_to_string: "ordinal" | date_to_long_string }} {{ s | normalize_whitespace | smartify | sassify | scssify }}
+{{ p.price | money | money_with_currency | money_without_currency | money_without_trailing_zeros }}
+{{ "a.css" | asset_url | stylesheet_tag }} {{ "a.js" | asset_url | script_tag }} {{ img | image_url: width: 300, height: 300, crop: "center" | image_tag: loading: "lazy", widths: "100, 200" }}
+{{ "k" | t: count: 2, name: n }} {{ "k" | translate }} {{ s | handleize | pluralize: "item", "items" | link_to: url, title: "T" | link_to_tag: t | link_to_type: ty | link_to_vendor: v | within: c }}
+{{ weight | weight_with_unit | weight_with_unit: "kg" }} {{ f | file_url | file_img_url: "300x" | shopify_asset_url | global_asset_url | payment_type_img_url }}
+{{ "#2d6cdf" | color_to_rgb | color_to_hsl | color_to_hex | color_extract: "red" | color_brightness | color_modify: "alpha", 0.5 | color_lighten: 10 | color_darken: 10 | color_saturate: 10 | color_desaturate: 10 | color_mix: "#fff", 50 | color_contrast: "#000" | color_difference: "#fff" | brightness_difference: "#fff" }}
+{{ font | font_face: font_display: "swap" | font_url: "woff2" | font_modify: "weight", "bold" }} {{ t | time_tag: format: "date" }} {{ s | highlight: q | highlight_active_tag | placeholder_svg_tag: "product-1" | payment_type_svg_tag | structured_data | metafield_tag | metafield_text | preload_tag: as: "style" | login_button | customer_login_link | camelize | camelcase | md5 | sha1 | sha256 | hmac_sha1: k | hmac_sha256: k | json: 2 }}
+{{ product.metafields.ns.key.value | default: blank }} {{ shop.url | append: routes.root_url | split: "/" | last }} {{ request.page_type }} {{ content_for_header }} {{ content_for_layout }} {{ content_for_index }} {{ template.name }} {{ template.suffix }} {{ settings.x }} {{ section.settings.x }} {{ block.settings.x }} {{ block.shopify_attributes }} {{ forloop.first }}
+{{ a["b c"] }} {{ a['d'] }} {{ a[b] }} {{ a.b.c[0].d }} {{ a.first }} {{ a.last }} {{ a.size }} {{ "str".size }} {{ "str" | size }} {{ (1..3) | join: "," }}
+{{- "trim both" -}} {{- "left" }} {{ "right" -}}
+{%- if true -%} trim {%- endif -%}
+{{ 'it''s' }} {{ "a" | append: '"' }} {{ 'a' | append: "'" }} {{ 1.5 | plus: .5 }} {{ -1 | abs }} {{ 0.1 | plus: 0.2 }} {{ 1e3 }} {{ 3 | times: 4 }}

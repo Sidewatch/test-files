@@ -1,0 +1,114 @@
+<%# ── Comments ── ERB comment tag: renders nothing. TODO: paginate. FIXME: escape notes. %>
+<%# Stock index — Rails view; @bins, current_user and flash come from the controller. %>
+<%# frozen_string_literal: true %>
+<%
+  # Scriptlet: plain Ruby, no output
+  LOW_STOCK = 5 unless defined?(LOW_STOCK)
+  total_value = 0
+  badge = ->(qty) { qty.zero? ? "out" : (qty < LOW_STOCK ? "low" : "ok") }
+=begin
+block comment inside a scriptlet
+=end
+  def helper_label(sku)
+    "SKU-#{sku.to_s.upcase}"
+  end
+%>
+<h1><%= t(".title", name: current_user.name) %></h1>
+
+<%- if flash[:notice].present? -%>
+  <div class="flash flash-notice" role="alert"><%= flash[:notice] %></div>
+<%- end -%>
+
+<p>Escaped: <%= "<b>not bold</b>" %> — raw: <%== "<b>bold</b>" %> — also <%= raw("<i>raw</i>") %></p>
+<p>Literal tag: <%% not a scriptlet %></p>
+
+<% if @bins.empty? %>
+  <p class="muted"><%= t(".empty") %></p>
+<% elsif @bins.one? %>
+  <p>One bin.</p>
+<% else %>
+  <table class="stock">
+    <thead>
+      <tr><th>Bin</th><th>Items</th><th>Value</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+      <% @bins.each_with_index do |bin, index| %>
+        <% bin_value = bin.items.sum { |it| it.qty * it.price }; total_value += bin_value %>
+        <tr class="<%= index.odd? ? 'odd' : 'even' %>" id="<%= dom_id(bin) %>">
+          <td><%= link_to bin.code, bin_path(bin), class: "bin-link", data: { turbo_frame: "bin" } %></td>
+          <td><%= pluralize(bin.items.size, "item") %></td>
+          <td><%= number_to_currency(bin_value) %></td>
+          <td class="<%= badge.(bin.qty) %>"><%= badge.call(bin.qty).upcase %></td>
+        </tr>
+        <% bin.items.reject(&:discontinued?).each do |item| %>
+          <tr class="item">
+            <td colspan="4">
+              <%= item.sku %> &times; <%= item.qty %>
+              <%= content_tag(:em, item.notes) if item.notes? %>
+              <%= button_to "Cancel", cancel_item_path(item), method: :patch,
+                    data: { turbo_confirm: "Cancel #{item.sku}?" } if item.cancellable? %>
+            </td>
+          </tr>
+        <% end %>
+      <% end %>
+    </tbody>
+    <tfoot>
+      <tr><td colspan="3">Total</td><td><%= number_to_currency(total_value) %></td></tr>
+    </tfoot>
+  </table>
+  <%= paginate @bins %>
+<% end %>
+
+<%- unless current_user.admin? -%>
+  <span>Member</span>
+<%- else -%>
+  <%= link_to "Admin", admin_path %>
+<%- end -%>
+
+<% case current_user.role
+   when "admin" %>
+  <b>Admin</b>
+<% when "clerk", "picker" %>
+  <b>Staff</b>
+<% else %>
+  <b>Guest</b>
+<% end %>
+
+<% 3.times do |i| %>
+  <span class="dot dot-<%= i %>"></span>
+<% end %>
+
+<% begin %>
+  <%= render partial: "summary", locals: { count: @bins.size, symbol: :bins, ratio: 3.14, hex: 0xFF } %>
+<% rescue ActionView::MissingTemplate => e %>
+  <p class="error"><%= e.message %></p>
+<% ensure %>
+  <% logger.debug "rendered" %>
+<% end %>
+
+<%= form_with model: @bin, url: bins_path, local: true do |f| %>
+  <%= f.label :code, "Code" %>
+  <%= f.text_field :code, placeholder: "B-07", required: true %>
+  <%= f.number_field :capacity, in: 1..500, step: 5 %>
+  <%= f.select :category, Category.all.map { |c| [c.name.titleize, c.id] }, include_blank: true %>
+  <%= f.submit %>
+<% end %>
+
+<%= render "shared/footer" %>
+<%= yield :sidebar %>
+<%= content_for(:title) { "Stock — #{@bins.size} bins" } %>
+<%= javascript_include_tag "stock", defer: true %>
+<%= "inline #{total_value}".strip %>
+
+<script>
+  const bins = <%= raw @bins.map(&:code).to_json %>;
+  const user = { id: <%= current_user.id %>, name: "<%= j current_user.name %>" };
+  console.log(`Loaded ${bins.length} bins`);
+</script>
+
+<style>
+  .low { color: #b45309; }
+  .row-<%= current_user.theme %> { background: <%= current_user.theme == "dark" ? "#111" : "#fff" %>; }
+</style>
+
+<footer>&copy; <%= Time.current.year %> Acme Inc. <%= Rails.env %> <%= __FILE__ %>:<%= __LINE__ %></footer>

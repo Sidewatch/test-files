@@ -1,0 +1,127 @@
+# Ninja showcase: a build for a small C program with generators, pools and subninja.
+# Comments run to the end of the line.
+ninja_required_version = 1.10
+
+# ── Variables ──
+cc = cc
+cxx = c++
+ar = ar
+cflags = -O2 -Wall -Wextra -std=c11
+ldflags = -L$builddir/lib -Wl,-rpath,'$$ORIGIN'
+builddir = build
+version = 1.4.0
+defines = -DVERSION="$version" -DNAME=\"inventory\"
+escaped = a$ b$:c $$dollar
+braced = ${builddir}/out-${version}
+include_dirs = -Iinclude -I$builddir/gen
+
+# ── Pools ──
+pool link_pool
+  depth = 2
+
+pool serial
+  depth = 1
+
+# ── Rules ──
+rule cc
+  command = $cc $cflags $defines $include_dirs -MMD -MF $out.d -c $in -o $out
+  depfile = $out.d
+  deps = gcc
+  description = CC $out
+
+rule cxx
+  command = $cxx -MMD -MF $out.d -c $in -o $out
+  depfile = $out.d
+  deps = gcc
+  description = CXX $out
+
+rule ar
+  command = rm -f $out && $ar crs $out $in
+  description = AR $out
+
+rule link
+  command = $cc $in -o $out $ldflags -lsqlite3 $libs
+  description = LINK $out
+  pool = link_pool
+
+rule gen_version
+  command = sh -c 'printf "#define VERSION \"%s\"\n" $version > $out'
+  description = GEN $out
+  generator = 1
+
+rule run_tests
+  command = $in --verbose
+  description = TEST $in
+  pool = serial
+
+rule regen
+  command = ninja -t restat -f $in
+  restat = 1
+  rspfile = $out.rsp
+  rspfile_content = $in_newline
+
+# ── Build edges ──
+build $builddir/gen/version.h: gen_version
+build $builddir/stock.o: cc src/stock.c | $builddir/gen/version.h
+build $builddir/reorder.o: cc src/reorder.c || $builddir/gen/version.h
+build $builddir/main.o: cc src/main.c | include/inventory.h || $builddir/gen/version.h
+  cflags = $cflags -DVERSION="1.4.0"
+  description = CC main
+
+build $builddir/lib/libinventory.a: ar $builddir/stock.o $builddir/reorder.o
+build $builddir/inventory: link $builddir/main.o $builddir/lib/libinventory.a
+  libs = -lm -lpthread
+build $builddir/tests/stock_test: link $builddir/tests/stock_test.o $builddir/lib/libinventory.a
+build $builddir/tests/stock_test.o: cc tests/stock_test.c
+
+# Implicit outputs and escaped paths
+build $builddir/multi.out | $builddir/multi.map: link $builddir/main.o
+build path$ with$ spaces.o: cc src/with$ spaces.c
+build $builddir/phony-all: phony $builddir/inventory $builddir/tests/stock_test
+build check: run_tests $builddir/tests/stock_test
+build build.ninja: regen configure.py
+
+# ── Includes ──
+include rules.ninja
+subninja vendor/sqlite/build.ninja
+
+# ── Targets ──
+default $builddir/inventory
+default check
+
+# ── More syntax: continuation lines, MSVC deps, pools, dynamic deps ──
+rule msvc_cc
+  command = cl /nologo /showIncludes /c $in /Fo$out
+  deps = msvc
+  msvc_deps_prefix = Note: including file:
+  description = CL $out
+
+rule long_command
+  command = $cc $cflags $
+      -DLONG_LINE=1 $
+      -c $in -o $out
+  description = LONG $out
+
+rule dyndep_rule
+  command = ./scan.sh $in > $out
+  restat = 1
+
+rule echo
+  command = echo "in=$in out=$out in_newline=$in_newline"
+
+build escaped$:colon.o: cc src/a.c
+build $builddir/dyn.o: cc src/dyn.c | $builddir/dyn.dd
+  dyndep = $builddir/dyn.dd
+build $builddir/dyn.dd: dyndep_rule src/dyn.c
+build phony_target: phony | $builddir/inventory
+build all: phony $builddir/inventory $builddir/tests/stock_test
+build echo_all: echo $
+    $builddir/stock.o $
+    $builddir/main.o
+build $builddir/with$ space.o: cc src/space.c
+  pool = console
+build /abs/path.o: cc /abs/src.c
+build ../relative/out.o: cc ../relative/src.c
+build out.txt | extra.txt: echo in1.txt in2.txt | implicit.txt || order_only.txt
+
+default all

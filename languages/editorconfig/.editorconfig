@@ -1,0 +1,97 @@
+# ── Comments ──
+# EditorConfig: https://editorconfig.org
+; Semicolon comments are also allowed
+# TODO: add per-package overrides. FIXME: confirm the Makefile rule.
+
+# ── Preamble ──
+root = true
+
+# ── Universal section ──
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+tab_width = 4
+max_line_length = 100
+
+# ── Globs: braces, alternatives, ranges ──
+[*.{js,ts,jsx,tsx,json,yml,yaml}]
+indent_size = 2
+
+[*.{c,h}]
+indent_size = 8
+indent_style = tab
+
+[{package.json,.travis.yml}]
+indent_size = 2
+
+[lib/**.js]
+indent_size = 2
+
+[src/**/test_*.py]
+max_line_length = 120
+
+[file[0-9].txt]
+end_of_line = crlf
+
+[file[!0-9].txt]
+end_of_line = lf
+
+[*.{md,markdown}]
+trim_trailing_whitespace = false
+max_line_length = off
+
+[*.{bat,cmd,ps1}]
+end_of_line = crlf
+charset = utf-8-bom
+
+[{Makefile,makefile,GNUmakefile,*.mk}]
+indent_style = tab
+indent_size = unset
+
+[*.{sh,bash,zsh}]
+shell_variant = bash
+
+[{a,b,c}-{1..3}.cfg]
+indent_size = 3
+
+[**/vendor/**]
+indent_style = unset
+indent_size = unset
+trim_trailing_whitespace = unset
+insert_final_newline = false
+
+[docs/**.{rst,txt}]
+indent_size = 3
+charset = latin1
+
+[*.xml]
+charset = utf-16le
+
+[Dockerfile*]
+indent_size = 4
+
+[nested/{dir,other}/**.cfg]
+spelling_language = en-GB
+
+# ── Language-specific extension keys ──
+[*.cs]
+csharp_new_line_before_open_brace = all
+csharp_style_var_for_built_in_types = true:suggestion
+dotnet_sort_system_directives_first = true
+dotnet_naming_rule.interfaces_start_with_i.severity = warning
+dotnet_diagnostic.CA1062.severity = none
+
+[*.{kt,kts}]
+ij_kotlin_allow_trailing_comma = true
+ktlint_code_style = ktlint_official
+
+[*.java]
+ij_continuation_indent_size = 8
+indent_brace_style = K&R
+
+[*.{yml,yaml}]
+quote_type = single

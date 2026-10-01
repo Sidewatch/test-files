@@ -3,7 +3,8 @@
 One fixture for **every extension and every exact filename** the language table maps to a format the
 editor's tree view shows (25 Sep 2026). `--selftest-config-views ../TestFiles/structured` checks both
 directions: every file here routes to a format and reads to a non-empty tree, and every name the
-detector claims has a file here — so a name the table gains without a fixture fails the gate.
+detector claims has a file here — so a name the table gains without a fixture fails the gate. It also
+OPENS every file through the editor's own open path and fails any that lands on its source instead of its tree.
 
 Open one and flip the breadcrumb's tree glyph. XML opens on its **source** (markup is read as written,
 the tree is one click away); every other format opens on its tree. Double-click a key or a value to
@@ -15,6 +16,15 @@ edit it in place: the format's finder names the one token, its encoder keeps the
 `regions.topojson`, `app.webmanifest`, `.arcconfig`, `.babelrc`, `.jshintrc`,
 `.phpunit.result.cache`, `.prettierrc`, `.stylelintrc`, `.swcrc`, `composer.lock`, `deno.lock`,
 `flake.lock`, `Package.resolved`, `Pipfile.lock`
+
+## JSONC and JSON5 — `.jsonc .json5` and the config files that are JSONC
+
+The same JSON tree, read leniently: comments (`//` and `/* */`), trailing commas, and JSON5's bare and
+single-quoted keys, hex, `Infinity` and `NaN`. Plain `.json` stays strict, so a comment there still
+says "Invalid JSON". An edit in place leaves every comment where it was.
+
+`tsconfig.json`, `jsconfig.json`, `devcontainer.json`, `.eslintrc.json`, `.babelrc.json`, `bun.lock`,
+`settings.jsonc`, `config.json5`
 
 ## YAML — `.yaml .yml` and the config files that are YAML
 

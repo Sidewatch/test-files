@@ -1,0 +1,283 @@
+@charset "UTF-8";
+
+// ── Comments ──
+// Line comment: warehouse inventory design tokens
+/* Block comment: spans
+   several lines */
+/*! Loud comment kept in compressed output */
+/// Doc comment (SassDoc)
+/// @param {Number} $n - the quantity
+/// @return {String} a label
+/// @example scss
+///   .a { content: stock-label(3); }
+// TODO: tune the reorder colours
+// FIXME: dark mode contrast
+
+// ── Modules ──
+@use "sass:math";
+@use "sass:color";
+@use "sass:map";
+@use "sass:list";
+@use "sass:string";
+@use "sass:meta";
+@use "sass:selector";
+@use "./tokens" as tokens with ($brand: #336699, $gap: 8px);
+@use "./helpers" as *;
+@forward "./theme" show theme-color, $theme-gap;
+@forward "./legacy" hide legacy-mixin as lg-*;
+@import "legacy/reset", "legacy/print";
+
+// ── Variables ──
+$primary: #336699 !default;
+$radius: 4px;
+$spacing: 0.75rem;
+$font-stack: "Helvetica Neue", Arial, sans-serif !default;
+$breakpoints: (small: 480px, medium: 768px, large: 1200px);
+$statuses: ok, low, out;
+$enabled: true;
+$nothing: null;
+$global-flag: false !global;
+$ratio: math.div(16, 9);
+$unicode-range: U+0025-00FF, u+4??;
+$escaped-name: "quote \" inside" + 'single \' quote';
+
+// ── Numbers and units ──
+$ints: 0 42 -7 +3;
+$floats: 1.5 .5 -0.25 1e3 1.5E-2 2e+4;
+$lengths: 10px 2em 1.5rem 50% 100vh 100vw 3ch 1fr 0.5in 2cm 12pt 6pc 1q;
+$angles: 90deg 0.25turn 1rad 100grad;
+$times: 200ms 0.3s;
+$resolution: 2dppx 96dpi;
+$calc-ish: calc(100% - #{$spacing * 2});
+
+// ── Colours ──
+$hex3: #fff;
+$hex6: #336699;
+$hex8: #33669980;
+$named: rebeccapurple;
+$fns: rgb(51 102 153 / 50%), rgba(51, 102, 153, .5), hsl(210 50% 40%), hsla(210, 50%, 40%, .8);
+$mixed: color.mix($primary, white, 40%);
+
+// ── Strings and interpolation ──
+$greeting: "Stock level for #{$primary}";
+$single: 'Single quoted #{"nested"}';
+$unquoted: warehouse-a;
+$url-ref: url("images/logo.png");
+$url-bare: url(images/sprite.svg#icon);
+$escapes: "tab\9 newline\a unicode\2014 \"quoted\"";
+
+// ── Maps and lists ──
+$config: (
+  "sku": "ABC-1",
+  count: 12,
+  nested: (a: 1, b: 2),
+  list: (1, 2, 3),
+);
+$space-list: 1px 2px 3px;
+$comma-list: (a, b, c);
+$bracketed: [first second];
+
+// ── Functions ──
+@function stock-label($n) {
+  @if $n <= 0 {
+    @return "out";
+  } @else if $n < 10 {
+    @return "low";
+  } @else {
+    @return "ok";
+  }
+}
+
+@function rem($px, $base: 16px) {
+  @return math.div($px, $base) * 1rem;
+}
+
+@function sum($numbers...) {
+  $total: 0;
+  @each $n in $numbers {
+    $total: $total + $n;
+  }
+  @return $total;
+}
+
+@function debug-all($args...) {
+  @debug "args:" list.length($args);
+  @warn "deprecated helper";
+  @return meta.inspect($args);
+}
+
+// ── Mixins ──
+@mixin flex($dir: row, $gap: 0) {
+  display: flex;
+  flex-direction: $dir;
+  gap: $gap;
+}
+
+@mixin respond($bp) {
+  @media (min-width: map.get($breakpoints, $bp)) {
+    @content;
+  }
+}
+
+@mixin button-variant($bg, $fg: white, $args...) {
+  background: $bg;
+  color: $fg;
+  &:hover { background: color.adjust($bg, $lightness: -10%); }
+  @content($bg);
+}
+
+// ── Placeholders and extend ──
+%card-base {
+  border-radius: $radius;
+  padding: $spacing;
+}
+
+%muted { opacity: .6 }
+
+// ── Rules ──
+:root {
+  --brand: #{$primary};
+  --gap: #{$spacing};
+  --font: #{$font-stack};
+  --empty:;
+}
+
+html, body { margin: 0; font: 400 1rem/1.5 $font-stack; }
+
+.card {
+  @extend %card-base;
+  @extend .base-card !optional;
+  @include flex(column, $spacing);
+  color: $primary;
+  background: color.adjust($primary, $lightness: 40%);
+  border: 1px solid rgba($primary, .3);
+  width: calc(100% - #{$spacing * 2});
+  margin: { top: 1px; bottom: 2px; }
+  font: { family: $font-stack; size: 1rem; weight: 700 }
+
+  &:hover { border-color: darken($primary, 10%); }
+  &:not(.disabled):nth-child(2n + 1)::before { content: "\201C"; }
+  &--active { box-shadow: 0 0 0 2px $primary !important; }
+  &__title { font-size: 1.25rem; /* inline block */ }
+  & + & { margin-top: 1px; }
+  > .child ~ .sibling { color: red; }
+  .dark-theme & { color: white; }
+  #{&}-suffix { color: blue; }
+  @at-root .detached { color: green; }
+  @at-root { .also-detached { color: green; } }
+
+  @include respond(medium) { padding: $spacing * 2; }
+  @include button-variant(#336699, $fg: #fff) using ($bg) { border-color: $bg; }
+}
+
+a[href^="https://"]:not([rel~="nofollow" i]),
+input[type="checkbox" s]:checked + label::after,
+ul > li:is(.a, .b):where(.c):has(> img) {
+  text-decoration: underline;
+}
+
+@supports (display: grid) and (not (display: inline-grid)) {
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); }
+}
+
+@media screen and (min-width: 600px) and (max-width: 1200px), print {
+  .card { padding: $spacing * 0.5; margin: -$spacing; width: 100% / 3; }
+}
+
+@font-face {
+  font-family: "Inventory Sans";
+  src: url("fonts/inv.woff2") format("woff2"), url("fonts/inv.woff") format("woff");
+  font-display: swap;
+}
+
+@keyframes pulse {
+  from { opacity: 1; }
+  50% { opacity: .5; }
+  to { opacity: 1; }
+}
+
+@layer base, components;
+@layer components { .btn { @include flex; } }
+@container sidebar (min-width: 400px) { .card { display: grid; } }
+@property --angle { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+@namespace svg url(http://www.w3.org/2000/svg);
+@page :first { margin: 1in; }
+
+// ── Control flow ──
+@each $name, $bp in $breakpoints {
+  .w-#{$name} { max-width: $bp; }
+}
+
+@each $status in $statuses {
+  .status-#{$status} { content: stock-label(index($statuses, $status)); }
+}
+
+@for $i from 1 through 3 {
+  .col-#{$i} { width: percentage(math.div($i, 3)); }
+}
+
+@for $i from 1 to 3 { .gap-#{$i} { gap: $i * 4px; } }
+
+$n: 3;
+@while $n > 0 {
+  .item-#{$n} { order: $n; }
+  $n: $n - 1;
+}
+
+@if $enabled and not $nothing or $n == 0 {
+  .on { display: block; }
+} @else if $n != 1 {
+  .maybe { display: none; }
+} @else {
+  .off { display: none; }
+}
+
+// ── Operators ──
+.ops {
+  a: 1 + 2 - 3 * 4;
+  b: math.div(10, 4) % 3;
+  c: 1 < 2 and 2 >= 1 or 3 <= 4;
+  d: 1 == 1 and 2 != 3;
+  e: "a" + "b";
+  f: -$spacing;
+  g: (1 + 2) * 3;
+  h: if($enabled, 1px, 2px);
+  i: map.get($config, "nested", "a");
+  j: unquote("raw");
+  k: selector.append(".a", ".b");
+}
+
+@debug "done";
+
+// ── More features ──
+$query: "(min-width: 900px)";
+@media #{$query} and (orientation: landscape) { .wide { display: block; } }
+@media not all and (monochrome) { .colour { color: red; } }
+@supports not (display: grid) { .fallback { float: left; } }
+@include meta.load-css("theme/dark", $with: ("primary": #123456));
+@use "sass:map" as m;
+
+$merged: map.merge($config, ("extra": 1));
+$deep: map.get($config, "nested", "b");
+
+@function clamp-to($value, $min, $max) {
+  @if not meta.type-of($value) == "number" {
+    @error "Expected a number, got #{meta.inspect($value)}";
+  }
+  @return math.max($min, math.min($value, $max));
+}
+
+.extras {
+  width: clamp-to(120%, 0%, 100%);
+  height: if(meta.function-exists("rem"), rem(24px), 24px);
+  content: "#{string.unquote("\"quoted\"")} and #{meta.type-of($ratio)}";
+  &:is(:hover, :focus-visible) { outline: 2px solid currentColor; }
+  &[data-state="open"] > .child:not(:last-child)::after { content: ","; }
+  @media (prefers-reduced-motion: reduce) { transition: none; }
+  background: linear-gradient(to right, rgba(#000, .5) 0%, transparent 100%), url(data:image/png;base64,iVBORw0KGgo=);
+  grid-template-areas: "header header" "sidebar main";
+  transform: translate(-50%, -50%) rotate(45deg) scale(1.5, 1.5);
+  font-feature-settings: "liga" 1, "kern" 1;
+  margin: { left: auto; right: auto; }
+  --custom-prop: { a: b };
+}

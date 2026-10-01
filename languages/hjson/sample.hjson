@@ -1,0 +1,230 @@
+{
+  # ── Comments ──
+  # Hjson: JSON for humans. Hash comment.
+  // Double-slash comment.
+  /* Block comment
+     spanning lines. TODO: add schema. */
+
+  # ── Quoteless keys and strings ──
+  name: inventory-api
+  version: 1.4.0
+  description: A quoteless string runs to the end of the line
+  url: https://example.com/path?x=1&y=2
+  path: /var/lib/inventory
+  mixed: some text with: colons, commas and "quotes" inside
+  trailing: value   # a quoteless string includes this comment text
+  "quoted key": "double quoted value"
+  'single-quoted key': 'single quoted value'
+
+  # ── Numbers and keywords ──
+  replicas: 3
+  negative: -17
+  ratio: 0.75
+  exponent: 6.02e23
+  negExp: 1.5E-3
+  hex: 0xFF
+  plus: +5
+  yes: true
+  no: false
+  nothing: null
+  # These are quoteless strings, not numbers, because text follows:
+  numberLike: 5 apples
+  boolLike: true story
+
+  # ── Quoted string escapes ──
+  escapes: "tab\there, newline\nthere, quote \" slash \/ backslash \\ unicode é \b \f \r"
+  singleEscapes: 'it\'s a \t tab'
+
+  # ── Multiline strings ──
+  motd:
+    '''
+    Welcome to the inventory service.
+    Nothing here is billable.
+      Indentation relative to the quotes is kept.
+    '''
+  poem: '''First line
+    second line
+    third line'''
+  sql:
+    '''
+    SELECT sku, qty
+      FROM stock
+     WHERE qty < 25
+    '''
+
+  # ── Arrays: commas optional, trailing commas allowed ──
+  ports: [8080, 9090]
+  features: [search, export,]
+  newlineSeparated: [
+    first
+    second
+    "third quoted"
+    4
+    true
+    null
+  ]
+  nestedArrays: [[1, 2], [3, 4], []]
+  mixedArray: [1, "two", three, 4.5, false, null, {a: 1}]
+  emptyArray: []
+
+  # ── Objects ──
+  database: {
+    host: db.internal
+    port: 5432
+    ssl: true
+    pool: { min: 2, max: 10, },
+  }
+  emptyObject: {}
+  inline: { a: 1, b: two, c: [3] }
+  nested: {
+    level1: {
+      level2: {
+        level3: deep value
+      }
+    }
+  }
+
+  # ── Realistic: inventory records ──
+  warehouse: {
+    id: WH-001
+    location: "Dock 4, Unit 7"
+    items: [
+      {
+        sku: A-1001
+        name: Widget
+        qty: 120
+        price: 9.99
+        tags: [hardware, small]
+        discontinued: false
+      }
+      {
+        sku: B-2002
+        name: Gadget (large)
+        qty: 0
+        price: 24.5
+        tags: []
+        discontinued: true
+      }
+    ]
+  }
+
+  // Trailing commas and quoteless values are fine
+  unicode: café 日本語 ☕
+  features2: [search, export,],
+
+  # ── Key forms ──
+  123: numeric key
+  true: boolean-looking key
+  null: null-looking key
+  "": empty quoted key
+  "key with: colon": quoted keys allow punctuation
+  'single': 'single-quoted key and value'
+  ünïcödé: unicode quoteless key
+  emoji☕: unicode symbol in key
+  key-with-dashes: ok
+  key_with_underscores: ok
+  key.with.dots: ok
+  spaced   :    lots of spaces around the colon
+  tabbed	:	tabs around the colon
+
+  # ── Number forms ──
+  zero: 0
+  negZero: -0
+  fraction: 0.5
+  bigExp: 1E5
+  plusExp: 1e+5
+  minusExp: 1e-5
+  negFloat: -3.14159
+  intMax: 9007199254740993
+  # These look numeric but are quoteless strings:
+  leadingZero: 007
+  versionLike: 1.2.3
+  dateLike: 2026-09-24
+  hexLike: 0xDEADBEEF
+  trailingText: 12 monkeys
+  numberThenComment: 5 # this comment is part of the string
+
+  # ── Keyword-like quoteless strings ──
+  looksTrue: true but a string
+  looksNull: nullable
+  looksFalse: falsey
+  realTrue: true
+  realFalse: false
+  realNull: null
+  trueWithSpaces: true   
+  trueThenComma: true,
+
+  # ── Quoteless string punctuation ──
+  brackets: text with [brackets] and {braces} inside
+  commas: a, b, c are part of this string
+  hashInside: not # a comment here
+  slashes: http://example.com//double/slash
+  quotesInside: say "hello" and 'goodbye'
+  equals: a = b
+  percent: 100% done
+  backslash: C:\path\no\escapes
+  afterEmpty: value
+
+  # ── Quoted string escapes ──
+  allEscapes: "\" \\ \/ \b \f \n \r \t \u00e9 \u0041"
+  singleAll: '\' \\ \/ \b \f \n \r \t \u00e9'
+  longQuoted: "a long double quoted string that continues on a single line and mentions unicode: café 日本語 ☕"
+
+  # ── Multiline strings: indentation rules ──
+  indented:
+    '''
+    first
+      second (indented)
+    third
+    '''
+  sameLine: '''starts on the key line
+    continues here'''
+  withQuotes:
+    '''
+    contains "double" and 'single' quotes
+    and a backslash \ and a tab\t that stay literal
+    '''
+  inArray: [
+    '''
+    multiline inside an array
+    with two lines
+    '''
+    plain
+  ]
+  blankLines:
+    '''
+    before blank
+
+    after blank
+    '''
+
+  # ── Arrays and objects: separators and comments ──
+  commaless: [
+    1
+    2
+    3
+  ]
+  mixedSeparators: [1, 2
+    3, 4
+  ]
+  trailingCommaObj: { a: 1, b: 2, }
+  commentsInside: [
+    1 # one
+    2 // two
+    /* three */ 3
+  ]
+  objectsInArray: [
+    { id: 1, name: first }
+    { id: 2, name: second }
+    {}
+    []
+  ]
+  deep: { a: { b: { c: { d: { e: bottom } } } } }
+  emptyAll: { a: {}, b: [], c: "" }
+
+  /* Block comment between members */
+  afterBlock: yes
+
+  // Final members
+  lastKey: last value
+}

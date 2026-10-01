@@ -1,0 +1,195 @@
+# ── Comments ──
+# systemd unit for the inventory API, exercising every section and value form.
+; Semicolon comments are accepted as well.
+# TODO: switch to socket activation
+# FIXME: the reload signal races with migrations
+
+[Unit]
+Description=Inventory API
+Documentation=https://example.com/docs/inventory man:inventory(8) file:/usr/share/doc/inventory/README
+Documentation=info:inventory
+After=network-online.target postgresql.service
+Wants=network-online.target
+Requires=postgresql.service
+Requisite=local-fs.target
+BindsTo=sys-subsystem-net-devices-eth0.device
+PartOf=inventory.target
+Conflicts=inventory-legacy.service
+Before=multi-user.target
+OnFailure=notify-failure@%n.service
+ConditionPathExists=/etc/inventory/config.toml
+ConditionPathIsDirectory=!/var/lib/inventory/.lock
+ConditionHost=|inventory-*
+ConditionACPower=true
+AssertFileNotEmpty=/etc/inventory/config.toml
+StartLimitIntervalSec=300
+StartLimitBurst=5
+StartLimitAction=none
+RequiresMountsFor=/var/lib/inventory
+JobTimeoutSec=infinity
+SourcePath=/etc/inventory/inventory.conf
+
+[Service]
+# ── Process management ──
+Type=notify
+NotifyAccess=main
+User=inventory
+Group=inventory
+SupplementaryGroups=ssl-cert adm
+DynamicUser=no
+UMask=0027
+WorkingDirectory=/opt/inventory
+RootDirectory=/srv/jail
+Nice=-5
+OOMScoreAdjust=-200
+IOSchedulingClass=best-effort
+IOSchedulingPriority=4
+CPUSchedulingPolicy=other
+
+# ── Environment ──
+Environment="LOG_LEVEL=info" "REGION=eu-west" WAREHOUSE_ID=42
+Environment="MESSAGE=hello world with spaces" 'SINGLE=quoted value'
+EnvironmentFile=-/etc/inventory/env
+EnvironmentFile=/etc/inventory/secrets.env
+PassEnvironment=LANG TZ
+UnsetEnvironment=DEBUG
+Environment=
+SetCredential=api_token:example-not-a-real-token
+LoadCredential=db_password:/etc/inventory/credentials/db
+ImportCredential=inventory.*
+
+# ── Commands ──
+ExecStartPre=/opt/inventory/bin/migrate --check
+ExecStartPre=-/bin/mkdir -p /run/inventory
+ExecStartPre=+/bin/chown inventory /run/inventory
+ExecStartPre=!/opt/inventory/bin/privileged-setup
+ExecStartPre=!!/opt/inventory/bin/ambient-setup
+ExecStartPre=:/opt/inventory/bin/no-env-subst --raw $HOME
+ExecStart=/opt/inventory/bin/inventory --port 8080 --config /etc/inventory/config.toml \
+    --workers ${WORKERS} --region $REGION --name "main instance" --literal 'single quoted' \
+    --percent %% --unit %n --instance %i --host %H --user %u
+ExecStartPost=/bin/sh -c 'echo started > /run/inventory/status'
+ExecReload=/bin/kill -HUP $MAINPID
+ExecReload=@/bin/kill kill-alias -HUP $MAINPID
+ExecStop=/opt/inventory/bin/inventory --shutdown
+ExecStopPost=-/bin/rm -f /run/inventory/status
+ExecCondition=/bin/test -r /etc/inventory/config.toml
+
+# ── Lifecycle ──
+Restart=on-failure
+RestartSec=5s
+RestartSteps=5
+RestartMaxDelaySec=1min
+TimeoutStartSec=90
+TimeoutStopSec=30s
+TimeoutAbortSec=10
+TimeoutSec=2min 30s
+WatchdogSec=30
+RuntimeMaxSec=1d 12h
+SuccessExitStatus=0 143 SIGTERM
+RestartPreventExitStatus=64 EX_USAGE
+RestartForceExitStatus=75
+KillMode=mixed
+KillSignal=SIGTERM
+SendSIGKILL=yes
+FinalKillSignal=SIGKILL
+RemainAfterExit=no
+GuessMainPID=yes
+PIDFile=/run/inventory/inventory.pid
+RuntimeDirectory=inventory
+RuntimeDirectoryMode=0750
+StateDirectory=inventory
+CacheDirectory=inventory
+LogsDirectory=inventory
+ConfigurationDirectory=inventory
+
+# ── Resource control ──
+LimitNOFILE=65536
+LimitNPROC=4096:8192
+LimitCORE=infinity
+LimitMEMLOCK=64M
+MemoryMax=2G
+MemoryHigh=1536M
+MemorySwapMax=0
+CPUQuota=200%
+CPUWeight=500
+TasksMax=512
+IOWeight=100
+IPAddressAllow=192.0.2.0/24 2001:db8::/32 localhost
+IPAddressDeny=any
+DeviceAllow=/dev/null rw
+DevicePolicy=closed
+Slice=inventory.slice
+Delegate=no
+
+# ── Logging ──
+StandardInput=null
+StandardOutput=journal
+StandardError=inherit
+SyslogIdentifier=inventory
+SyslogFacility=daemon
+SyslogLevel=info
+SyslogLevelPrefix=true
+LogLevelMax=notice
+LogExtraFields=SERVICE_TIER=api
+LogRateLimitIntervalSec=30s
+LogRateLimitBurst=1000
+
+# ── Hardening ──
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectProc=invisible
+ProcSubset=pid
+ReadWritePaths=/var/lib/inventory /run/inventory
+ReadOnlyPaths=/etc/inventory
+InaccessiblePaths=/root -/nonexistent
+BindPaths=/var/lib/inventory:/data:rbind
+BindReadOnlyPaths=/etc/ssl
+TemporaryFileSystem=/var:ro
+PrivateTmp=true
+PrivateDevices=true
+PrivateNetwork=false
+PrivateUsers=true
+PrivateMounts=yes
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE CAP_CHOWN
+CapabilityBoundingSet=~CAP_SYS_ADMIN
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
+SystemCallArchitectures=native
+SystemCallErrorNumber=EPERM
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RemoveIPC=yes
+NoExecPaths=/home
+ExecPaths=/opt/inventory
+PAMName=inventory
+SELinuxContext=system_u:system_r:inventory_t:s0
+AppArmorProfile=-usr.bin.inventory
+Personality=x86-64
+CoredumpFilter=default
+TimerSlackNSec=50ms
+
+[Install]
+WantedBy=multi-user.target
+RequiredBy=inventory.target
+Also=inventory.socket
+Alias=inventory-api.service
+DefaultInstance=main
+
+# ── Drop-in style overrides: empty assignment resets a list ──
+[Service]
+ExecStart=
+ExecStart=/opt/inventory/bin/inventory --port 8081
+Environment="OVERRIDE=1"

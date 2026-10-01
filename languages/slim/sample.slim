@@ -1,0 +1,158 @@
+/ ── Comments ──
+/ Slim code comment: not rendered in the HTML output.
+/ The inventory page; @items, @warehouse and current_user come from the controller.
+/! HTML comment: rendered as <!-- ... -->
+/[if IE]
+  p Please upgrade your browser.
+/ TODO: paginate the stock table
+/ FIXME: the low-stock badge needs an accessible label
+
+/ ── Doctype and root ──
+doctype html
+html lang="en"
+  head
+    meta charset="utf-8"
+    meta name="viewport" content="width=device-width, initial-scale=1"
+    title = "#{@warehouse.name} — Inventory"
+    link rel="stylesheet" href=asset_path("inventory.css")
+    css:
+      .low-stock { color: #b00; }
+      .badge     { padding: 0 .5em; }
+    javascript:
+      window.warehouse = { id: #{@warehouse.id}, name: "#{j @warehouse.name}" };
+    scss:
+      $accent: #336699;
+      .accent { color: $accent; }
+    coffee:
+      console.log "loaded"
+    == csrf_meta_tags
+
+  body.inventory#top class=("admin" if current_user.admin?) data-region="eu-west"
+    / ── Tags, classes, ids, attributes ──
+    header.site-header
+      h1.title#main-title = t(".title", name: current_user.name)
+      nav.menu role="navigation" aria-label="Main"
+        a href="/" class="active" Home
+        a href=items_path data-turbo="false" Items
+        a(href="/orders" title="Orders") Orders
+        a[href="/reports" target="_blank"] Reports
+        a href="/help" disabled=false hidden=true Help
+        a.btn.btn-primary href="/new" data={ action: "new", count: 3 } New item
+
+    / ── Output: escaped, unescaped, whitespace control ──
+    p = @warehouse.address
+    p == @warehouse.html_notes
+    p= number_with_delimiter(12_345)
+    p=> "trailing whitespace"
+    p=< "leading whitespace"
+    p ==> raw_html_with_trailing_space
+
+    / ── Text blocks ──
+    p
+      | Verbatim text block, with #{interpolation} and \#{escaped}.
+      | A second line follows.
+    p
+      ' Text with a trailing space added after it.
+    p
+      | Escaped: \#{not_interpolated} and "quotes" and 'apostrophes'.
+    pre
+      |
+        Preformatted
+          indentation is
+            kept here.
+
+    / ── Control code ──
+    - total = @items.sum(&:quantity)
+    - low, ok = @items.partition { |i| i.quantity < 10 }
+    - if @items.empty?
+      p.muted = t(".empty")
+    - elsif @items.size > 100
+      p Too many items to show.
+    - else
+      table.items
+        thead
+          tr
+            th SKU
+            th Name
+            th Qty
+            th
+        tbody
+          - @items.each_with_index do |item, index|
+            tr class=(item.low? ? "low-stock" : "ok") id="item-#{item.id}" data-index=index
+              td = link_to item.sku, item_path(item)
+              td = item.name.truncate(40)
+              td.num = item.quantity
+              td
+                - case item.status
+                - when :ok
+                  span.badge.ok OK
+                - when :low
+                  span.badge.low Low
+                - else
+                  span.badge Unknown
+      - unless low.empty?
+        p.warn = "#{low.size} of #{@items.size} items need reordering"
+
+    - 3.times do |n|
+      span class="dot dot-#{n}" = n
+    - while total > 1000
+      - total -= 1000
+    - begin
+      - risky = Integer("12")
+    - rescue ArgumentError => e
+      p.error = e.message
+    - ensure
+      - cleanup!
+
+    / ── Ruby interpolation in attributes and text ──
+    a href="/items/#{@items.first.id}/edit?ref=#{CGI.escape(request.path)}" Edit first
+    input type="text" name="q" value=params[:q] placeholder="Search…" required=true autofocus=true
+    input type="checkbox" checked=(@warehouse.active?)
+    img src=image_path("logo.png") alt="Logo"
+    br
+    hr
+    p Mixed text with <em>inline html</em> and #{@warehouse.name.upcase} in the middle.
+    p class=["a", "b", ("c" if total > 0)] Array classes
+    p *{ title: "splat", "data-x": 1 } Splat attributes
+    p *dynamic_attrs Dynamic splat
+    p.long-line = "A very long line that continues " \
+      "on the next line using a backslash"
+    p.comma-line = link_to "Reorder",
+      new_order_path,
+      class: "btn"
+
+    / ── Shortcuts, inline tags, defaults ──
+    ul
+      li: a href="#a" First
+      li: strong Bold item
+      li: a(href="#b") Second
+    #sidebar.wide
+      .card.shadow
+        .card-body Plain div shortcuts
+    ruby:
+      def fmt(qty)
+        qty.to_s.rjust(4, "0")
+      end
+    p = fmt(7)
+
+    / ── Partials, yield, and embedded engines ──
+    = render "summary", count: @items.size, total: total
+    = render partial: "row", collection: @items, as: :item
+    = yield
+    = yield :sidebar
+    = content_for :footer do
+      p Footer from content_for
+    markdown:
+      # Notes
+      Items marked **low** are reordered _nightly_.
+    sass:
+      .note
+        color: red
+    erb:
+      <%= Time.now.year %>
+
+    footer
+      = form_with url: search_path, method: :get do |f|
+        = f.text_field :q
+        = f.submit "Search", class: "btn"
+      small &copy; Acme Warehousing — 2026 → ünïcödé ✓

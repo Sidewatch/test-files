@@ -1,0 +1,210 @@
+/- kdl-version 2
+// ── KDL: a warehouse service definition exercising the whole grammar ──
+/* Block comment
+   /* nested block comment */
+   still inside */
+// TODO: add the regional replica
+
+// ── Nodes with arguments and properties ──
+service "inventory-api" version="1.4.0" {
+    replicas 3
+    ports 8080 9090 9091
+    debug #false
+    verbose #true
+    parent #null
+
+    // ── Strings ──
+    strings {
+        plain "A plain string with \"escapes\" \n \t \\ \/ \u{1F4E6} \u{e9}"
+        multi-word "unicode: Zürich → 東京 ✓"
+        raw #"C:\warehouse\bin "quoted" no escapes"#
+        raw-more ##"contains "# inside"##
+        multiline """
+            Multi-line string
+              keeps relative indentation
+            and "quotes"
+            """
+        multiline-raw #"""
+            Raw \n multi-line
+            """#
+        bare identifier-string-like
+        unquoted-arg arg-without-quotes
+    }
+
+    // ── Numbers ──
+    numbers {
+        integer 42
+        negative -17
+        positive +5
+        float 3.14159
+        exponent 6.022e23
+        upper-exp 1E-9
+        signed-exp 2e+10
+        separators 1_000_000
+        hex 0xdeadBEEF
+        octal 0o755
+        binary 0b1010_0101
+        infinite #inf
+        negative-infinite #-inf
+        not-a-number #nan
+    }
+
+    // ── Type annotations ──
+    typed {
+        timeout (seconds)30
+        started (date)"2026-01-31"
+        id (uuid)"123e4567-e89b-12d3-a456-426614174000"
+        addr (ipv4)"192.0.2.10"
+        addr6 (ipv6)"2001:db8::1"
+        (author)contact name="Ops" email="ops@example.com"
+        (u8)sizes (u8)1 (u8)2 (i64)3
+    }
+
+    // ── Properties ──
+    database host="db.example.com" port=5432 ssl=#true password="example-not-a-real-key" {
+        pool min=2 max=20 idle-ms=3e4
+        options timeout=(seconds)30 label=#"raw value"# nothing=#null
+    }
+
+    // ── Children, nesting, and semicolons ──
+    env {
+        LOG_LEVEL "info"
+        FEATURE_FLAGS "search,export"
+        EMPTY ""
+    }
+    inline-node 1; another-node 2; third-node 3
+
+    // ── Slashdash on nodes, arguments, properties, children ──
+    /- disabled-node "this whole node is commented out"
+    visible-node /- "disabled-arg" "kept-arg" /-disabled=1 kept=2
+    node-with-children {
+        kept-child
+        /- dropped-child
+    }
+    block-dropped /- {
+        gone
+    } {
+        remains
+    }
+
+    // ── Line continuation ──
+    long-node "first" \
+        "second" \
+        key="value" \
+        other=42 // trailing comment
+
+    // ── Node names that are quoted or unusual ──
+    "quoted node name" 1
+    - dash-node
+    ✓ unicode-node
+    "node with spaces" a=1
+
+    healthcheck path="/healthz" interval="10s" {
+        expect status=200
+        headers {
+            "X-Request-Id" "abc"
+            Accept "application/json"
+        }
+    }
+}
+
+// ── Multiple top-level nodes ──
+warehouse "WH-NORTH" {
+    bin "A-01" sku="WIDGET-100" quantity=250 price=2.5
+    bin "A-02" sku="GADGET-200" quantity=0 price=14.99
+}
+warehouse "WH-SOUTH"
+empty-node
+
+// ── Rare constructs ──
+rare-strings {
+    escapes "\" \\ \/ \b \f \n \r \t \s \u{0} \u{10FFFF} \u{1f4e6}"
+    whitespace-escape "line one \
+                       continued with the leading whitespace removed"
+    empty ""
+    empty-raw #""#
+    raw-with-hashes ###"contains "## and "# inside"###
+    multiline-indent """
+        deepest indent defines the dedent
+          this line is indented two more
+        back to base
+        """
+    multiline-escape """
+        escaped newline \
+        stays one line, tab\there
+        """
+    multiline-empty-lines """
+
+        blank lines above and below
+
+        """
+    multiline-raw-hashes ##"""
+        has """ inside \n and no escapes
+        """##
+    unicode-escapes "\u{e9}\u{4e2d}\u{1F600}"
+    identifier-strings foo.bar a-b a_b a+b a:b @at ~tilde !bang ?q $dollar %pct ^caret &amp *star |pipe
+    unicode-identifier Zürich 東京 ✓ ключ
+    dotted-number-like .5x -x +x --flag
+}
+
+rare-numbers {
+    ints 0 1 -1 +1 007 1_0 1__0_ 0_1
+    hex 0x0 0xff 0xFF 0xDEAD_beef -0x10 +0x10
+    octal 0o0 0o777 -0o7 0o7_7
+    binary 0b0 0b1 0b1010_1010 -0b1
+    floats 0.0 1.0 -1.5 +1.5 1.5e3 1.5E3 1.5e+3 1.5e-3 1e3 1E3 1e+3 1e-3 1_0.0_1 1.0e1_0
+    keywords-as-values #true #false #null #inf #-inf #nan
+    typed (u8)255 (i32)-5 (f64)1.5 (decimal)"1.50" (date-time)"2026-01-31T09:00:00Z" (time)"09:00:00" (duration)"PT1H" (regex)"^a+$" (base64)"ZXhhbXBsZQ==" (url)"https://example.com" (hostname)"example.com" (email)"ops@example.com"
+}
+
+rare-properties {
+    node "quoted key"=1 "another key"="value" key-with-dash=2 unicode-ключ="v" a.b=3
+    node2 k=#true k2=#false k3=#null k4=#inf k5=#nan k6=(type)"typed" k7=#"raw"# k8="""
+        multi
+        """
+    typed-key-value (t)k=(u)"v"
+    duplicate-keys a=1 a=2 a=3
+    mixed 1 k=2 3 k2=4 "five" 6
+}
+
+rare-nodes {
+    (type)typed-node 1
+    ("quoted type")another-typed 2
+    "quoted name with spaces" 3
+    "" empty-name-node
+    node-with-args-before-children 1 2 3 { child }
+    node-no-space {child}
+    semicolons-a; semicolons-b; semicolons-c;
+    a { b; c; d }
+    empty-children {}
+    empty-children-with-args 1 {}
+    deeply { nested { levels { of { children { here 1 } } } } }
+    tab	separated	args
+    trailing-semicolon 1;
+    final-no-semicolon
+}
+
+rare-comments {
+    /* inline block */ node-after-block 1 /* between args */ 2 /* end */
+    /* /* nested */ still comment */ visible
+    /- slashdash-with-space-before-node "x"
+    /-slashdash-no-space "y"
+    node /- 1 2 /- k=v 3 k2=4
+    node /- {
+        dropped children
+    }
+    node /- {
+        dropped
+    } {
+        kept
+    }
+    // comment at end of children
+    last // trailing
+}
+
+// escaped line continuation across comments
+continued 1 \
+    2 /* comment in continuation */ \
+    3 // trailing comment after continuation
+    
+(final-type)final-node "end" { child (c)"v" }

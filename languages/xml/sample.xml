@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?xml-stylesheet type="text/xsl" href="inventory.xsl"?>
+<?xml-stylesheet type="text/css" href="inventory.css" media="screen" alternate="yes"?>
+<!-- ── Comments ───────────────────────────────────────────────
+     A warehouse inventory document exercising every XML construct.
+     TODO: add the supplier catalogue. FIXME: stale prices. -->
+<!DOCTYPE inventory SYSTEM "inventory.dtd" [
+  <!-- Internal DTD subset -->
+  <!ELEMENT inventory (meta, warehouse+)>
+  <!ELEMENT meta (title, updated?, note*)>
+  <!ELEMENT title (#PCDATA)>
+  <!ELEMENT updated (#PCDATA)>
+  <!ELEMENT note (#PCDATA | em)*>
+  <!ELEMENT em (#PCDATA)>
+  <!ELEMENT warehouse (location, (item | bundle)*)>
+  <!ELEMENT location EMPTY>
+  <!ELEMENT item (name, price, tags?, description?)>
+  <!ELEMENT bundle (item+)>
+  <!ELEMENT name (#PCDATA)>
+  <!ELEMENT price (#PCDATA)>
+  <!ELEMENT tags (tag*)>
+  <!ELEMENT tag (#PCDATA)>
+  <!ELEMENT description ANY>
+  <!ATTLIST warehouse
+            id        ID                      #REQUIRED
+            region    (north | south | east)  "north"
+            capacity  CDATA                   #IMPLIED
+            version   CDATA                   #FIXED "2.1"
+            refs      IDREFS                  #IMPLIED
+            owner     IDREF                   #IMPLIED
+            kind      NMTOKEN                 #IMPLIED
+            kinds     NMTOKENS                #IMPLIED
+            logo      ENTITY                  #IMPLIED
+            format    NOTATION (png | svg)    #IMPLIED>
+  <!ATTLIST item sku CDATA #REQUIRED qty CDATA "0" xml:lang CDATA #IMPLIED>
+  <!ENTITY company "Acme Supply &amp; Co.">
+  <!ENTITY copyright "&#169; 2026 &company;">
+  <!ENTITY % currency "GBP">
+  <!ENTITY % shared SYSTEM "shared.ent">
+  %shared;
+  <!ENTITY external SYSTEM "external.xml">
+  <!ENTITY public-ent PUBLIC "-//ACME//ENTITIES Stock//EN" "stock.ent">
+  <!ENTITY logo-img SYSTEM "logo.png" NDATA png>
+  <!NOTATION png SYSTEM "image/png">
+  <!NOTATION svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+  <?processing-in-dtd instruction?>
+]>
+<inventory xmlns="https://example.com/inventory"
+           xmlns:dc="http://purl.org/dc/elements/1.1/"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:xi="http://www.w3.org/2001/XInclude"
+           xsi:schemaLocation="https://example.com/inventory inventory.xsd"
+           version='2.1' xml:lang="en-GB">
+
+  <meta>
+    <dc:title>Acme Warehouse Inventory</dc:title>
+    <title>Stock &amp; reorder report</title>
+    <updated>2026-03-01T09:30:00Z</updated>
+    <note>Fewer than 5 &lt;copies&gt; left &#8212; order soon. Quote: &quot;ok&quot; &apos;ok&apos; &#x263A; &#128230;</note>
+    <note>Mixed <em>content</em> with <!-- an inline comment --> and a processing instruction <?stock-refresh now?> inside.</note>
+    <note>&copyright;</note>
+  </meta>
+
+  <warehouse id="w1" region="south" capacity="500" refs="w1 w2" xml:space="preserve">
+    <location lat="50.8198" lon="-1.0880"/>
+    <item sku="WGT-100" qty="12" xml:lang="en">
+      <name>Widget</name>
+      <price currency="GBP" scale='2'>4.50</price>
+      <tags><tag>small</tag><tag>metal</tag></tags>
+      <description>
+        A <em>very</em> useful widget.
+        <![CDATA[Raw text: <not-a-tag> & unescaped ampersands, ]]> and ]]&gt; escaped.
+      </description>
+    </item>
+    <item sku="GDG-200" qty="40" xml:lang="de">
+      <name>Gadget — Größe M</name>
+      <price currency="EUR">1.25</price>
+      <description/>
+    </item>
+    <bundle>
+      <item sku="KIT-001" qty="3"><name>Starter kit</name><price>9.99</price></item>
+      <xi:include href="more-items.xml" parse="xml">
+        <xi:fallback><note>Items unavailable.</note></xi:fallback>
+      </xi:include>
+    </bundle>
+    <empty-element></empty-element>
+    <self-closing a="1" b="2" c = "3" />
+    <ns:prefixed xmlns:ns="urn:example:ns" ns:attr="value">text</ns:prefixed>
+    <numbers>42 -17 3.14159 1.5e-3 0xFF</numbers>
+    <special-chars attr="a &lt; b &amp;&amp; c &gt; d">&lt;tag&gt; &amp; "quotes" and 'apostrophes'</special-chars>
+    <unicode>café ☃ 日本語 𝒳</unicode>
+    <ids xml:id="ident-1" xsi:nil="true"/>
+    <multiline attr="line one
+                     line two" other='single "double" inside'>text</multiline>
+    <whitespace xml:space="preserve">  keep   this   spacing  </whitespace>
+  </warehouse>
+
+  <warehouse id="w2" region="north" version="2.1">
+    <location lat="53.4808" lon="-2.2426"/>
+    <item sku="GZM-300" qty="0"><name>Gizmo</name><price>7.00</price></item>
+  </warehouse>
+
+  <?php echo "processing instruction with code"; ?>
+  <?inventory-hint priority="high" mode='fast'?>
+</inventory>
+<!-- Trailing comment after the root element -->
+<?trailing-instruction done?>

@@ -1,0 +1,178 @@
+/* ── Comments ── */
+// Line comment. TODO: cluster by team. FIXME: tune ranksep.
+# Preprocessor-style line comment (treated as a comment by dot)
+/* Block comment
+   across lines */
+
+strict digraph "warehouse pipeline" {
+    // ── Graph attributes ──
+    graph [rankdir = LR, label = "Warehouse fulfilment", labelloc = t, fontsize = 18, fontname = "Helvetica", bgcolor = "#FAFAFA", splines = ortho, nodesep = 0.5, ranksep = "0.75 equally", compound = true, concentrate = false, newrank = true];
+    rankdir = LR;
+    size = "8,5";
+    ratio = fill;
+    pad = 0.3;
+    charset = "UTF-8";
+
+    // ── Default node and edge attributes ──
+    node [shape = box, style = "rounded,filled", fillcolor = "#EEF3FF", fontname = "Helvetica", fontsize = 11, penwidth = 1.2, margin = "0.15,0.08"];
+    edge [color = "#555555", arrowhead = vee, arrowsize = 0.8, fontsize = 9];
+
+    // ── Nodes: shapes, colours, HTML labels ──
+    receiving [label = "Receiving\ndock", shape = house, fillcolor = lightblue];
+    inspect   [label = "Inspect", shape = diamond, fillcolor = "/blues9/3"];
+    putaway   [label = <<B>Put&nbsp;away</B><BR/><FONT POINT-SIZE="9" COLOR="gray">to bin</FONT>>];
+    table1    [shape = plaintext, label = <
+        <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+            <TR><TD COLSPAN="2" BGCOLOR="lightgray"><B>Stock</B></TD></TR>
+            <TR><TD PORT="sku">sku</TD><TD PORT="qty">qty</TD></TR>
+            <TR><TD>A-100</TD><TD>42</TD></TR>
+        </TABLE>>];
+    record1   [shape = record, label = "{<f0> left|<f1> middle|<f2> right}"];
+    pick      [shape = ellipse, style = dashed, color = darkgreen];
+    pack      [shape = hexagon, style = "filled,bold", fillcolor = gold, width = 1.2, height = 0.6, fixedsize = false];
+    ship      [shape = doublecircle, label = "Ship", fillcolor = "0.3 0.5 0.9"];
+    returns   [shape = Mrecord, label = "{Returns|{restock|scrap}}"];
+    unicode   [label = "Café 📦 日本語", URL = "https://example.com/unicode", tooltip = "tip", fontcolor = red];
+    "9lives";
+    "quoted node name";
+    -3.5;
+
+    // ── Edges: directions, ports, labels ──
+    receiving -> inspect -> putaway;
+    putaway -> table1:sku [label = "records", style = dotted];
+    table1:qty:s -> record1:f1:n;
+    inspect -> pick [label = "pass", color = green, weight = 2];
+    inspect -> returns [label = "fail", color = red, style = bold, constraint = false];
+    pick -> pack -> ship [penwidth = 2];
+    receiving -> { pick pack } [style = invis];
+    { rank = same; pick; pack }
+    { receiving, inspect } -> putaway [arrowhead = none, dir = both, arrowtail = odot];
+    ship -> returns [label = "RMA", headlabel = "h", taillabel = "t", labeldistance = 2, decorate = true];
+    "quoted node name" -> unicode [lhead = cluster_ops, ltail = cluster_dock];
+
+    // ── Subgraphs and clusters ──
+    subgraph cluster_dock {
+        label = "Dock";
+        style = "dashed,rounded";
+        color = "#999999";
+        bgcolor = "#F0F0F0";
+        receiving; inspect;
+    }
+
+    subgraph cluster_ops {
+        label = <<I>Operations</I>>;
+        graph [style = filled, fillcolor = "#F7F7E8"];
+        node [fillcolor = white];
+        putaway; pick; pack;
+        subgraph cluster_inner {
+            label = "Inner";
+            ship;
+        }
+    }
+
+    subgraph {
+        rank = min;
+        legend [shape = note, label = "Legend:\l• box = step\l• diamond = decision\l", fontsize = 8];
+    }
+
+    // ── Escapes and string concatenation ──
+    longlabel [label = "line one\nline two\lleft aligned\rright aligned\"quoted\" \\ backslash \N node name \G graph name"];
+    joined [label = "part one, " + "part two"];
+}
+
+graph undirected {
+    a -- b -- c;
+    a -- c [label = "shortcut"];
+    node [shape = circle];
+    d -- { e f };
+}
+
+digraph G2 { edge [dir = back]; x -> y; }
+
+/* ── Further constructs ── */
+digraph "further" {
+    // Keywords are case-insensitive
+    DiGraph_alias_not_a_keyword;
+    NODE [shape = oval];
+    EDGE [dir = forward];
+    SubGraph s1 { a1; b1 }
+    STRICT_not_keyword;
+
+    // Port compass points
+    n1 [shape = record, label = "<p0> a | <p1> b | <p2> c"];
+    n1:p0:n -> n2:p1:sw;
+    n1:p1:e -> n3:_ ;
+    n2:c -> n3:s;
+    n3:ne -> n1:nw [headport = w, tailport = e];
+
+    // Attribute value types
+    x1 [width = 1.5, height = .75, fontsize = 12, penwidth = 2., peripheries = 2, sides = 5, skew = -0.3, orientation = 45, regular = true, fixedsize = shape, group = g1];
+    x2 [color = "red:blue;0.5", fillcolor = "red:blue", gradientangle = 90, style = "wedged,filled"];
+    x3 [color = "#ff000080", fontcolor = "0.650 0.200 1.000", fillcolor = "/accent3/1"];
+    x4 [pos = "10,20!", pin = true, rank = same, shape = star, image = "icon.png", labelloc = b, nojustify = true];
+    x5 [shape = polygon, distortion = 0.3, label = <<TABLE><TR><TD>html</TD></TR></TABLE>>];
+    x6 [URL = "http://example.com", target = "_blank", id = "node6", class = "klass", comment = "note", root = true];
+    e1 [label = ""];
+    x1 -> x2 [arrowhead = "lteeoldiamond", arrowtail = "invempty", dir = both, minlen = 2, samehead = h, sametail = t, constraint = true, layer = "all", lp = "1,2", xlabel = "xl", labelangle = -25, labelfloat = true, labelfontsize = 8, labelfontcolor = blue, fontname = "Courier"];
+    x2 -> x3 -> x4 -> x5;
+    x5 -> x6 [style = "setlinewidth(3),dashed"];
+
+    // Semicolon and comma separators
+    a2; b2, c2;
+    a2 -> b2 -> c2 -> a2;
+    {a2 b2 c2} -> {d2 e2};
+    subgraph cluster_x { rank = same; d2; e2 }
+    subgraph cluster_y { subgraph cluster_z { f2 } }
+
+    // Numerals as IDs, escaped quotes in IDs
+    1 -> 2 -> 3.5 -> -4;
+    "id with \"quotes\"" -> "id with\nnewline";
+    "line \
+continuation" -> end;
+
+    // Layout engines set via attributes
+    layout = dot;
+    overlap = false;
+    sep = "+4";
+    mode = major;
+    model = circuit;
+    K = 0.3;
+    maxiter = 1000;
+    normalize = true;
+    outputorder = edgesfirst;
+    packmode = "clust";
+    quantum = 0.1;
+    remincross = true;
+    searchsize = 30;
+    showboxes = 0;
+    start = 7;
+    truecolor = true;
+    viewport = "100,100,1,50,50";
+    clusterrank = local;
+    colorscheme = set312;
+    dpi = 96;
+    fontnames = svg;
+    fontpath = "/usr/share/fonts";
+    forcelabels = true;
+    imagepath = ".";
+    inputscale = 72;
+    landscape = false;
+    levels = 4;
+    levelsgap = 0.1;
+    lheight = 1;
+    lwidth = 1;
+    margin = 0.1;
+    mclimit = 1;
+    nslimit = 10;
+    nslimit1 = 10;
+    ordering = out;
+    page = "8.5,11";
+    pagedir = BL;
+    peripheries = 1;
+    rotate = 90;
+    samplepoints = 8;
+    splines = curved;
+    stylesheet = "style.css";
+    tooltip = "graph tip";
+    xdotversion = 1.7;
+}

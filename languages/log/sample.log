@@ -1,0 +1,96 @@
+2026-01-31 09:15:02.114 INFO  [main] inventory.Server - Starting inventory-api 2.4.0 on port 8080 (pid=4242)
+2026-01-31 09:15:02.371 INFO  [main] inventory.Database - Connected to postgres://db.example.com:5432/inventory (pool=8)
+2026-01-31 09:15:02.402 DEBUG [main] inventory.Cache - Warmed 1,204 SKUs in 31 ms
+2026-01-31 09:15:02.403 TRACE [main] inventory.Cache - key=sku:WIDGET-100 ttl=300s hit=true
+2026-01-31 09:15:03.000 NOTICE [main] inventory.Config - Loaded config from /etc/inventory/app.yaml
+2026-01-31T09:16:11.009Z INFO  [http-2] inventory.Orders - GET /orders?status=paid 200 12ms client=192.0.2.44
+2026-01-31T09:16:11.812+01:00 WARN  [http-3] inventory.Orders - Slow query (812 ms): SELECT * FROM orders WHERE placed_at > $1
+2026-01-31 09:16:12.003 ERROR [http-4] inventory.Payments - Charge failed for order #1042: gateway timeout
+java.net.SocketTimeoutException: Read timed out
+	at java.base/sun.nio.ch.NioSocketImpl.timedRead(NioSocketImpl.java:288)
+	at java.base/java.net.Socket$SocketInputStream.read(Socket.java:966)
+	at inventory.Payments.charge(Payments.java:71)
+	at inventory.Orders.checkout(Orders.java:140)
+	... 12 more
+Caused by: java.io.IOException: connection reset by peer
+	at inventory.Net.read(Net.java:19)
+2026-01-31 09:16:12.004 INFO  [http-4] inventory.Payments - Retrying in 2s (attempt 1/3)
+2026-01-31 09:16:14.220 INFO  [http-4] inventory.Payments - Charge succeeded for order #1042 amount=£125.50 id=3f2504e0-4f89-11d3-9a0c-0305e82c3301
+2026-01-31 09:17:00.001 FATAL [main] inventory.Server - Out of memory: heap exhausted at 0x7ffee4b3c2a8
+Traceback (most recent call last):
+  File "/opt/inventory/worker.py", line 88, in run
+    raise ValueError("negative stock for WIDGET-100")
+ValueError: negative stock for WIDGET-100
+Jan 31 09:18:22 warehouse-01 sshd[1021]: Accepted publickey for deploy from 192.0.2.77 port 52114 ssh2
+Jan 31 09:18:23 warehouse-01 kernel: [12345.678901] eth0: link up 1000 Mbps
+192.0.2.10 - - [31/Jan/2026:09:19:01 +0000] "GET /api/items?sku=WIDGET-100 HTTP/1.1" 200 2326 "https://example.com/" "Mozilla/5.0 (X11; Linux x86_64)"
+192.0.2.11 - ops [31/Jan/2026:09:19:02 +0000] "POST /api/orders HTTP/2.0" 201 512 "-" "curl/8.4.0"
+2001:db8::1 - - [31/Jan/2026:09:19:03 +0000] "DELETE /api/items/42 HTTP/1.1" 404 0 "-" "-"
+09:20:00,000 INFO  inventory.Reports - Daily rollup: 318 orders, £12,480.50 revenue, 0.75 ratio, 1.6e-3 variance
+[2026-01-31 09:21:00] [warning] disk usage at 91% on /dev/sda1 (mount=/var/lib/inventory)
+[2026-01-31 09:21:05] [error] failed to open C:\warehouse\data\stock.db: access denied (errno=13)
+level=info ts=2026-01-31T09:22:00Z caller=main.go:57 msg="request complete" method=GET path=/healthz status=200 duration=1.2ms
+level=error ts=2026-01-31T09:22:01Z msg="upstream failed" err="dial tcp 192.0.2.50:5432: connect: connection refused" attempt=3
+{"time":"2026-01-31T09:23:00Z","level":"info","msg":"json log line","sku":"WIDGET-100","qty":250,"ok":true,"trace":null}
+{"time":"2026-01-31T09:23:01Z","level":"warn","msg":"low stock","sku":"GADGET-200","qty":0}
+I/Inventory(4242): sync complete in 120ms
+W/Inventory(4242): token=example-not-a-real-key rejected
+E/Inventory(4242): NullPointerException at com.example.Sync.run(Sync.java:12)
+D/Inventory(4242): [debug] user=ops@example.com url=https://example.com/api/v2?x=1&y=2#frag
+2026-01-31 09:25:00.000 INFO  [scheduler] inventory.Reports - done in 3m 12.5s, 14.3 MB, 100% complete, exit code 0
+2026-01-31 09:25:01.000 ERROR [scheduler] inventory.Reports - failed with exit code 1 (status=FAILED, result: false)
+2026-01-31 09:25:02.000 WARNING [scheduler] deprecated call: use v2 API; Exception: null; stacktrace follows
+<34>1 2026-01-31T09:30:00.003Z warehouse-01 inventory 4242 ID47 [meta@32473 iut="3" eventSource="App" eventID="1011"] BOMAn application event log entry
+<13>Jan 31 09:30:01 warehouse-01 inventory[4242]: <notice> syslog priority prefix without version
+Jan 31 09:30:02 warehouse-01 systemd[1]: Started Inventory Service.
+Jan 31 09:30:03 warehouse-01 systemd-journald[300]: Journal started
+-- Logs begin at Sat 2026-01-31 08:00:00 UTC, end at Sat 2026-01-31 09:31:00 UTC. --
+2026/01/31 09:31:00 [error] 1234#5678: *9 open() "/var/www/missing.html" failed (2: No such file or directory), client: 192.0.2.99, server: example.com, request: "GET /missing.html HTTP/1.1", host: "example.com"
+[Sat Jan 31 09:31:01.123456 2026] [core:error] [pid 1234:tid 140234] [client 192.0.2.99:51234] AH00124: Request exceeded the limit of 10 internal redirects
+192.0.2.12 - - [31/Jan/2026:09:31:02 +0000] "GET /static/app.js?v=2 HTTP/1.1" 304 0 "https://example.com/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15" 0.003 "-"
+CEF:0|Acme|Inventory|2.4.0|100|Login failed|5|src=192.0.2.5 suser=ops dst=192.0.2.10 spt=51234 msg=Bad credentials
+{"version":"1.1","host":"warehouse-01","short_message":"GELF message","timestamp":1769851860.123,"level":3,"_sku":"WIDGET-100","_qty":0}
+2026-01-31 09:32:00,123 [pool-1-thread-3] [req=7f3a9c12 user=ops] DEBUG c.e.w.StockService:142 - lookup sku=WIDGET-100 took=3ms cache=HIT
+2026-01-31 09:32:00.456 CRITICAL [worker-7] Disk failure on /dev/sdb1: SMART status BAD (temperature=71C, reallocated=1024)
+2026-01-31 09:32:01.000 ALERT  [monitor] Thresholds exceeded: cpu=97.5% mem=88% load=12.04
+2026-01-31 09:32:02.000 EMERG  [kernel] System is unusable
+2026-01-31 09:32:03.000 SEVERE [main] java.lang.OutOfMemoryError: Java heap space
+2026-01-31 09:32:04.000 VERBOSE [ui] rendered 60 frames in 1000ms (60 fps)
+2026-01-31 09:32:05.000 ERR  [net] connect to 2001:db8::1 port 443 failed: Connection timed out (110)
+2026-01-31 09:32:06.000 [INFO] [thread-1] id=550e8400-e29b-41d4-a716-446655440000 mac=00:1A:2B:3C:4D:5E hash=9e107d9d372bb6826bd81d3542a419d6 sha=da39a3ee5e6b4b0d3255bfef95601890afd80709
+2026-01-31 09:32:07.000 INFO  size=1.5GiB free=512 MB rate=12.5 MB/s took=1h 2m 3.456s retry=3/5 progress=45% ver=v2.4.0-rc.1+build.5 pid=4242 code=0x1F addr=0xDEADBEEF
+2026-01-31 09:32:08.000 WARN  "quoted message with 'nested' quotes" and key="a b" other='c d' path=/etc/inventory/app.conf url=https://example.com/a?b=c&d=e
+2026-01-31 09:32:09.000 ERROR at src/stock.rs:128:17 in inventory::stock::reserve
+thread 'main' panicked at src/stock.rs:128:17:
+called `Option::unwrap()` on a `None` value
+stack backtrace:
+   0: rust_begin_unwind
+             at /rustc/abc123/library/std/src/panicking.rs:645:5
+   1: inventory::stock::reserve
+             at ./src/stock.rs:128:17
+panic: runtime error: index out of range [5] with length 3
+
+goroutine 1 [running]:
+main.process(0xc000012345, 0x5)
+	/app/main.go:42 +0x1d5
+exit status 2
+Unhandled exception. System.InvalidOperationException: Sequence contains no elements
+   at System.Linq.ThrowHelper.ThrowNoElementsException()
+   at Inventory.Stock.First() in /src/Stock.cs:line 57
+   --- End of inner exception stack trace ---
+TypeError: Cannot read properties of undefined (reading 'sku')
+    at lookup (/app/src/stock.js:31:14)
+    at async Promise.all (index 0)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+Exception in thread "main" java.lang.IllegalStateException: boom
+	at com.example.Main.main(Main.java:10)
+Caused by: java.lang.NullPointerException: Cannot invoke "String.length()" because "s" is null
+	... 1 common frames omitted
+00000000  48 65 6c 6c 6f 2c 20 77  6f 72 6c 64 21 0a 00 ff  |Hello, world!...|
+Event ID: 4625 | Level: Error | Source: Microsoft-Windows-Security-Auditing | Computer: WH-01 | 2026-01-31 09:33:00
+[2026-01-31T09:33:01.000+0000] [INFO] [] [com.example] [tid: _ThreadID=31] [userId: ops] [ecid: 0000] Unicode: Zürich → 東京 ✓ 📦
+Z 20260131T093302Z ts=1769851982 epoch_ms=1769851982123 elapsed=00:00:03.456 duration=PT1.5S
+=== BEGIN SECTION: startup ===
+--- 12 more lines omitted ---
++++ diff-like line +++
+############################## banner ##############################

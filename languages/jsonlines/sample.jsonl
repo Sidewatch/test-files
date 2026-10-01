@@ -1,0 +1,24 @@
+{"id": 1, "sku": "WIDGET-100", "event": "received", "quantity": 250, "unitPrice": 2.5, "tags": ["small", "fast"], "at": "2026-01-31T09:00:00Z", "meta": {"dock": 4, "carrier": null}}
+{"id": 2, "sku": "GADGET-200", "event": "shipped", "quantity": -3, "unitPrice": 14.99, "tags": [], "at": "2026-01-31T09:05:12.250Z", "meta": {"dock": 2, "carrier": "Acme Freight"}}
+{"id": 3, "sku": "BOLT-M8", "event": "adjusted", "quantity": 12000, "unitPrice": 0.03, "tags": ["bulk"], "at": "2026-01-31T10:00:00+01:00", "meta": {}}
+{"id": 4, "note": "Escapes: tab\t newline\n quote \" backslash \\ solidus \/ unicode \u00e9 \ud83d\udce6", "ok": true, "ratio": -0.75, "exp": 6.022e23, "small": 1E-9}
+{"id": 5, "note": "Zürich → 東京 ✓ 📦", "ok": false, "big": 12345678901234567890, "nothing": null, "nested": {"a": {"b": {"c": [1, [2, [3]]]}}}}
+{"id": 6, "empty": {}, "list": [], "matrix": [[1, 2], [3, 4]], "mixed": [1, "two", 3.0, true, false, null, {"k": "v"}]}
+[7, "arrays", "are", "valid", "lines", true, null, 4.5]
+"a bare string line"
+42
+null
+{"id": 9, "path": "C:\\warehouse\\data", "regex": "^[A-Z]{3}-\\d{3,}$", "url": "https://example.com/items?sku=A-1&limit=5", "ip": "192.0.2.10", "ipv6": "2001:db8::1"}
+{"escapes": "\b\f\n\r\t\\ \" \/ \u0041 \u00e9 \ud83d\udce6", "emptyKey": {"": 1}, "": "empty key at top"}
+{"numbers": [0, -0, 1, -1, 1.5, -1.5, 1e5, 1E5, 1e+5, 1e-5, 0.5E-5, 123456789012345678901234567890, 1.7976931348623157e308]}
+{"nested": [[[]], [{}], {"a": {"b": {"c": []}}}], "booleans": [true, false, null]}
+true
+false
+-12.5e-3
+[]
+{}
+[[], {}, null]
+""
+   {"leading and trailing whitespace": true}   
+{"unicode keys": {"ключ": "значение", "日本語": "テキスト", "emoji": "📦"}}
+{"url": "https://example.com/a?b=c&d=e#f", "ipv4": "192.0.2.1", "ipv6": "2001:db8::2", "path": "/var/log/stock.log", "time": "2026-01-31T09:00:00.123456Z"}

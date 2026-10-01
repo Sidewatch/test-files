@@ -1,0 +1,87 @@
+{{! A comment tag: never rendered. }}
+{{!
+  A multi-line comment
+  spanning lines.
+}}
+{{=<% %>=}}
+<%! Delimiters are now angle-percent. %>
+<%={{ }}=%>
+<!DOCTYPE html>
+<html lang="{{lang}}">
+<head>
+  <meta charset="utf-8">
+  <title>{{title}} · {{site.name}}</title>
+  <style>
+    .orders { border-collapse: collapse; }
+    .paid { color: #2a7; }
+  </style>
+</head>
+<body>
+<h1>Orders for {{user.name}}</h1>
+<p>Escaped: {{html}} Unescaped: {{{html}}} Also unescaped: {{& html}}</p>
+<p>Dotted names: {{user.address.city}}; implicit iterator: {{.}}</p>
+<p>Whitespace in tags: {{  spaced   }} and {{ user . name }}</p>
+
+{{#orders.length}}
+<table class="orders">
+  {{#orders}}
+  <tr class="{{#paid}}paid{{/paid}}{{^paid}}open{{/paid}}">
+    <td>#{{number}}</td>
+    <td>{{total}}</td>
+    <td>{{status}}</td>
+    <td>{{#tags}}<span>{{.}}</span>{{^last}}, {{/last}}{{/tags}}</td>
+  </tr>
+  {{/orders}}
+</table>
+{{/orders.length}}
+
+{{^orders.length}}
+<p class="muted">No orders yet.</p>
+{{/orders.length}}
+
+{{#user}}
+  {{#admin}}Admin {{/admin}}{{name}}
+{{/user}}
+
+{{#lambda}}Rendered by a lambda: {{name}}{{/lambda}}
+
+{{> pagination}}
+{{>  partials/footer  }}
+{{< layout}}
+  {{$content}}Default block content{{/content}}
+{{/layout}}
+{{$title}}Overridable title{{/title}}
+
+<script>
+  var config = {{{configJson}}};
+  window.userId = "{{user.id}}";
+</script>
+{{{footerHtml}}}
+<!-- an HTML comment {{ignored}} -->
+</body>
+</html>
+
+{{! More Mustache forms }}
+{{#items}}{{name}}: {{#price}}{{.}}{{/price}}{{/items}}
+{{#a.b.c}}dotted section{{/a.b.c}}
+{{^a.b.c}}dotted inverted{{/a.b.c}}
+{{>*dynamic}}
+{{> user/profile }}
+{{<base}}{{$header}}Custom header{{/header}}{{$footer}}{{/footer}}{{/base}}
+{{=| |=}}
+|! Alternate delimiters: |value| and |{raw}| and |&amp| |
+|#section|inside|/section|
+|={{ }}=|
+{{#each}}Handlebars-style names are just names here{{/each}}
+{{ trimmed }} {{&ampersand}} {{{ spaced triple }}} {{ . }}
+{{#list}}
+  {{#.}}[{{.}}]{{/.}}
+{{/list}}
+{{#person?}}Who knows?{{/person?}}
+{{#lambda}}{{#nested}}{{deep}}{{/nested}}{{/lambda}}
+{{a}}{{b}}{{c}}
+Line with only a standalone tag:
+  {{#standalone}}
+  {{/standalone}}
+Unicode: {{名前}} {{café}} {{emoji_📦}}
+<input value="{{value}}" data-x='{{x}}' {{#disabled}}disabled{{/disabled}}>

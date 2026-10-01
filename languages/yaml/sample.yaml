@@ -1,0 +1,360 @@
+%YAML 1.2
+%TAG !e! tag:example.com,2026:
+---
+# ── Comments ───────────────────────────────────────────────
+# Warehouse service configuration exercising every YAML construct.
+# TODO: split per environment. FIXME: rotate the placeholder credentials.
+
+# ── Scalars: strings, numbers, booleans, null ──────────────
+plain: a plain scalar with spaces
+single: 'single ''quoted'' string with # not-a-comment'
+double: "double \"quoted\" with \t tab, \n newline, é, \x41, \U0001F4E6, \\ backslash"
+multi_word: this is text:with a colon inside, and a # hash-not-comment
+url: https://example.com/path?query=1#fragment
+unicode: café ☃ 日本語
+empty:
+explicit_null: null
+tilde_null: ~
+bool_true: true
+bool_false: false
+bool_yes: yes
+bool_no: No
+bool_on: ON
+integer: 42
+negative: -17
+separated: 1_000_000
+hex: 0xFF
+octal: 0o755
+legacy_octal: 0755
+float: 3.14159
+exponent: 1.5e-3
+scientific: 6.02E+23
+infinity: .inf
+neg_infinity: -.Inf
+not_a_number: .NaN
+timestamp: 2026-03-01T09:30:00Z
+date: 2026-03-01
+time_zone: 2026-03-01 09:30:00.5 +01:00
+sexagesimal: 190:20:30
+version_string: "1.1.6"
+looks_numeric_string: "0042"
+special_chars: "@backtick`reserved"
+"quoted key": value for a quoted key
+'single quoted key': another value
+? complex key
+: complex value
+? [a, b]
+: sequence as key
+? - block
+    - sequence key
+: mapped from a block key
+
+# ── Block scalars ──────────────────────────────────────────
+literal: |
+  Line one
+  Line two with  preserved   spaces
+    indented line
+  Last line
+literal_strip: |-
+  no trailing newline
+literal_keep: |+
+  keep trailing newlines
+
+folded: >
+  This is a folded multi-line string that will be
+  joined into a single line when parsed.
+
+  A blank line starts a new paragraph.
+folded_strip: >-
+  folded and stripped
+folded_keep: >+
+  folded and kept
+
+with_indent: |2
+    explicit indentation indicator
+startup_script: |
+  #!/bin/sh
+  echo "Starting server on port 8080"
+  exec /usr/bin/warehouse --config /etc/config.yaml
+
+# ── Multi-line flow scalars ────────────────────────────────
+plain_multiline: first line
+  continues here
+  and here
+quoted_multiline: "first line
+  continues with a single space \
+  and an escaped newline"
+single_multiline: 'first
+  second'
+
+# ── Sequences ──────────────────────────────────────────────
+fruits:
+  - apple
+  - banana
+  - cherry
+nested_sequence:
+  - - a
+    - b
+  - - c
+    - - deep
+      - deeper
+compact_sequence:
+- no indent
+- under the key
+mixed:
+  - scalar
+  - key: value
+    other: thing
+  - - nested
+  -
+    - indented on next line
+  - !!str 123
+  - ~
+
+# ── Mappings ───────────────────────────────────────────────
+apiVersion: v1
+kind: Deployment
+metadata:
+  name: warehouse-server
+  namespace: production
+  labels:
+    app: warehouse
+    tier: backend
+    version: "1.1.6"
+  annotations:
+    example.com/description: "Stock & reorder service"
+    example.com/owner: platform-team
+
+# ── Flow collections ───────────────────────────────────────
+featureFlags: { darkMode: true, betaSearch: false, retryCount: 5 }
+allowedOrigins: ["https://example.com", "https://warehouse.example.com"]
+mixed_flow: [1, two, 3.0, true, null, { a: 1 }, [x, y]]
+empty_map: {}
+empty_seq: []
+multi_line_flow:
+  [
+    one,
+    two,
+    { key: value, other: [1, 2] },
+  ]
+flow_with_quotes: { "key with spaces": 'single', plain key: "double" }
+flow_implicit: { a, b: , c: d }
+single_pair_in_seq: [ a: b, c: d ]
+
+# ── Anchors, aliases, merge keys ───────────────────────────
+defaults: &default_resources
+  cpu: 500m
+  memory: 256Mi
+
+base: &base
+  retries: 3
+  timeout: 30
+
+extra: &extra
+  debug: true
+
+spec:
+  replicas: 3
+  minReadySeconds: 10
+  enabled: true
+  paused: false
+  strategy: null
+  resources:
+    <<: *default_resources
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+  override:
+    <<: [*base, *extra]
+    timeout: 60
+  alias_value: *default_resources
+  alias_scalar: &port 8080
+  port_again: *port
+  env:
+    - name: LOG_LEVEL
+      value: DEBUG
+    - name: MAX_CONNECTIONS
+      value: "100"
+    - name: TIMEOUT_SECONDS
+      value: 30
+  ports:
+    - containerPort: 8080
+      protocol: TCP
+    - containerPort: 9090
+      protocol: TCP
+
+# ── Tags ───────────────────────────────────────────────────
+tags:
+  explicit_str: !!str 123
+  explicit_int: !!int "42"
+  explicit_float: !!float 1
+  explicit_bool: !!bool "true"
+  explicit_null: !!null ""
+  explicit_seq: !!seq [1, 2]
+  explicit_map: !!map { a: 1 }
+  explicit_set: !!set { a, b, c }
+  explicit_omap: !!omap
+    - first: 1
+    - second: 2
+  binary: !!binary |
+    R0lGODlhDAAMAIQAAP//9/X17unp5WZmZgAAAOfn515eXvPz7Y6OjuDg4J+fn5
+  timestamp: !!timestamp 2026-03-01
+  local_tag: !local value
+  custom: !e!item { sku: WGT-100, qty: 12 }
+  verbatim: !<tag:example.com,2026:thing> value
+  tagged_anchor: &tagged !!str anchored string
+  tagged_seq: !items
+    - one
+    - two
+
+# ── Additional scalar and key forms ────────────────────────
+more_scalars:
+  positive_infinity: +.inf
+  inf_variants: [.inf, .Inf, .INF, -.inf]
+  nan_variants: [.nan, .NaN, .NAN]
+  null_variants: [Null, NULL, ~]
+  bool_variants: [True, TRUE, False, FALSE, y, n, Y, N, off, Off]
+  ints: [0, +1, -0, 1_0, 0b101, 0x_FF, 0o17, 017, 0xdeadBEEF]
+  floats: [0., .5, -.5e+3, 1e3, 1.e3, 6.8523015e+5, 1_0.5]
+  dates:
+    - 2026-03-01
+    - 2026-3-1
+    - 2026-03-01t21:59:43.10-05:00
+    - 2026-03-01 21:59:43.10 -5
+    - 2026-03-01T09:30:00.123456Z
+  strings_that_look_like_other_things: ["true", 'null', "123", '1.5', "2026-03-01", "~", "yes", "0x1F"]
+  special_start: ["@at", "`tick", "%pct", "!bang", "&amp", "*star", "?question", "-dash", ":colon", "|pipe", ">gt", "#hash", "[bracket", "{brace", ",comma"]
+  colon_in_key:
+    "key: with colon": value
+    key:with:colons: value
+    http://example.com/path: url as key
+    ? "complex: key"
+    : value
+  hash_forms: value with # not a comment, and url#fragment, and a#b
+  comment_after: value # a real comment
+  comment_after_quoted: "value" # another comment
+  windows_path: C:\Users\warehouse\inventory.csv
+  json_like: {"name": "WGT-100", "tags": ["a", "b"], "nested": {"x": 1.5, "ok": true, "none": null}}
+  utf8: "日本語 ☃ 😀 café"
+  escapes: "bell \a backspace \b escape \e form-feed \f vertical-tab \v null \0 next-line \N nbsp \_ line-sep \L para-sep \P slash \/ space \  tab \	"
+  long_plain: this is a long plain scalar that continues on the same line without any line breaks at all and keeps going
+  empty_string: ""
+  empty_single: ''
+  only_spaces: "   "
+  alias_as_key: &keyanchor key
+  *keyanchor : value for aliased key
+
+# ── Block scalar edge cases ────────────────────────────────
+block_scalars:
+  with_comment: | # comment after the indicator
+    body line
+  folded_more_indented: >
+    normal line
+      more indented line stays on its own line
+    back to normal
+  literal_with_trailing_spaces: |
+    trailing spaces kept   
+    next line
+  chomping_and_indent: |-2
+      two extra spaces kept
+  keep_with_blank_lines: |+
+    content
+
+
+  strip_folded_blank: >-
+
+    leading blank line
+
+# ── Nested and unusual structures ──────────────────────────
+structures:
+  seq_of_maps_inline:
+    - {name: a, value: 1}
+    - {name: b, value: 2}
+  seq_with_empty:
+    -
+    - ~
+    - ""
+    - []
+    - {}
+  map_with_seq_values:
+    ports: [80, 443]
+    hosts:
+    - one.example.com
+    - two.example.com
+  deep:
+    level1:
+      level2:
+        level3:
+          level4: [leaf, {k: v}]
+  seq_item_with_map_and_seq:
+    - name: first
+      items:
+        - a
+        - b
+      meta: {x: 1}
+    - name: second
+      items: []
+  anchored_seq: &list
+    - one
+    - two
+  reused_seq: *list
+  anchored_map_in_seq:
+    - &first {id: 1}
+    - *first
+    - <<: *first
+      id: 2
+  multi_key_complex:
+    ? - a
+      - b
+    : - c
+    ? {x: 1}
+    : {y: 2}
+    ? |
+      literal block as key
+    : value
+  flow_multiline_with_comments:
+    [
+      one, # first
+      two, # second
+      "three
+       continued",
+    ]
+  tags_on_structures:
+    python_obj: !!python/object:module.Class {attr: 1}
+    python_tuple: !!python/tuple [1, 2]
+    ruby_sym: !ruby/symbol name
+    custom_scalar: !money 12.50 GBP
+    custom_seq: !coords [1, 2]
+    custom_map: !point {x: 1, y: 2}
+    non_specific: ! "forced string"
+    secondary: !!set {a, b}
+    verbatim_local: !<!local> value
+    tag_then_anchor: !!map &m {a: 1}
+    anchor_then_tag: &n !!seq [1, 2]
+
+# ── Document stream ────────────────────────────────────────
+...
+---
+# Second document: a list of items
+- sku: WGT-100
+  name: Widget
+  qty: 12
+  price: 4.50
+  tags: [small, metal]
+- sku: GDG-200
+  name: Gadget
+  qty: 40
+  price: 1.25
+  tags: [large]
+...
+%TAG !e! tag:example.com,2026:
+--- !e!report
+# Third document with a tag
+title: "Stock report"
+rows:
+  - [WGT-100, 12, 4.50]
+  - [GDG-200, 40, 1.25]
+--- |
+  A document that is only a literal block scalar.
+--- plain scalar document
+...

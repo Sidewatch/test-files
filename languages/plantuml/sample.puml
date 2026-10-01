@@ -1,0 +1,479 @@
+@startuml
+' PlantUML showcase: sequence, class, use case, activity, state and more.
+/' A block comment
+   over several lines '/
+!pragma teoz true
+!theme cerulean
+title Placing an order
+header Warehouse system
+footer Page %page% of %lastpage%
+caption Figure 1
+legend right
+  Legend text with <b>bold</b> and <color:red>colour</color>
+endlegend
+skinparam sequenceMessageAlign center
+skinparam backgroundColor #FEFEFE
+skinparam handwritten false
+skinparam class {
+  BackgroundColor LightYellow
+  ArrowColor #336699
+}
+!define RED_COLOR #FF0000
+!$limit = 25
+!$names = ["north", "south"]
+!$obj = {"key": "value", "n": 1}
+!if ($limit > 10)
+  !$mode = "bulk"
+!elseif %strlen("x") == 1
+  !$mode = "single"
+!else
+  !$mode = "none"
+!endif
+!function $double($x)
+  !return $x * 2
+!endfunction
+!procedure $note($t)
+  note over Web : $t
+!endprocedure
+!include <C4/C4_Container>
+!include_once common.iuml
+!includeurl https://example.com/skins.puml
+!log debug message
+!assert 1 == 1 : "arithmetic"
+
+' ── Sequence diagram ──
+actor Customer
+participant "Web app" as Web <<frontend>> #LightBlue
+participant "Orders API" as API order 10
+database Postgres as DB
+queue "Payments" as Pay
+boundary Form
+control Ctl
+entity Ent
+collections Items
+
+autonumber 10 10 "<b>[000]"
+Customer -> Web : Checkout
+Web -> API : POST /orders
+activate API #DarkSalmon
+API -> DB : INSERT order (pending)
+API ->> Pay : charge(order)
+API -[#red]> Pay : colored arrow
+API -[dashed]-> Pay : dashed
+API ->x Pay : lost
+API ->o Pay : circle
+Pay ->> API : async
+API <-- Pay : return
+API <-> Web : both ways
+API -\ Web : half arrow
+API -> API : self message
+alt payment ok
+    Pay --> API : paid
+    API -> DB : UPDATE status = paid
+    API --> Web : 201 Created
+else declined
+    Pay --> API : declined
+    API --> Web : 402 Payment Required
+end
+opt gift wrap
+    Web -> API : wrap
+end
+loop 3 times
+    API -> DB : retry
+end
+par
+    API -> Pay : a
+else
+    API -> DB : b
+end
+group My own label [optional label]
+    API -> Web : grouped
+end
+critical
+    API -> DB : lock
+end
+break failure
+    API -> Web : abort
+end
+ref over API, DB : see other diagram
+== Phase two ==
+... five minutes later ...
+|||
+||45||
+Web -> Customer : delay
+delay 5
+deactivate API
+Web --> Customer : Confirmation
+return done
+create Ent
+API -> Ent : new
+destroy Ent
+box "Internal" #LightGray
+  participant X
+  participant Y
+end box
+hnote over Web : hexagonal note
+rnote over DB : rounded note
+note left of Web : left note
+note right of DB
+  Orders keep their history
+  in the audit table.
+end note
+note over Web, API
+  spanning note
+end note
+newpage Second page
+
+@enduml
+
+' ── Class diagram ──
+
+@startuml
+package "Domain" <<Rectangle>> {
+  abstract class Item {
+    - sku : String
+    # qty : int
+    ~ tags : List<String>
+    + price : double
+    + {static} count : int
+    + {abstract} audit() : void
+    + restock(amount : int) : boolean
+    --
+    .. section ..
+    == other ==
+    __ underline __
+  }
+  interface Shippable {
+    + ship() : void
+  }
+  enum Zone {
+    COLD
+    DRY
+  }
+  annotation Entity
+  class Widget<T extends Item> extends Item implements Shippable
+  class Pallet
+  object order1 {
+    id = 1
+  }
+  entity Customer
+  protocol P
+  struct S
+  exception E
+  metaclass M
+  stereotype St
+}
+Item <|-- Widget : inherits
+Item *-- Pallet : composition
+Item o-- Rack : aggregation
+Item --> Shippable : "uses >"
+Item ..> Log : dependency
+Item ..|> Shippable
+Item "1" -- "0..*" Tag : has
+Widget -up-> Pallet
+Widget -[hidden]-> Zone
+(Item, Pallet) .. Link
+note top of Item : root of stock
+note "floating" as N1
+Item .. N1
+class Foo #pink;line:red;line.bold;text:blue
+set namespaceSeparator ::
+hide empty members
+show Item fields
+remove Rack
+together { class A class B }
+@enduml
+
+@startuml
+left to right direction
+actor "Picker" as P
+actor Admin <<human>>
+rectangle Warehouse {
+  usecase "Scan item" as UC1
+  usecase (Print label) as UC2
+  (Audit) as UC3
+}
+P --> UC1
+P --> UC2
+Admin --> UC3
+UC1 .> UC2 : <<include>>
+UC3 <|-- UC1
+:Actor: --> (Use case)
+@enduml
+
+@startuml
+start
+:Receive goods;
+if (Damaged?) then (yes)
+  :Quarantine;
+  stop
+elseif (Short?) then (yes)
+  :Flag shortage;
+else (no)
+  :Shelve;
+endif
+while (More pallets?) is (yes)
+  :Scan pallet;
+endwhile (no)
+repeat
+  :Count stock;
+repeat while (Mismatch?) is (yes) not (no)
+fork
+  :Print label;
+fork again
+  :Update system;
+end fork
+split
+  :A;
+split again
+  :B;
+end split
+partition "Shipping" {
+  :Pack;
+  :Dispatch;
+}
+|Picker|
+:Pick;
+|#LightBlue|Packer|
+:Pack;
+switch (type?)
+case (fragile)
+  :Bubble wrap;
+case (heavy)
+  :Pallet;
+endswitch
+note right: remember the form
+#palegreen:Highlighted step;
+-[#blue]->
+:Next;
+detach
+end
+@enduml
+
+@startuml
+[*] --> Pending
+Pending --> Paid : payment ok
+Pending --> Cancelled : timeout
+state Shipped {
+  [*] --> InTransit
+  InTransit --> Delivered
+  --
+  [*] --> Tracking
+}
+state fork_s <<fork>>
+state choice_s <<choice>>
+state "Long name" as LN
+LN : entry / log
+LN : exit / flush
+Shipped --> [*]
+Cancelled -[#red,bold]-> [*]
+note right of Paid : paid state
+@enduml
+
+@startuml
+component Web
+component [Orders API] as API
+node "Server" { database "DB" }
+cloud Internet
+frame Frame
+folder Folder
+interface Port
+Web -( Port
+Port - API
+API ..> DB : jdbc
+() "Interface" as I
+@enduml
+
+@startgantt
+[Receive] lasts 3 days
+[Shelve] starts at [Receive]'s end and lasts 2 days
+[Count] happens at 2025-01-20
+Project starts 2025-01-06
+@endgantt
+
+@startmindmap
+* Inventory
+** Receiving
+*** Inspect
+** Shipping
+@endmindmap
+
+@startjson
+{ "sku": "A-100", "qty": 12, "tags": ["a", "b"], "ok": true, "none": null }
+@endjson
+
+@startyaml
+sku: A-100
+qty: 12
+@endyaml
+
+@startsalt
+{
+  Login    | "admin   "
+  Password | "****    "
+  [Cancel] | [  OK   ]
+}
+@endsalt
+
+@startuml
+' ── Timing diagram ──
+concise "Web" as W
+robust "DB" as D
+clock "Clock" as C with period 50
+binary "Flag" as F
+@0
+W is Idle
+D is Ready
+F is low
+@100
+W is Waiting
+D is Busy
+F is high
+@+50
+W is Idle
+W@100 <-> @150 : {50 ms}
+@enduml
+
+@startwbs
+* Inventory
+** Receiving
+*** Inspect
+*< Left side
+**> Right side
+**- Boxless
+@endwbs
+
+@startuml
+' ── ER (information engineering) ──
+entity Customer {
+  *id : number <<generated>>
+  --
+  *name : text
+  email : text
+}
+entity Order {
+  *id : number
+  --
+  placed : date
+}
+Customer ||--o{ Order
+Customer }o..o| Address
+@enduml
+
+@startuml
+' ── Components, deployment and C4 ──
+!include <C4/C4_Context>
+Person(picker, "Picker")
+System_Boundary(wh, "Warehouse") {
+  Container(api, "API", "Kotlin", "Serves orders")
+  ContainerDb(db, "Database", "Postgres")
+}
+Rel(picker, api, "Uses", "HTTPS")
+Rel_D(api, db, "Reads/writes")
+SHOW_LEGEND()
+@enduml
+
+@startuml
+' ── Creole text, colours, sprites, stdlib and misc ──
+skinparam monochrome false
+skinparam shadowing false
+skinparam defaultFontName "Helvetica"
+skinparam roundcorner 10
+skinparam ArrowFontColor #0000FF
+skinparam note {
+  BackgroundColor #FFFFCC
+  BorderColor black
+}
+sprite $icon [16x16/16] {
+  0123456789ABCDEF
+  FEDCBA9876543210
+}
+participant A <<$icon>>
+participant B #red/blue
+A -> B : **bold** //italic// ""mono"" --strike-- __underline__ ~~wave~~
+A -> B : <size:18>big</size> <color:#118888>teal</color> <back:yellow>hl</back> <u:red>u</u> <w:green>wave</w>
+A -> B : <&heart> <$icon> \n newline \\ escaped \t tab
+A -> B : unicode: éüñ 日本 📦 and entities &#9731; &lt;
+note over A
+  = Heading 1
+  == Heading 2
+  * bullet
+  # numbered
+  ----
+  |= H1 |= H2 |
+  | a | b |
+  <code>
+  code block
+  </code>
+  <img:https://example.com/pic.png>
+end note
+rnote over B #aqua : coloured note
+ref over A, B : <b>reference</b>
+newpage
+A -> B : after page break
+...
+!pragma layout smetana
+!$color = "#FF0000"
+!$list = %splitstr("a,b", ",")
+!foreach $item in $list
+  note over A : %upper($item) %lower("X") %strlen("abc") %substr("hello", 1, 3) %date("yyyy") %version() %true() %false() %not(1) %boolval("true") %intval("5") %dirpath() %filename() %getenv("HOME") %random() %get_variable_value("$color")
+!endfor
+!while $i < 3
+  !$i = $i + 1
+!endwhile
+!local $x = 1
+!global $y = 2
+!dump_memory
+!exit
+@enduml
+
+@startditaa
++--------+   +-------+
+|  cRED  |-->| cBLU  |
++--------+   +-------+
+@endditaa
+
+@startnwdiag
+nwdiag {
+  network dmz { address = "192.0.2.0/24"; web01 [address = "192.0.2.10"]; }
+}
+@endnwdiag
+
+@startchronology
+2025-01-01 : Launch
+@endchronology
+
+@startebnf
+(* EBNF comment *)
+order = "ORDER", number, { item }, ";" ;
+@endebnf
+
+@startregex
+^inv-\d{3,}$
+@endregex
+
+@startlatex
+E = mc^2
+@endlatex
+
+@startmath
+x = {-b \pm \sqrt{b^2-4ac} \over 2a}
+@endmath
+
+@startgantt
+Project starts 2025-01-06
+[Task A] on {Picker} lasts 5 days
+[Task B] starts at [Task A]'s end and lasts 3 days
+[Task A] -> [Task B]
+[Task B] is colored in Lavender/LightBlue
+[Task B] is 40% completed
+then [Task C] lasts 2 days
+saturday are closed
+2025-01-20 is closed
+-- Phase 2 --
+@endgantt
+
+@startboard
+Todo
+Doing
+@endboard

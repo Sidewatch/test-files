@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<?xml-stylesheet type="text/xsl" href="plist.xsl"?>
+<!-- Property list showcase: every value type, nested containers and entitlement keys. -->
+<plist version="1.0">
+<dict>
+	<!-- Entitlements for a sandboxed app that talks to the network and reads user-picked files -->
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<key>com.apple.security.network.client</key>
+	<true/>
+	<key>com.apple.security.network.server</key>
+	<false/>
+	<key>com.apple.security.files.user-selected.read-write</key>
+	<true/>
+	<key>com.apple.security.temporary-exception.files.home-relative-path.read-only</key>
+	<array>
+		<string>/Library/Application Support/Inventory/</string>
+	</array>
+	<key>com.apple.developer.team-identifier</key>
+	<string>ABCDE12345</string>
+	<key>keychain-access-groups</key>
+	<array>
+		<string>$(AppIdentifierPrefix)com.example.inventory</string>
+	</array>
+
+	<!-- Scalar types -->
+	<key>CFBundleName</key>
+	<string>Inventory &amp; Stock &lt;beta&gt; &quot;quoted&quot; &apos;apos&apos; &#169; &#x1F4E6;</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.4.0</string>
+	<key>MaxItems</key>
+	<integer>1000</integer>
+	<key>NegativeNumber</key>
+	<integer>-42</integer>
+	<key>ReorderRatio</key>
+	<real>0.25</real>
+	<key>Exponent</key>
+	<real>1.5e-3</real>
+	<key>Enabled</key>
+	<true/>
+	<key>Disabled</key>
+	<false/>
+	<key>Updated</key>
+	<date>2026-09-24T12:30:00Z</date>
+	<key>Thumbnail</key>
+	<data>
+	SGVsbG8gd29ybGQ=
+	</data>
+	<key>EmptyString</key>
+	<string></string>
+	<key>EmptyTrue</key>
+	<true></true>
+
+	<!-- Containers -->
+	<key>Warehouses</key>
+	<array>
+		<string>north</string>
+		<string>south</string>
+		<integer>3</integer>
+		<real>4.5</real>
+		<true/>
+		<dict>
+			<key>name</key>
+			<string>east</string>
+			<key>zones</key>
+			<array>
+				<string>cold</string>
+				<string>dry</string>
+			</array>
+		</dict>
+		<array>
+			<string>nested array</string>
+		</array>
+	</array>
+	<key>EmptyArray</key>
+	<array/>
+	<key>EmptyDict</key>
+	<dict/>
+	<key>Nested</key>
+	<dict>
+		<key>Inner</key>
+		<dict>
+			<key>Deep</key>
+			<string>value</string>
+		</dict>
+	</dict>
+	<key>Script</key>
+	<string><![CDATA[echo "raw <text> & more"]]></string>
+	<key>URLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.example.inventory</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>inventory</string>
+			</array>
+		</dict>
+	</array>
+	<!-- More entitlement and Info.plist style keys -->
+	<key>com.apple.security.device.camera</key>
+	<false/>
+	<key>com.apple.security.device.audio-input</key>
+	<true/>
+	<key>com.apple.security.personal-information.location</key>
+	<false/>
+	<key>com.apple.security.files.downloads.read-only</key>
+	<true/>
+	<key>com.apple.security.cs.allow-jit</key>
+	<false/>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.example.inventory</string>
+	</array>
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:example.com</string>
+		<string>webcredentials:example.com</string>
+	</array>
+	<key>com.apple.developer.icloud-container-identifiers</key>
+	<array>
+		<string>iCloud.com.example.inventory</string>
+	</array>
+	<key>aps-environment</key>
+	<string>development</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>example.com</key>
+			<dict>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+				<key>NSExceptionMinimumTLSVersion</key>
+				<string>TLSv1.2</string>
+			</dict>
+		</dict>
+	</dict>
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>com.example.inventory.stock</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+				<string>public.json</string>
+			</array>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>stock</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © 2026 Acme Warehouse Ltd. 日本語 العربية 📦</string>
+	<key>Whitespace</key>
+	<string>
+		leading and trailing whitespace is kept
+	</string>
+	<key>EntityRefs</key>
+	<string>&lt;key&gt;nested&lt;/key&gt; &amp;amp; &#x3C; &#60;</string>
+</dict>
+</plist>

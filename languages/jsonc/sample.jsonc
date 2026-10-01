@@ -1,0 +1,91 @@
+// JSON with Comments: a tsconfig-style and editor-settings file for the warehouse app.
+/* Block comment
+   across several lines, with "quotes" and // slashes inside */
+{
+  /** Doc-style block comment before a key */
+  "compilerOptions": {
+    "target": "ES2022", // trailing line comment
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": false,
+    /* Emit */
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "sourceMap": true,
+    "declaration": true,
+    "removeComments": false,
+    "incremental": null,
+    "lib": ["ES2022", "DOM", /* inline */ "DOM.Iterable"],
+    "paths": {
+      "@warehouse/*": ["src/warehouse/*"],
+      "@shared/*": ["src/shared/*"]
+    },
+    "typeRoots": [],
+    "maxNodeModuleJsDepth": 0
+  },
+
+  // ── Strings and escapes ──
+  "strings": {
+    "escapes": "tab\t newline\n quote \" backslash \\ solidus \/ unicode \u00e9",
+    "unicode": "Zürich → 東京 ✓",
+    "glob": "src/**/*.ts",
+    "url": "https://example.com/path?x=1&y=2", // the // inside the string is not a comment
+    "pattern": "/* not a comment */",
+    "empty": ""
+  },
+
+  // ── Numbers and literals ──
+  "numbers": {
+    "int": 42,
+    "negative": -17,
+    "float": 3.14159,
+    "exponent": 6.022e23,
+    "small": 1E-9,
+    "zero": 0
+  },
+  "literals": { "yes": true, "no": false, "nothing": null },
+
+  "include": ["src/**/*.ts", "src/**/*.json"],
+  "exclude": ["node_modules", "dist", "**/*.spec.ts"], // trailing comment
+  "references": [
+    { "path": "./packages/core" },
+    { "path": "./packages/cli" }, // trailing comma allowed below
+  ],
+  "editor.rulers": [80, 120,],
+  "files.associations": { "*.jsonc": "jsonc", ".eslintrc": "jsonc" },
+  "emptyObject": {},
+  "emptyArray": [],
+  // ── Rare constructs ──
+  "rare": {
+    /**/ "emptyBlockComment": 1, /**/
+    "comment between" /* before colon */ : /* after colon */ "value" /* before comma */,
+    "slashes": "a // b /* c */ d",
+    "escapedKey\u0041\n\"": "escaped characters in keys",
+    "negativeZero": -0,
+    "exp": [1e+5, 1E5, 0.5E-5, 1.0e0, -1.5e-10, 0e0],
+    "surrogate": "\ud83d\udce6 pair",
+    "controlEscapes": "\b\f\n\r\t",
+    "nestedEmpty": [[], {}, [{}], [[]]],
+    "deep": { "a": { "b": { "c": { "d": [1, [2, [3]]] } } } },
+    "trailingBoth": [1, 2, 3,], // comma then comment
+    "multiLine": [ // comment after bracket
+      1, // one
+      /* two */ 2,
+      3 /* three */
+    ],
+    "tsconfigExtras": {
+      "extends": "./tsconfig.base.json",
+      "compilerOptions": { "jsx": "react-jsx", "types": ["node", "jest"], "skipLibCheck": true },
+      "ts-node": { "esm": true }
+    },
+    "settingsExtras": {
+      "[typescript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+      "terminal.integrated.env.osx": { "PATH": "${env:PATH}:/opt/bin" },
+      "files.exclude": { "**/.git": true, "**/node_modules": false }
+    }
+  },
+  /* TODO: add project references */
+  "last": "no trailing comma needed",
+}

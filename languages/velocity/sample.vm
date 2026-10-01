@@ -1,0 +1,167 @@
+## ── Comments ───────────────────────────────────────────────
+## Velocity: the warehouse stock email. TODO: add the supplier block.
+#*
+   Block comment spanning
+   several lines. FIXME: translate.
+*#
+#**
+   Doc comment block with @author tag-like text
+   and @version markers.
+*#
+#[[ Unparsed content: #set($x = 1) and $notAVariable are left alone ]]#
+#**#
+
+## ── Variables, literals, #set ─────────────────────────────
+#set($reorderPoint = 25)
+#set($ratio = 0.75)
+#set($negative = -3)
+#set($appName = "Warehouse")
+#set($single = 'single quoted: $notInterpolated and ''escaped'' quote')
+#set($double = "double quoted: $appName has ${items.size()} items, \$escaped")
+#set($yes = true)
+#set($no = false)
+#set($nothing = $null)
+#set($list = [1, 2, 3, "four"])
+#set($range = [1..5])
+#set($backwards = [5..1])
+#set($map = {"sku": "WGT-100", "qty": 12, "nested": {"a": 1}})
+#set($empty = [])
+#set($total = 0)
+#set($label = $low ? "low" : "ok")
+#set($sum = 1 + 2 - 3 * 4 / 5 % 6)
+#set($logic = !$yes && $no || $yes)
+#set($cmp = $total < 1 || $total > 2 || $total <= 3 || $total >= 4 || $total == 5 || $total != 6)
+#set($words = "a" + "b")
+#set($lt = $total lt 1 and $total gt 2 or $total le 3 and $total ge 4 and $total eq 5 or $total ne 6)
+#set($not = !$yes)
+
+## ── Macros ────────────────────────────────────────────────
+#macro(money $n)$number.format("#,##0.00", $n)#end
+
+#macro(badge $text $class)
+  <span class="badge $class">$text</span>
+#end
+
+#macro(card $title)
+  <div class="card"><h2>$title</h2>$bodyContent</div>
+#end
+
+#define($footer)
+  <footer>$appName &copy; $date.get("yyyy")</footer>
+#end
+
+## ── References: simple, formal, quiet, method, property ────
+<h1>Stock for $warehouse.name</h1>
+<p>Hello, ${user.firstName}! You have ${items.size()} items.</p>
+<p>Quiet: $!{user.nickname} and $!nothing and $!user.nickname</p>
+<p>Method chain: $user.name.toUpperCase().trim() and $items.get(0).sku</p>
+<p>Map access: $map.sku and $map.get("sku") and $map["qty"] and $list[0]</p>
+<p>Escaped: \$notAVariable \\$user and \#notADirective</p>
+<p>Email: user@example.com and price $5 and a lone # or $ stay text</p>
+
+## ── Conditionals ──────────────────────────────────────────
+#if($items.isEmpty())
+  <p>No items yet.</p>
+#elseif($items.size() < 3 && !$user.admin)
+  <p>Only a few items.</p>
+#else
+  <table class="stock">
+  ## ── Loops ──────────────────────────────────────────────
+  #foreach($item in $items)
+    #set($lineTotal = $item.qty * $item.price)
+    #set($total = $total + $lineTotal)
+    #if($item.qty <= $reorderPoint)#set($low = true)#{else}#set($low = false)#end
+    <tr class="#if($foreach.index % 2 == 0)even#{else}odd#end #if($low)low#end">
+      <td>$foreach.count of $foreach.size</td>
+      <td>$item.sku</td>
+      <td>$item.qty &times; #money($item.price)</td>
+      <td>#money($lineTotal)</td>
+      #if($foreach.first)<td>#badge("top" "gold")</td>#end
+      #if($foreach.hasNext),#end
+      #if($velocityCount == 3)#break#end
+    </tr>
+  #end
+  </table>
+  <p>Total: <b>#money($total)</b></p>
+#end
+
+#foreach($key in $map.keySet())
+  $key = $map.get($key)#if($foreach.hasNext), #end
+#end
+
+#foreach($i in [1..3])$i#if($foreach.hasNext), #end#end
+
+## ── Directives: include, parse, evaluate, stop ────────────
+#include("header.txt", "disclaimer.txt")
+#parse("footer.vm")
+#evaluate("#set($dyn = 42) dynamic: $dyn")
+#card("Low stock")
+$footer
+#@card("block macro")inner content#end
+#{if}($yes)braced directive#{end}
+#{foreach}($x in $list)$x#{end}
+
+## ── More references, setters, ranges and spacing forms ───
+#set($item.sku = "WGT-100")
+#set($map.key = $value)
+#set($list[0] = 1)
+#set( $spaced = "inner spaces" )
+#set($count = $list.size())
+#set($first = $list.get(0))
+#set($upper = $first.toString().toUpperCase())
+#set($n = 5)
+#set($seq = [1..$n])
+#set($rev = [$n..1])
+#set($math = $math.add($n, 1))
+#set($nested = {"list": [1, 2, {"deep": true}], "text": "x"})
+#set($str = "Concatenated: ${first}${n} and $first$n and ${first}text")
+#set($escapedDollar = "costs \$5 and \\$first")
+#set($quotesInside = "single 'inside' double and ""doubled"" quotes")
+#set($singleInside = 'double "inside" single')
+#set($nullable = $null)
+#set($isNull = !$nullable)
+#set($result = ($a + $b) * ($c - $d) / ($e % $f))
+#set($cond = ($a > $b && $c < $d) || (!$e && $f >= $g) || $h <= $i)
+#set($eq = $a == $b || $a != $c)
+#set($numbers = [1, 2.5, -3, 1.5e2])
+$list.size() $list.get(0) $list[0] $map.key $map["key"] $map.get("key") $item.getSku() $item.sku
+${list.size()}${map.key}$!{missing.value}$!missing.value
+$esc.d $esc.h $esc.n $esc.t
+#foreach($row in $table)
+  #foreach($cell in $row)
+    $foreach.parent.index,$foreach.index = $cell#if($foreach.hasNext), #end
+  #end
+#end
+#foreach($i in [1..$n])$velocityCount #end
+#foreach($entry in $map.entrySet())$entry.key=$entry.value #end
+#foreach($x in $list)#if($x > 2)#break($foreach)#end$x #end
+#if($a)A#elseif($b)B#elseif($c)C#else D#end
+#if(!$list.isEmpty() && $list.size() > 0)non-empty#end
+#if("$name" == "test")string compare#end
+#if($obj.method("arg") == true)method#end
+#macro(row $label $value)
+  <tr><th>$label</th><td>$!value</td></tr>
+#end
+#macro(wrap $content)<div class="wrap">$content</div>#end
+#macro( spaced $a , $b )$a$b#end
+#row("SKU" $item.sku)
+#wrap("text")
+#{row}("Braced" "call")
+#@wrap()inner body $item.sku#end
+#foreach($c in $columns)
+  #set($ref = "col_$c")
+#end
+#define($block)Evaluated lazily: $item.sku#end
+$block
+#set($ml = "multi
+line string")
+## Directive keywords inside text: #include is a directive; hash alone # and $ alone stay text.
+Price: $ 5 # tag; email a@b.c; url http://example.com/#anchor
+#[[Literal #foreach($x in $y) block that is not parsed]]#
+\#set($escaped = 1) \$notRef \\$stillRef
+
+## ── Custom tools and escaping ─────────────────────────────
+$esc.html("<b>bold</b>") $date.format("yyyy-MM-dd", $date.date) $math.add(1, 2)
+$display.list($items) $number.format("0.0", 1.234) $sorter.sort($list)
+
+#stop

@@ -1,0 +1,315 @@
+#!/usr/bin/env bazel
+# ── Comments ──
+# Bazel BUILD file (Starlark): the inventory service.
+# TODO: split the test suites per warehouse
+# FIXME: glob picks up editor backup files
+# buildifier: disable=load-on-top
+"""Module docstring: build rules for the warehouse inventory service."""
+
+# ── Loads ──
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
+load("@bazel_skylib//lib:selects.bzl", "selects")
+load("//tools:version.bzl", "stamp_version", stamp = "stamp_version")
+load(":defs.bzl", "SKU_PATTERN", my_macro = "inventory_macro")
+
+# ── Package-level declarations ──
+package(
+    default_visibility = ["//visibility:public"],
+    features = ["layering_check"],
+)
+
+licenses(["notice"])
+exports_files(["LICENSE", "VERSION"], visibility = ["//visibility:private"])
+
+# ── Constants (literals of every kind) ──
+VERSION = "1.4.0"
+MAX_SKUS = 10_000
+RATIO = 0.75
+BIG = 1e6
+HEX = 0xFF
+OCTAL = 0o755
+BINARY = 0b1010
+ENABLED = True
+DISABLED = False
+NOTHING = None
+RAW = r"C:\raw\path"
+BYTES_LIKE = "tab\there\nnewline \"quoted\" \\ back \x41 \u00e9 \101"
+SINGLE = 'single \'quoted\''
+TRIPLE = """Multi-line
+string with "quotes" inside."""
+TRIPLE_SINGLE = '''another
+multi-line string'''
+UNICODE = "Lager — Zürich ✓ 🏭"
+FORMATTED = "v%s has %d skus (%.1f%%)" % (VERSION, 12, 99.5)
+FORMAT_CALL = "{} and {name}".format("positional", name = "keyword")
+
+# ── Collections ──
+REGIONS = ["eu-west", "us-east", "ap-south"]
+TUPLE = ("a", "b", 3)
+SINGLETON = ("only",)
+CONFIG = {
+    "name": "inventory",
+    "threads": 4,
+    "nested": {"deep": [1, 2, 3]},
+}
+EMPTY_LIST = []
+EMPTY_DICT = {}
+EMPTY_TUPLE = ()
+
+# ── Expressions ──
+ARITH = 1 + 2 - 3 * 4 // 5 % 6
+BITS = (1 << 4) | (0xF0 & 0x3C) ^ 0x01
+INVERTED = ~7
+NEGATED = -ARITH
+COMPARE = 1 < 2 and 2 <= 3 and 3 > 2 and 3 >= 3 and 1 != 2 and 1 == 1
+LOGIC = not DISABLED or (ENABLED and NOTHING == None)
+MEMBERSHIP = "eu-west" in REGIONS and "mars" not in REGIONS
+IDENTITY = NOTHING == None
+TERNARY = "release" if VERSION.startswith("1.") else "dev"
+SLICES = REGIONS[0], REGIONS[-1], REGIONS[1:], REGIONS[:2], REGIONS[::2], REGIONS[::-1]
+CONCAT = REGIONS + ["eu-north"]
+REPEATED = ["x"] * 3
+UNPACKED_A, UNPACKED_B = "left", "right"
+[FIRST, SECOND] = ["one", "two"]
+AUGMENTED = 1
+AUGMENTED += 2
+AUGMENTED -= 1
+AUGMENTED *= 3
+AUGMENTED //= 2
+AUGMENTED %= 5
+AUGMENTED |= 4
+AUGMENTED &= 6
+AUGMENTED ^= 1
+AUGMENTED <<= 2
+AUGMENTED >>= 1
+
+# ── Comprehensions ──
+SQUARES = [n * n for n in range(10)]
+EVENS = [n for n in range(20) if n % 2 == 0]
+PAIRS = [(a, b) for a in range(3) for b in range(3) if a != b]
+BY_NAME = {name: len(name) for name in REGIONS}
+FILTERED = {k: v for k, v in CONFIG.items() if type(v) == "int"}
+
+# ── Functions ──
+def sku_label(sku, prefix = "SKU", *rest, upper = False, **extra):
+    """Format a SKU label.
+
+    Args:
+      sku: the stock keeping unit.
+      prefix: label prefix.
+      *rest: extra pieces joined with dashes.
+      upper: uppercase the result.
+      **extra: ignored keyword arguments.
+
+    Returns:
+      The formatted label.
+    """
+    parts = [prefix, sku] + list(rest)
+    label = "-".join(parts)
+    if upper:
+        label = label.upper()
+    elif len(label) > 40:
+        label = label[:40]
+    else:
+        pass
+    return label
+
+def _impl(ctx):
+    out = ctx.actions.declare_file(ctx.label.name + ".txt")
+    ctx.actions.write(output = out, content = "version=%s\n" % ctx.attr.version)
+    for src in ctx.files.srcs:
+        if src.extension == "c":
+            continue
+        elif src.basename == "stop":
+            break
+    return [DefaultInfo(files = depset([out]))]
+
+def fibonacci(n):
+    a, b = 0, 1
+    for _ in range(n):
+        a, b = b, a + b
+    return a
+
+def with_lambda(items):
+    return sorted(items, key = lambda item: (-item["qty"], item["sku"]))
+
+def check(value):
+    if type(value) == "string" and len(value) > 0:
+        return True
+    fail("expected a non-empty string, got %r" % (value,))
+
+# ── Rule and provider definitions ──
+InventoryInfo = provider(
+    doc = "Information about an inventory build.",
+    fields = {"manifest": "the generated manifest file", "count": "number of SKUs"},
+)
+
+inventory_rule = rule(
+    implementation = _impl,
+    attrs = {
+        "version": attr.string(default = VERSION, mandatory = True),
+        "srcs": attr.label_list(allow_files = [".c", ".h"]),
+        "deps": attr.label_list(providers = [InventoryInfo]),
+        "config": attr.label(allow_single_file = True, cfg = "exec"),
+        "threads": attr.int(default = 4, values = [1, 2, 4, 8]),
+        "verbose": attr.bool(default = False),
+        "env": attr.string_dict(),
+        "_tool": attr.label(default = "//tools:gen", executable = True, cfg = "exec"),
+    },
+    outputs = {"manifest": "%{name}.manifest"},
+    toolchains = ["@rules_cc//cc:toolchain_type"],
+    fragments = ["cpp"],
+    executable = False,
+)
+
+inventory_aspect = aspect(
+    implementation = lambda target, ctx: [],
+    attr_aspects = ["deps"],
+)
+
+# ── Macros ──
+def inventory_library(name, srcs = [], deps = [], **kwargs):
+    native.cc_library(
+        name = name,
+        srcs = srcs,
+        deps = deps + ["@sqlite3"],
+        copts = select({
+            "//conditions:default": ["-O2"],
+            ":debug": ["-O0", "-g"],
+        }),
+        **kwargs
+    )
+
+# ── Targets ──
+config_setting(
+    name = "debug",
+    values = {"compilation_mode": "dbg"},
+)
+
+config_setting(
+    name = "linux_arm",
+    constraint_values = ["@platforms//os:linux", "@platforms//cpu:arm64"],
+)
+
+cc_library(
+    name = "inventory",
+    srcs = glob(["src/*.c"], exclude = ["src/main.c", "src/*_test.c"], allow_empty = True),
+    hdrs = glob(["include/**/*.h"]),
+    includes = ["include"],
+    defines = ["VERSION=\\\"%s\\\"" % VERSION] + select({
+        ":debug": ["DEBUG=1"],
+        "//conditions:default": [],
+    }),
+    linkopts = select({
+        "@platforms//os:macos": ["-framework", "Foundation"],
+        "@platforms//os:linux": ["-lpthread", "-ldl"],
+        "//conditions:default": [],
+    }),
+    deps = [
+        "@sqlite3",
+        "//third_party:json",
+        ":generated",
+        "@//external:zlib",
+    ],
+    visibility = ["//visibility:public", "//services:__subpackages__", "//tools:__pkg__"],
+)
+
+cc_binary(
+    name = "inventory_bin",
+    srcs = ["src/main.c"],
+    deps = [":inventory"],
+    data = ["//config:defaults.toml"] + glob(["data/*.csv"]),
+    args = ["--port=8080", "--config=$(location //config:defaults.toml)"],
+    env = {"LOG_LEVEL": "info"},
+    stamp = 1,
+)
+
+cc_test(
+    name = "stock_test",
+    size = "small",
+    timeout = "short",
+    srcs = ["tests/stock_test.c"],
+    deps = [":inventory"],
+    tags = ["unit"] + (["flaky"] if VERSION.startswith("0.") else []),
+    shard_count = 2,
+    flaky = False,
+    local = True,
+)
+
+py_library(
+    name = "tools",
+    srcs = ["tools/report.py"],
+    imports = ["tools"],
+)
+
+py_binary(
+    name = "report",
+    srcs = ["tools/report_main.py"],
+    main = "tools/report_main.py",
+    python_version = "PY3",
+    deps = [":tools"],
+)
+
+py_test(
+    name = "report_test",
+    srcs = ["tools/report_test.py"],
+    deps = [":tools"],
+)
+
+genrule(
+    name = "generated",
+    srcs = ["schema.sql"],
+    outs = ["schema_gen.h", "schema_gen.c"],
+    cmd = """
+        $(location //tools:gen) --in $< \\
+            --header $(location schema_gen.h) \\
+            --source $(location schema_gen.c)
+    """,
+    tools = ["//tools:gen"],
+    message = "Generating schema bindings",
+)
+
+filegroup(
+    name = "all_sources",
+    srcs = glob(["**/*.c", "**/*.h"]) + [":generated"],
+    testonly = False,
+)
+
+alias(
+    name = "default",
+    actual = ":inventory_bin",
+)
+
+test_suite(
+    name = "all_tests",
+    tests = [":stock_test", ":report_test"],
+    tags = ["-manual"],
+)
+
+stamp_version(name = "version", value = VERSION)
+my_macro(name = "macro_target", skus = [sku_label("ABC-1"), sku_label("ABC-2", upper = True)])
+inventory_rule(name = "manifest", version = VERSION, srcs = [":all_sources"], threads = 8)
+inventory_library(name = "extras", srcs = ["extras.c"], visibility = ["//visibility:private"])
+
+# ── Dictionary / string methods ──
+_METHODS = [
+    "x".upper(),
+    " pad ".strip(),
+    "a,b".split(","),
+    ",".join(["a", "b"]),
+    "abc".replace("b", "-"),
+    "abc".find("c"),
+    "abc".endswith("c"),
+    CONFIG.get("name", "default"),
+    CONFIG.keys(),
+    CONFIG.values(),
+    CONFIG.items(),
+    dir(CONFIG),
+    str(1), int("2"), float("3.5"), bool(0), repr("x"),
+    len(REGIONS), min(1, 2), max(1, 2), sorted([3, 1, 2]), reversed([1, 2]),
+    enumerate(REGIONS), zip(REGIONS, REGIONS), any([False]), all([True]),
+    hasattr(CONFIG, "get"), getattr(CONFIG, "get", None), type(1), hash("a"),
+]
+
+print("loaded", VERSION)

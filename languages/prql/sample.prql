@@ -1,0 +1,154 @@
+# ── Comments ──
+# PRQL showcase: warehouse revenue and stock analysis.
+#! A doc-style comment (shebang-ish) at the top of a file
+# TODO: parameterise the date range. FIXME: currency conversion.
+
+# ── Header: version, dialect target, module imports ──
+prql version:"0.13" target:sql.postgres
+
+module inv {
+  let tax_rate = 0.075
+  let net = price -> price / (1 + tax_rate)
+}
+
+# ── Constants, numbers and literals ──
+let numbers = [
+  42, 1_000_000, -7, 3.14, 1e3, 1.5e-3, 0xff, 0o17, 0b1010,
+  null, true, false,
+]
+
+let strings = [
+  "double \"quoted\" with \n escapes \t and \u{1F4E6}",
+  'single quoted',
+  """triple
+  quoted""",
+  r"raw \n string",
+  f"formatted {tax_rate} string",
+  s"upper({name})",
+]
+
+let dates = [@2026-01-01, @2026-09-24T12:30:00Z, @08:30:15, @2026-09-24T12:30:00+02:00]
+let durations = [1years, 3months, 2weeks, 5days, 12hours, 30minutes, 15seconds, 100milliseconds, 5microseconds]
+
+# ── Functions, with defaults and named params ──
+let add = a b -> a + b
+let discounted = price rate:0.1 -> price * (1 - rate)
+let in_range = value low high -> low <= value && value <= high
+let tier = x -> (
+  case [
+    x >= 1000 => "gold",
+    x >= 100 => "silver",
+    true => "bronze",
+  ]
+)
+
+# ── Pipelines and transforms ──
+let paid = (
+  from orders
+  filter status == "paid"
+  filter placed_at >= @2026-01-01 && placed_at < @2027-01-01
+  filter !is_test
+  filter (status | in ["paid", "shipped"])
+  filter customer_id != null
+  filter total ?? 0 > 0
+)
+
+let revenue = (
+  from paid
+  join side:left customers (==customer_id)
+  join items (this.id == that.order_id)
+  join side:inner products (items.sku == products.sku)
+  derive {
+    revenue = items.quantity * items.unit_price,
+    month = s"date_trunc('month', {placed_at})",
+    net = inv.net revenue,
+    label = f"{customers.name} <{customers.email}>",
+    margin = (revenue - products.cost) / revenue * 100,
+    bucket = revenue / 100 // 1,
+    leftover = revenue % 100,
+    power = 2 ** 8,
+    ok = revenue > 0 && !(margin < 5) || is_vip,
+    maybe = customers.region ?? "unknown",
+    match_name = customers.name ~= "^A",
+    neg = -revenue,
+  }
+  group {month, customers.region} (
+    aggregate {
+      order_count = count_distinct orders.id,
+      total = sum revenue,
+      avg_order = average revenue,
+      biggest = max revenue,
+      smallest = min revenue,
+      n = count this,
+      any_vip = any is_vip,
+      all_ok = all ok,
+      joined = concat_array tags,
+    }
+  )
+  sort {-month, +total, region}
+  take 1..12
+)
+
+# ── More transforms: window, select, append, loop, sort ──
+from stock
+select {sku, bin, qty}
+select !{internal_id}
+rename {warehouse = wh}
+append (from stock_archive | select {sku, bin, qty})
+remove (from discontinued)
+intersect (from active_skus)
+loop (
+  filter qty < 1000
+  derive qty = qty * 2
+)
+window rolling:7 (
+  derive {seven_day_avg = average qty}
+)
+window rows:-3..0 expanding:true (
+  derive {running = sum qty}
+)
+window range:-1..1 (
+  derive {neighbours = lag 1 qty}
+)
+group sku (
+  sort {-updated_at}
+  take 1
+)
+derive {
+  rank = row_number this,
+  prev = lag 1 qty,
+  next = lead 1 qty,
+  first_qty = first qty,
+  last_qty = last qty,
+  nth_qty = nth 2 qty,
+  pct = rank / count this,
+}
+take 10..
+take ..5
+sort {-total}
+filter (total | in 100..500)
+
+# ── Dialect-specific, tuple and array features ──
+let lookup = (
+  from_text format:json '''
+    [{"sku": "AC-1001", "qty": 25}]
+  '''
+)
+
+from_text format:csv """
+sku,qty
+AC-1001,25
+AC-1002,3
+"""
+
+from_text format:json '{"columns": ["sku", "qty"], "data": [["AC-1001", 25]]}'
+
+# ── Final result: type annotations, tuples, ranges ──
+let typed = (x <int> y <text> -> x)
+let tuple_example = {a = 1, b = {c = 2, d = [3, 4]}}
+let range_example = 1..10
+
+from paid
+derive {x = tuple_example.b.c, r = range_example}
+sort {-month}
+take 12

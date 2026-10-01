@@ -1,0 +1,87 @@
+# ── Comments ──
+# Crontab for the warehouse service account.
+# TODO: move the nightly jobs to a scheduler once the fleet grows.
+# m h dom mon dow command
+
+# ── Environment assignments ──
+SHELL=/bin/bash
+PATH=/usr/local/bin:/usr/bin:/bin
+MAILTO=ops@example.com
+HOME=/var/lib/warehouse
+LOGDIR="/var/log/warehouse"
+CRON_TZ=Europe/London
+MAILFROM=
+
+# ── Simple numeric fields ──
+30 2 * * * /opt/warehouse/bin/nightly-count --all
+0 0 1 1 * /opt/warehouse/bin/year-open
+15 14 1 * * /opt/warehouse/bin/monthly-invoice
+0 22 * * 1-5 /opt/warehouse/bin/close-shifts
+
+# ── Wildcards and steps ──
+* * * * * /opt/warehouse/bin/heartbeat
+*/5 * * * * /opt/warehouse/bin/poll-scanners
+*/15 8-18 * * * /opt/warehouse/bin/sync-stock
+0 */2 * * * /opt/warehouse/bin/rotate-labels
+0-30/10 9 * * * /opt/warehouse/bin/early-batch
+
+# ── Lists and ranges ──
+0 6,12,18 * * * /opt/warehouse/bin/pick-lists
+0 8 1,15 * * /opt/warehouse/bin/fortnight-report
+0 9 * * 1,3,5 /opt/warehouse/bin/supplier-orders
+30 7 10-20 * * /opt/warehouse/bin/mid-month-audit
+0 4 * 3-5 * /opt/warehouse/bin/spring-stocktake
+0 5 1-7,22-28 * * /opt/warehouse/bin/edge-weeks
+
+# ── Names for months and weekdays ──
+0 7 * jan,jul * /opt/warehouse/bin/half-year
+0 7 * Feb-Apr * /opt/warehouse/bin/quarter-check
+0 17 * * mon-fri /opt/warehouse/bin/end-of-day
+0 10 * * Sat,Sun /opt/warehouse/bin/weekend-skeleton
+0 3 * * 7 /opt/warehouse/bin/sunday-vacuum
+
+# ── Special strings ──
+@reboot /opt/warehouse/bin/start-agent
+@yearly /opt/warehouse/bin/archive-year
+@annually /opt/warehouse/bin/archive-year
+@monthly /opt/warehouse/bin/archive-month
+@weekly /opt/warehouse/bin/archive-week
+@daily /opt/warehouse/bin/archive-day
+@midnight /opt/warehouse/bin/archive-day
+@hourly /opt/warehouse/bin/flush-cache
+
+# ── Commands with redirection, pipes, quoting ──
+0 1 * * * /opt/warehouse/bin/backup > /dev/null 2>&1
+5 1 * * * /opt/warehouse/bin/export --format=csv >> "$LOGDIR/export.log" 2>&1
+10 1 * * * cd /opt/warehouse && ./bin/reindex | tee -a /var/log/warehouse/reindex.log
+15 1 * * * /usr/bin/find /var/tmp/labels -name '*.pdf' -mtime +7 -delete
+20 1 * * * echo "stock check at $(date +\%H:\%M)" | mail -s "Stock" ops@example.com
+25 1 * * * [ -f /var/run/warehouse.lock ] || /opt/warehouse/bin/unlocked-job; echo done
+30 1 * * * /opt/warehouse/bin/report %sku,qty%A-100,5%
+45 1 * * * date +\%Y-\%m-\%d >> /var/log/warehouse/dates.log
+
+# ── System crontab format (user field) ──
+17 * * * * root cd / && run-parts --report /etc/cron.hourly
+25 6 * * * root test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.daily )
+*/10 * * * * warehouse /opt/warehouse/bin/poll-scanners
+
+# ── More field forms ──
+*/2 */3 */4 */5 */2 /opt/warehouse/bin/every-which-way
+0-59/15 0-23/6 1-31/10 1-12/3 0-6/2 /opt/warehouse/bin/ranged-steps
+0 0 29 2 * /opt/warehouse/bin/leap-day
+0 12 * * MON-FRI/2 /opt/warehouse/bin/alternate-weekdays
+0 0 * JAN-MAR,OCT-DEC SAT /opt/warehouse/bin/season-saturdays
+59 23 31 12 * /opt/warehouse/bin/year-end
+0 0 13 * 5 /opt/warehouse/bin/friday-or-thirteenth
+00 08 * * 01 /opt/warehouse/bin/leading-zeros
+ 5   4   *   *   *   /opt/warehouse/bin/extra-spaces
+	10	4	*	*	*	/opt/warehouse/bin/tab-separated
+
+# ── Quoting, percent and environment use ──
+0 3 * * * /opt/warehouse/bin/backup --name="nightly $(date +\%F)" --tag='daily' 2>&1 | logger -t warehouse
+0 4 * * * env LANG=en_GB.UTF-8 TZ=UTC /opt/warehouse/bin/report
+0 5 * * * . /etc/warehouse/env && "$WAREHOUSE_HOME/bin/refresh"
+*/30 * * * * flock -n /var/lock/sync.lock -c '/opt/warehouse/bin/sync --full' || true
+0 6 * * * /bin/sh -c 'echo "line one"; echo "line two"'
+0 7 * * * mysqldump --defaults-file=/etc/warehouse/my.cnf stock | gzip > /backup/stock-`date +\%u`.sql.gz
+0 8 * * * /opt/warehouse/bin/notify %subject%body line%

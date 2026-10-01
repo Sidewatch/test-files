@@ -1,0 +1,272 @@
+# ── Comments ──
+# Comment line: the project's task runner (`just --list` shows recipes).
+# TODO: add a deploy recipe
+#!/usr/bin/env just --justfile
+
+# ── Settings ──
+set shell := ["bash", "-euo", "pipefail", "-c"]
+set windows-shell := ["powershell.exe", "-NoLogo", "-Command"]
+set dotenv-load
+set dotenv-filename := ".env.local"
+set export
+set positional-arguments
+set fallback := true
+set quiet := false
+set tempdir := "/tmp"
+set allow-duplicate-recipes
+set ignore-comments
+
+# ── Imports and modules ──
+import "ci.just"
+import? "local.just"
+mod deploy "deploy/mod.just"
+mod? optional
+
+# ── Variables and assignment ──
+app := "Inventory"
+config := env_var_or_default("CONFIG", "debug")
+version := `git describe --tags --always`
+build_dir := justfile_directory() / ".build"
+export RUST_LOG := "info"
+export API_KEY := "example-not-a-real-key"
+unexport DEBUG
+number := "42"
+joined := app + "-" + version
+nested := if config == "release" { "optimised" } else if config == "debug" { "slow" } else { "unknown" }
+matches := if config =~ '^(debug|release)$' { "valid" } else { "invalid" }
+not_equal := if os() != "macos" { "foreign" } else { "native" }
+raw_string := 'single quoted: no \escapes, {{not interpolated}}'
+indented := '''
+  triple single
+  quoted
+'''
+cooked := "double quoted with \"escapes\" \t tab \n newline \u{1F4E6} and {{{{ literal braces"
+indent_cooked := """
+  triple double
+  quoted with {{app}}
+"""
+shell_expanded := x'$HOME/stock'
+shell_expanded_cooked := x"$HOME/stock-{{app}}"
+quoted_path := quote("it's a path")
+
+# ── Recipes ──
+
+# Default recipe: list everything
+default:
+    @just --list --unsorted
+
+# Build the app in the chosen configuration
+build:
+    swift build -c {{config}}
+
+[doc("Run the whole test suite")]
+[group("test")]
+test *ARGS: build
+    swift test {{ARGS}}
+
+# Recipe with parameters, defaults, variadics
+greet name="World" +rest="":
+    echo "Hello, {{name}}! {{rest}}"
+
+[private]
+_helper $VAR="value":
+    echo "$VAR"
+
+[confirm("Build a signed release?")]
+[macos]
+release: (build) (package "release" "arm64")
+    ./bundle.sh
+    @echo "Built {{app}} ({{config}}) at {{build_dir}}"
+
+[linux]
+release:
+    echo "linux release"
+
+[windows]
+release:
+    echo "windows release"
+
+[no-cd]
+[no-exit-message]
+[script("python3")]
+report:
+    import json
+    print(json.dumps({"app": "{{app}}"}))
+
+#!/usr/bin/env bash
+shebang:
+    set -euo pipefail
+    echo "Running in $(pwd)"
+
+package config arch="x86_64": (build)
+    tar czf {{app}}-{{config}}-{{arch}}.tar.gz -C {{build_dir}} .
+
+# Dependencies with arguments, subsequent and prior
+all: lint && notify
+    @echo "all done"
+
+lint: && (echo-done "lint")
+    swiftformat --lint Sources
+    swiftlint --strict
+
+echo-done what:
+    @echo "{{what}} done"
+
+notify:
+    -osascript -e 'display notification "Done"'
+    @-false
+    +true
+
+# Conditionals and functions inside recipes
+info:
+    @echo "os={{os()}} arch={{arch()}} family={{os_family()}} cpus={{num_cpus()}}"
+    @echo "dir={{invocation_directory()}} home={{home_directory()}} just={{just_executable()}}"
+    @echo "{{uppercase(app)}} {{lowercase(app)}} {{capitalize(app)}} {{replace(app, 'I', 'i')}} {{trim(' x ')}}"
+    @echo "{{path_exists('Package.swift')}} {{file_name(justfile())}} {{extension('a.txt')}} {{parent_directory('/a/b')}}"
+    @echo "{{sha256('x')}} {{uuid()}} {{datetime('%Y-%m-%d')}} {{env('HOME', 'none')}} {{error_or("x")}}"
+    @echo "{{ if config == 'debug' { 'D' } else { 'R' } }}"
+
+# Backtick evaluation and escaping
+escape:
+    echo '{{ "{{" }}not interpolated{{ "}}" }}'
+    echo "{{`date +%s`}}"
+
+# Alias
+alias b := build
+alias t := test
+
+clean:
+    rm -rf .build
+
+# ── Rare constructs ──
+set shell := ["zsh", "-cu"]
+set unstable
+set lazy
+set script-interpreter := ["python3"]
+set working-directory := "."
+set dotenv-path := ".env.production"
+set dotenv-required
+set dotenv-override
+set export := false
+set no-exit-message
+set guards
+
+# every attribute
+[doc('Single-quoted doc')]
+[group('misc')]
+[extension('.py')]
+[working-directory('subdir')]
+[positional-arguments]
+[parallel]
+[unix]
+[openbsd]
+[freebsd]
+[netbsd]
+[dragonfly]
+[no-quiet]
+[metadata('key', 'value')]
+attributed:
+    @echo "attributed"
+
+# combined attributes on one line
+[private, no-cd, linux]
+combined: ; @echo "combined"
+
+# parameter forms
+star-args *args: ; @echo {{args}}
+plus-args +files: ; @echo {{files}}
+export-param $VAR='default': ; @echo $VAR
+star-default *rest='x y': ; @echo {{rest}}
+many a b='two' c="three" +d='four': ; @echo {{a}} {{b}} {{c}} {{d}}
+
+# dependencies in every form
+dep-forms: first (with-arg "x") (with-arg env_var_or_default('K', 'v')) && after (with-arg "post")
+    @echo main
+first:
+    @echo 1
+after:
+    @echo 2
+with-arg x:
+    @echo {{x}}
+
+# line prefixes and shebang recipes
+prefixes:
+    @echo quiet
+    -false
+    @-false
+    -@false
+    +echo plus
+    echo normal
+
+shebang-python:
+    #!/usr/bin/env python3
+    import sys
+    print("args:", sys.argv, "{{app}}")
+
+shebang-multi-line:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    for i in 1 2 3; do
+      echo "$i {{i}}" || true
+    done
+    cat <<'EOF'
+    heredoc with {{ "{{" }}escaped braces{{ "}}" }}
+    EOF
+
+# multi-line commands
+continuation:
+    echo one \
+         two \
+         three
+    echo "{{ if os() == "macos" { "mac" } else { "other" } }}"
+
+# interpolation forms
+interpolation:
+    echo {{ app }} {{app}} {{  app  }} {{ app + "-" + version }} {{ app / "path" }}
+    echo {{ `echo backtick` }} {{ x'$HOME' }} {{ if "a" == "b" { "x" } else if "a" != "c" { "y" } else { "z" } }}
+    echo {{ "{{" }} {{ '}}' }} {{{{ not-interpolation
+
+# all built-in functions
+functions:
+    echo {{arch()}} {{os()}} {{os_family()}} {{num_cpus()}}
+    echo {{shell('echo', 'hi')}} {{shell_quote('x')}} {{quote('a b')}} {{append('.o', 'a b')}} {{prepend('x', 'a b')}}
+    echo {{invocation_directory()}} {{invocation_directory_native()}} {{justfile()}} {{justfile_directory()}} {{source_file()}} {{source_directory()}} {{module_file()}} {{module_directory()}}
+    echo {{just_executable()}} {{just_pid()}} {{is_dependency()}}
+    echo {{env('HOME')}} {{env('NOPE', 'dflt')}} {{env_var('HOME')}} {{env_var_or_default('NOPE', 'd')}}
+    echo {{require('cargo')}} {{which('ls')}} {{path_exists('.')}} {{read('Cargo.toml')}} {{canonicalize('.')}} {{absolute_path('x')}} {{executable_directory()}} {{cache_directory()}} {{config_directory()}} {{config_local_directory()}} {{data_directory()}} {{data_local_directory()}} {{home_directory()}}
+    echo {{clean('a//b/../c')}} {{join('a', 'b', 'c')}} {{file_name('/a/b.txt')}} {{file_stem('/a/b.txt')}} {{extension('/a/b.txt')}} {{parent_directory('/a/b')}} {{without_extension('/a/b.txt')}}
+    echo {{capitalize('abc')}} {{kebabcase('Ab Cd')}} {{lowercamelcase('ab cd')}} {{lowercase('AB')}} {{shoutykebabcase('ab cd')}} {{shoutysnakecase('ab cd')}} {{snakecase('Ab Cd')}} {{titlecase('ab cd')}} {{uppercamelcase('ab cd')}} {{uppercase('ab')}}
+    echo {{replace('abc', 'b', 'x')}} {{replace_regex('abc', '[bc]', 'x')}} {{trim('  x ')}} {{trim_end(' x ')}} {{trim_end_match('xyy', 'y')}} {{trim_end_matches('xyy', 'y')}} {{trim_start(' x')}} {{trim_start_match('yx', 'y')}} {{trim_start_matches('yyx', 'y')}} {{trim_end_matches('x', 'y')}}
+    echo {{blake3('x')}} {{blake3_file('justfile')}} {{sha256('x')}} {{sha256_file('justfile')}} {{uuid()}} {{choose('4', HEX)}} {{encode_uri_component('a b')}} {{datetime()}} {{datetime_utc()}} {{semver_matches('1.2.3', '>=1')}} {{style('error')}}{{ style("command") }}{{ NORMAL }}{{ BOLD }}{{ RED }}{{ GREEN }}{{ BLUE }}{{ BG_YELLOW }}{{ CYAN }}{{ MAGENTA }}{{ BLACK }}{{ WHITE }}{{ ITALIC }}{{ UNDERLINE }}{{ STRIKETHROUGH }}{{ HEX }}{{ HEXLOWER }}{{ HEXUPPER }}
+    echo {{error('stop')}}
+
+# assignment forms
+lazy_val := `date`
+export EXPORTED := "x"
+export EXPORTED2 := env("PATH") + ":/x"
+unexported := "x"
+tricky := "{{"
+paths := "a" / "b" / "c"
+cond_nested := if "x" == "y" { "1" } else if "x" =~ 'x' { "2" } else { "3" }
+bool_like := if path_exists("justfile") == "true" { "found" } else { "missing" }
+regex_ne := if "a" !~ 'b' { "ok" } else { "no" }
+multi_line_str := "line one
+line two"
+single_multi := 'literal
+multi-line'
+
+# aliases and modules
+alias bld := build
+alias tst := test
+alias fmt := lint
+mod? maybe 'optional.just'
+mod pkg
+import 'common.just'
+
+# unicode and odd names
+café:
+    echo "Zürich → 東京 ✓"
+kebab-case_snake_Mixed123:
+    echo ok
+_hidden-by-underscore:
+    echo hidden

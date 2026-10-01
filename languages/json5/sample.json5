@@ -1,0 +1,107 @@
+// JSON5: a warehouse service configuration exercising the whole grammar.
+/* Block comment
+   spanning lines */
+{
+  // ── Keys: identifiers, quoted, unicode, reserved words ──
+  name: 'warehouse-inventory',
+  "double-quoted-key": "double quotes",
+  'single-quoted-key': 'single quotes',
+  $dollar: 1,
+  _underscore: 2,
+  ünïcode: 3,
+  \u0061bc: 'escaped identifier start',
+  class: 'reserved words are valid keys',
+  null: 'even this',
+  version: '2.4.0',
+
+  // ── Strings ──
+  strings: {
+    single: 'It\'s "mixed" quoting',
+    double: "He said \"hi\" and it's fine",
+    escapes: 'tab\t newline\n return\r backspace\b formfeed\f vertical\v nul\0 backslash\\',
+    hexEscape: '\x41\x42',
+    unicodeEscape: '\u00e9 \u4e2d',
+    lineContinuation: 'Welcome to the \
+inventory service.',
+    unicode: 'Zürich → 東京 ✓',
+    empty: '',
+    otherEscaped: '\a\c\d',
+  },
+
+  // ── Numbers ──
+  numbers: {
+    integer: 42,
+    positive: +17,
+    negative: -17,
+    float: 3.14159,
+    leadingDot: .75,
+    trailingDot: 5.,
+    exponent: 6.022e23,
+    upperExponent: 1E-9,
+    signedExponent: 2e+10,
+    hex: 0xFF,
+    hexUpper: 0XDEADbeef,
+    negativeHex: -0x10,
+    timeoutMs: 0x7530,
+    infinite: Infinity,
+    negativeInfinite: -Infinity,
+    positiveInfinite: +Infinity,
+    notANumber: NaN,
+    negativeNaN: -NaN,
+    zero: 0,
+  },
+
+  // ── Literals ──
+  literals: { yes: true, no: false, nothing: null },
+
+  // ── Arrays and nesting ──
+  features: ['search', 'export', "import",],
+  matrix: [[1, 2,], [3, 4,],],
+  empty: { array: [], object: {} },
+  mixed: [1, 'two', 3.0, true, null, { k: 'v', }, [Infinity]],
+
+  // ── Realistic nested config ──
+  database: {
+    host: 'db.example.com',
+    port: 5432,
+    ssl: true,
+    password: 'example-not-a-real-key',
+    pool: { min: 2, max: 20, idleMs: 3e4, },
+  },
+  warehouses: [
+    { code: 'WH-NORTH', bins: [{ bin: 'A-01', sku: 'WIDGET-100', qty: 250, price: 2.5 }], },
+    { code: 'WH-SOUTH', bins: [], },
+  ],
+  motd: 'Welcome to the \
+inventory service.',
+  // ── Rare constructs ──
+  rare: {
+    \u0024escapedDollar: 1,
+    \u005fescapedUnderscore: 2,
+    'ключ': 'non-Latin identifiers are keys too',
+    日本語: 'CJK key',
+    $: 'lone dollar', _: 'lone underscore', a1: 'digit after start',
+    true: 'literal words as keys', false: 0, Infinity: 1, NaN: 2, undefined: 3,
+    '': 'empty key',
+    'key with spaces': 1,
+    negativeHalf: -.5,
+    plusExp: +.5e-2,
+    dotZero: 0.,
+    negZero: -0,
+    zeroExp: 0e0,
+    hexSigned: +0xAB,
+    longHex: 0xFFFFFFFFFFFFFFFF,
+    bigExp: 1E400,
+    lineSep: 'U+2028 allowed: \u2028 and \u2029',
+    verticalTab: 'a\vb',
+    nullChar: '\0',
+    escapedQuotes: "both ' and \" fit",
+    continuedDouble: "line one \
+line two",
+    nestedEmpty: [[], {}, [{}], [[]]],
+    deep: {a:{b:{c:{d:{e:[1,[2,[3,[4]]]]}}}}},
+    trailingCommaNested: [{a: 1,},],
+  },
+  address: '192.0.2.10', // trailing comment
+  ipv6: '2001:db8::1', /* inline block */
+}

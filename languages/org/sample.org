@@ -1,0 +1,311 @@
+#+TITLE: Inventory service notes
+#+SUBTITLE: Org-mode syntax showcase
+#+AUTHOR: Warehouse team
+#+EMAIL: ops@example.com
+#+DATE: 2026-09-24
+#+LANGUAGE: en
+#+OPTIONS: toc:2 num:t H:3 ^:{} tex:t
+#+STARTUP: overview indent hidestars
+#+TODO: TODO(t) NEXT(n) WAITING(w@/!) | DONE(d!) CANCELLED(c@)
+#+SEQ_TODO: REPORT BUG | FIXED
+#+TAGS: report(r) infra(i) urgent(u)
+#+PROPERTY: header-args :results output :exports both
+#+SETUPFILE: ./theme.org
+#+INCLUDE: "./shared.org" :lines "1-10"
+#+LATEX_HEADER: \usepackage{amsmath}
+#+CAPTION: A captioned thing
+#+NAME: stock-table
+# A comment line (hash then a space)
+#+begin_comment
+A comment block that is never exported.
+#+end_comment
+
+* Overview
+The inventory service keeps stock levels for every warehouse.
+Text can be *bold*, /italic/, _underlined_, +strikethrough+, =verbatim=, ~code~,
+and mix *bold with /italic/ inside*. Subscripts: H_2O, x^2, x_{i+1}, a^{b+c}.
+A line break forces\\
+a new line. Special symbols: \alpha \beta \rightarrow \le \ge \pi \deg, and --- dashes -- too.
+Footnote reference[fn:1] and a named one[fn:note: inline definition].
+
+** Endpoints
+- =GET /orders= :: the orders, newest first
+- =POST /orders= :: place an order, returns ~201 Created~
+- =GET /healthz= :: liveness
+
+*** Lists
+- Unordered dash
+  - Nested item
+    - Deeper item
++ Plus bullet
+* Star bullet at column one is a heading, so this is indented text
+  * Indented star bullet
+1. First ordered
+2. Second ordered
+   1) Nested with paren
+   2) Another
+3. [@5] Counter reset
+- [ ] Unchecked task
+- [X] Checked task
+- [-] Partial task [1/2]
+  - [X] sub one
+  - [ ] sub two
+- Term :: Description list item
+- Tag with checkbox :: [ ] inside
+
+** Links and images
+[[https://example.com][An external link]] and [[https://example.com]] bare brackets.
+[[file:./notes.org][A file link]], [[file:./pallet.png]], [[./relative.org::*Heading][To a heading]].
+[[#custom-id][Custom id link]], [[*Overview][Heading link]], [[mailto:ops@example.com][Mail]].
+Plain https://example.com/plain link and <https://example.com/angle> angle link.
+Radio target <<<radio>>> and a target <<anchor>> with [[anchor][a reference]].
+Citation [cite:@smith2020] and a macro {{{title}}} and {{{date(%Y)}}}.
+
+* Tasks [1/4]                                                        :report:infra:
+:PROPERTIES:
+:CUSTOM_ID: tasks
+:ID:       0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0
+:Effort:   2:00
+:END:
+** DONE Write the reorder query
+   CLOSED: [2026-09-20 Sat 14:02]
+   :LOGBOOK:
+   - State "DONE"       from "TODO"       [2026-09-20 Sat 14:02]
+   CLOCK: [2026-09-20 Sat 12:00]--[2026-09-20 Sat 14:02] =>  2:02
+   :END:
+** TODO [#A] Add the daily rollup                                   :report:urgent:
+   SCHEDULED: <2026-09-26 Fri 09:00 +1d> DEADLINE: <2026-09-30 Wed -2d>
+** NEXT [#B] Paginate =/orders=
+   - [ ] cursor parameter
+   - [ ] tests
+** WAITING [#C] Vendor reply
+   <2026-10-01 Thu>--<2026-10-03 Sat>
+   [2026-09-24 Thu] inactive timestamp
+** CANCELLED Drop the legacy export                                      :infra:
+:LOGBOOK:
+:END:
+** COMMENT A commented-out heading
+** Heading with a [[https://example.com][link]] and ~code~
+
+* Configuration
+:PROPERTIES:
+:header-args: :tangle config.yml
+:END:
+| Key           | Default | Notes            |
+|---------------+---------+------------------|
+| REORDER_POINT |      25 | per SKU          |
+| LOG_LEVEL     | info    | debug/info/warn  |
+| Total         | =vsum($2) | formula         |
+#+TBLFM: @>$2=vsum(@2..@-1)
+
+#+NAME: orders
+#+CAPTION: Orders by status
+| status    | count |
+|-----------+-------|
+| paid      |    12 |
+| pending   |     3 |
+
+* Source blocks
+#+BEGIN_SRC bash
+curl -s https://api.example.com/orders | jq '.[0]'
+#+END_SRC
+
+#+begin_src python :results value :var n=5 :exports code
+def square(x):
+    return x * x
+return square(n)
+#+end_src
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+(defun inventory-low (items)
+  "Return items under the reorder point."
+  (seq-filter (lambda (i) (< (plist-get i :qty) 25)) items))
+#+END_SRC
+
+#+RESULTS:
+: 25
+
+#+RESULTS: orders
+| paid | 12 |
+
+src_python[:exports code]{1 + 1} inline source and call_square(5) inline call.
+
+* Blocks
+#+BEGIN_QUOTE
+A quote block. Stock is what you have; demand is what you need.
+#+END_QUOTE
+
+#+BEGIN_EXAMPLE
+An example block, verbatim: *no markup* here.
+#+END_EXAMPLE
+
+#+BEGIN_VERSE
+Verse keeps
+   its line breaks.
+#+END_VERSE
+
+#+BEGIN_CENTER
+Centered text.
+#+END_CENTER
+
+#+BEGIN_EXPORT html
+<div class="note">Raw HTML on export</div>
+#+END_EXPORT
+
+#+BEGIN_NOTES
+Speaker notes.
+#+END_NOTES
+
+#+BEGIN_dynamic: clocktable :maxlevel 2
+#+END:
+
+: A fixed-width line (colon then space).
+: Another one.
+
+-----
+
+#+BEGIN: columnview :hlines 1 :id global
+#+END:
+
+Math: $E = mc^2$, \(a^2 + b^2\), and
+\[ \int_0^1 x\,dx = \tfrac{1}{2} \]
+\begin{equation}
+\sum_{i=1}^{n} i = \frac{n(n+1)}{2}
+\end{equation}
+
+* More Org: timestamps, links, tables and keywords
+** Timestamps in every form
+<2026-09-24 Thu> <2026-09-24 Thu 10:00> <2026-09-24 Thu 10:00-11:30> <2026-09-24 Thu .+1w> <2026-09-24 Thu ++1m> <2026-09-24 Thu +1y -3d>
+[2026-09-24 Thu] [2026-09-24 Thu 10:00] [2026-09-24 Thu 10:00-11:30]
+<2026-09-24 Thu>--<2026-09-30 Wed> [2026-09-24 Thu]--[2026-09-30 Wed]
+<%%(diary-float t 4 2)> <%%(org-anniversary 1990 5 17)>
+SCHEDULED: <2026-09-24 Thu> DEADLINE: <2026-09-30 Wed> CLOSED: [2026-09-25 Fri 09:00]
+CLOCK: [2026-09-24 Thu 09:00]--[2026-09-24 Thu 10:30] =>  1:30
+** Other link types
+[[id:0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0][ID link]] [[elisp:(message "hi")][Elisp link]] [[shell:ls -l][Shell link]]
+[[info:org#Top][Info link]] [[man:ls][Man link]] [[attachment:notes.txt][Attachment]] [[file:~/doc.org::42][Line number]]
+[[file:data.csv::/regexp/][Search link]] [[docview:doc.pdf::5][Docview]] [[news:comp.emacs][News]] [[irc:/irc.example.com/#chan][IRC]]
+[[https://example.com/a%20b][Escaped]] [[file:a\[1\].org][Brackets escaped]] [[wikipedia:Org-mode]]
+[[./pallet.png][file:./thumb.png]] [[https://example.com][https://example.com/img.png]]
+cite:smith2020 citep:jones2021 [cite/t:@smith2020;@jones2021, p. 5]
+** Tables
+| a | b |
+|---+---|
+| 1 | 2 |
+
++---+---+
+| a | b |
++---+---+
+| 1 | 2 |
++---+---+
+
+| <l> | <c> | <r> | <10> |
+| left | center | right | width |
+| / | < | > |
+| ! | #   | $  | * |
+| _ | ^   |
+| # | commented row |
+#+TBLFM: $3=$1+$2;N::@2$1=5::$4='(identity $1)
+** Keywords and blocks
+#+ATTR_HTML: :width 300 :alt Pallet
+#+ATTR_LATEX: :width 5cm
+#+ATTR_ORG: :width 200
+#+html: <p>Inline HTML</p>
+#+latex: \newpage
+#+ascii: ASCII only
+#+texinfo: @page
+#+call: square(5)
+#+call: orders[:results table]()
+#+CONSTANTS: c=299792458
+#+LINK: gh https://github.com/
+#+ARCHIVE: %s_done::
+#+FILETAGS: :inventory:report:
+#+CATEGORY: warehouse
+#+COLUMNS: %25ITEM %TODO %3PRIORITY %TAGS
+#+EXPORT_FILE_NAME: out
+#+EXCLUDE_TAGS: noexport
+#+SELECT_TAGS: export
+#+BIND: org-export-use-babel nil
+#+MACRO: version 1.4.0
+#+MACRO: greet Hello $1
+#+PRIORITIES: A C B
+#+BEGIN_aside
+A special block.
+#+END_aside
+#+begin_details
+Details block.
+#+end_details
+#+BEGIN_SRC sh :dir /tmp :session s1 :results output replace :noweb yes :tangle script.sh :mkdirp yes :shebang "#!/bin/sh"
+echo <<greeting>>
+#+END_SRC
+#+NAME: greeting
+#+BEGIN_SRC sh
+echo hello
+#+END_SRC
+#+BEGIN_SRC sql -n 5 -r :engine sqlite :db stock.db
+SELECT sku, qty FROM stock WHERE qty < 25; -- ref:low
+#+END_SRC
+#+BEGIN_SRC js -i -t
+console.log("tabs"); // (ref:log)
+#+END_SRC
+#+BEGIN_EXPORT latex
+\begin{center}raw latex\end{center}
+#+END_EXPORT
+#+BEGIN_EXPORT ascii
+raw ascii
+#+END_EXPORT
+** Macros, radio targets and misc inline
+{{{version}}} {{{greet(world)}}} {{{keyword(TITLE)}}} {{{property(CUSTOM_ID)}}} {{{time(%Y-%m-%d)}}} {{{input-file}}} {{{modification-time(%Y)}}} {{{n}}} {{{results(1+1)}}}
+Statistics cookies [2/5] [40%] [/] [%] in headings and list items.
+- Item with cookie [1/3]
+  - [X] a
+  - [ ] b
+  - [ ] c
+Entities: \copy \reg \trade \ldots \nbsp \- \shy \pm \times \div \Rightarrow \infty \sum \int \hbar \AA
+Escaped entity \alpha{} and \alpha_beta, plain \alphabet.
+Line with trailing\\
+Export snippet @@html:<b>bold</b>@@ and @@latex:\textbf{bold}@@.
+Inline babel src_sh{echo hi} src_python[:results output]{print(1)} call_greeting() call_square[:var n=3](5)[:results raw].
+Text with a <<target>> and a radio <<<radio target>>>; a reference to radio target.
+Footnote forms: [fn:1] [fn:name] [fn::anonymous inline] [fn:label:inline definition].
+Emphasis edge cases: *bold* /italic/ _underline_ +strike+ =verbatim= ~code~ *bold/italic* a*b*c (not emphasis) 2*3*4.
+Citation [cite:@key] and subscript a_b a_{b} a^b a^{b}, superscript H^+.
+Verbatim with =equals=sign= and ~tilde~in~ code.
+Horizontal rules:
+-----
+--------
+Comment line below:
+# This is a comment
+#+ This is also a comment
+:PROPERTIES:
+:END:
+
+* Drawers and special headings                                                :ARCHIVE:
+:LOGBOOK:
+CLOCK: [2026-09-24 Thu 09:00]--[2026-09-24 Thu 10:00] =>  1:00
+- Note taken on [2026-09-24 Thu 09:30] \\
+  A logbook note.
+:END:
+:CUSTOM_DRAWER:
+Custom drawer content.
+:END:
+** TODO [#A] Priority and tags and COMMENT                                :tag1:tag2:@home:
+SCHEDULED: <2026-09-24 Thu>
+** DONE Closed with a note
+   CLOSED: [2026-09-24 Thu 12:00]
+** [#B] Priority only
+** Heading ending with statistics [1/2]
+** QUOTE Quote heading
+** Headings with numbers like 1. and 2)
+**** Level four
+***** Level five
+****** Level six
+******* Level seven
+
+* Footnotes
+[fn:1] The footnote definition, with =verbatim= text.
+
+* COMMENT Local variables
+# Local Variables:
+# eval: (org-content 2)
+# End:

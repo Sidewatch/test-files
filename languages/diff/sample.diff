@@ -1,0 +1,261 @@
+From 1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b Mon Sep 17 00:00:00 2001
+From: Acme Dev <dev@example.com>
+Date: Mon, 2 Mar 2026 08:30:00 +0000
+Subject: [PATCH 1/2] Rework stock reporting
+
+Add low-stock sorting and a lockfile bump. This email-style header is
+what `git format-patch` writes before the diff body.
+---
+ src/inventory.py | 14 +++++++++-----
+ 2 files changed, 9 insertions(+), 5 deletions(-)
+
+Index: legacy/Makefile
+===================================================================
+RCS file: /var/cvs/warehouse/legacy/Makefile,v
+retrieving revision 1.4
+diff -u -r1.4 Makefile
+--- legacy/Makefile	2026-01-10 10:00:00.000000000 +0000
++++ legacy/Makefile	2026-02-01 12:30:00.000000000 +0000
+@@ -1,3 +1,4 @@
+ all: build
++	@echo "building"
+ build:
+ 	cc -o warehouse main.c
+diff --git a/src/inventory.py b/src/inventory.py
+index 3f2a1c9..8b7d0e4 100644
+--- a/src/inventory.py
++++ b/src/inventory.py
+@@ -12,10 +12,13 @@ REORDER_POINT = 25
+ 
+ def low_stock(items):
+-    return [i for i in items if i.qty < REORDER_POINT]
++    """Items at or below the reorder point, cheapest first."""
++    low = [i for i in items if i.qty <= REORDER_POINT]
++    return sorted(low, key=lambda i: i.price)
+ 
+ 
+ def total_value(items):
+-    return sum(i.qty * i.price for i in items)
++    total = sum(i.qty * i.price for i in items)
++    return round(total, 2)
+@@ -40,4 +43,4 @@ if __name__ == "__main__":
+     for item in low_stock(load()):
+-        print(item.sku)
++        print(f"{item.sku}: {item.qty} left")
+\ No newline at end of file
+diff --git a/docs/notes.txt b/docs/notes.txt
+new file mode 100644
+index 0000000..e69de29
+--- /dev/null
++++ b/docs/notes.txt
+@@ -0,0 +1,2 @@
++Stock notes
++Reorder weekly
+diff --git a/old/report.csv b/old/report.csv
+deleted file mode 100644
+index 5d6e7f8..0000000
+--- a/old/report.csv
++++ /dev/null
+@@ -1,2 +0,0 @@
+-sku,qty
+-A-100,5
+diff --git a/tools/run.sh b/tools/run.sh
+old mode 100644
+new mode 100755
+diff --git a/scripts/pack.sh b/scripts/ship.sh
+similarity index 92%
+rename from scripts/pack.sh
+rename to scripts/ship.sh
+index 1111111..2222222 100755
+--- a/scripts/pack.sh
++++ b/scripts/ship.sh
+@@ -1 +1 @@
+-echo pack
++echo ship
+diff --git a/assets/logo.png b/assets/logo.png
+index 3333333..4444444 100644
+Binary files a/assets/logo.png and b/assets/logo.png differ
+diff --git a/src/copy.py b/src/copy2.py
+similarity index 100%
+copy from src/copy.py
+copy to src/copy2.py
+diff --git a/lib/blob.bin b/lib/blob.bin
+index 5555555..6666666 100644
+GIT binary patch
+literal 12
+Tc${NkU|?VnU|?VnU|?VnU|?Vn
+
+literal 0
+HcmV?d00001
+
+diff --cc src/merge.c
+index 111,222..333
+--- a/src/merge.c
++++ b/src/merge.c
+@@@ -1,4 -1,4 +1,5 @@@
+  int main(void) {
+- 	return 0;
+ +	return 1;
+++	return 2;
+  }
+-- 
+2.43.0
+
+--- original.txt	2026-01-01 00:00:00
++++ modified.txt	2026-01-02 00:00:00
+@@ -1,4 +1,4 @@ section heading
+ unchanged line
+-removed line
++added line
+ unchanged line
+ +looks like an addition inside context
+-- a line that starts with dashes is a deletion
+
+*** old.c	2026-01-01 00:00:00
+--- new.c	2026-01-02 00:00:00
+***************
+*** 1,4 ****
+  keep
+! changed old
+- removed
+  keep
+--- 1,4 ----
+  keep
+! changed new
++ added
+  keep
+
+3c3,4
+< old line
+---
+> new line one
+> new line two
+5d4
+< deleted line
+7a7
+> appended line
+
+Only in a/src: removed.c
+Only in b/src: added.c
+Common subdirectories: a/lib and b/lib
+diff -r a/src/util.c b/src/util.c
+diff -ruN a/docs/README b/docs/README
+--- a/docs/README	2026-01-01 08:00:00.000000000 +0000
++++ b/docs/README	2026-01-02 09:30:00.123456789 -0500
+@@ -1 +1,2 @@
+ Warehouse docs
++Second line
+@@ -10,3 +11,3 @@ function_context(int arg)
+ context before
+-	tab-indented removal
++	tab-indented addition
+ context after
+@@ -0,0 +1 @@
++single added line (count omitted for one line)
+@@ -5 +5 @@
+-one line replaced
++by another
+@@ -1,2 +1,2 @@ trailing text after the hunk header
+-é accents — and symbols ✓
++é accents — and symbols ✗
+
+diff --git a/new-mode.sh b/new-mode.sh
+new file mode 100755
+index 0000000..abc1234
+--- /dev/null
++++ b/new-mode.sh
+@@ -0,0 +1,2 @@
++#!/bin/sh
++echo ok
+diff --git a/gone.txt b/gone.txt
+deleted file mode 100644
+index abc1234..0000000
+--- a/gone.txt
++++ /dev/null
+@@ -1 +0,0 @@
+-gone
+diff --git a/old name.txt b/new name.txt
+similarity index 87%
+rename from old name.txt
+rename to new name.txt
+index 1234567..89abcde 100644
+--- a/old name.txt
++++ b/new name.txt
+@@ -1 +1 @@
+-before
++after
+diff --git a/rewritten.txt b/rewritten.txt
+dissimilarity index 95%
+index 1234567..89abcde 100644
+diff --git a/vendor/lib b/vendor/lib
+index 1111111..2222222 160000
+--- a/vendor/lib
++++ b/vendor/lib
+@@ -1 +1 @@
+-Subproject commit 1111111111111111111111111111111111111111
++Subproject commit 2222222222222222222222222222222222222222
+diff --git a/link b/link
+index 3333333..4444444 120000
+--- a/link
++++ b/link
+@@ -1 +1 @@
+-target-old
+\ No newline at end of file
++target-new
+\ No newline at end of file
+diff --git a/img.png b/img.png
+GIT binary patch
+delta 12
+Tc${NkU|?VnU|?VnU|?VnU|?Vn
+
+delta 0
+HcmV?d00001
+
+diff --git a/mode-only.sh b/mode-only.sh
+old mode 100755
+new mode 100644
+diff --combined merge.txt
+index 111,222..333
+--- a/merge.txt
++++ b/merge.txt
+@@@ -1,3 -1,3 +1,4 @@@
+  common
+- from first parent
+ +from second parent
+++resolved
+  common
+ -removed in second
+  tail
+
+Property changes on: trunk/lib.c
+___________________________________________________________________
+Added: svn:keywords
+## -0,0 +1 ##
++Id
+
+ src/inventory.py | 14 +++++++++-----
+ docs/README      |  2 ++
+ gone.txt         |  1 -
+ 3 files changed, 11 insertions(+), 6 deletions(-)
+ create mode 100755 new-mode.sh
+ delete mode 100644 gone.txt
+ rename old name.txt => new name.txt (87%)
+
+*** a/ctx.c	2026-01-01 00:00:00.000000000 +0000
+--- b/ctx.c	2026-01-02 00:00:00.000000000 +0000
+***************
+*** 1,5 ****
+  int main(void) {
+! 	old();
+- 	removed();
+  	return 0;
+  }
+--- 1,5 ----
+  int main(void) {
+! 	new();
++ 	added();
+  	return 0;
+  }
+*** 10,12 ****
+--- 10,13 ----
++ appended in a second hunk

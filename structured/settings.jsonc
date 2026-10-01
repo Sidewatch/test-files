@@ -1,0 +1,13 @@
+// Workspace settings, JSONC.
+{
+  "editor.tabSize": 2,
+  "editor.rulers": [80, 120],
+  /* Formatting */
+  "editor.formatOnSave": true,
+  "files.exclude": {
+    "**/.build": true,
+    "**/node_modules": true,
+  },
+  "search.useIgnoreFiles": true, // honour .gitignore
+  "window.zoomLevel": -0.5,
+}

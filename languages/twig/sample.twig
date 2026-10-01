@@ -1,0 +1,188 @@
+{# ── Comments ───────────────────────────────────────────────
+   Twig: the warehouse stock page. `items`, `user` and `warehouse`
+   come from the controller. TODO: paginate the table.
+   {# Twig comments do not nest, but this text is still inside one #}
+{% extends "layout.html.twig" %}
+{% use "blocks/badges.html.twig" with badge as base_badge %}
+{% import "macros/forms.html.twig" as forms %}
+{% import _self as fmt %}
+{% from "macros/money.html.twig" import money as cash, percent %}
+
+{# ── Variables and literals ───────────────────────────────── #}
+{% set title = warehouse.name ~ " — Stock" %}
+{% set reorder_point = 25 %}
+{% set ratio = 0.75 %}
+{% set big = 1_000_000 %}
+{% set hex = 0xFF %}
+{% set octal = 0o17 %}
+{% set binary = 0b1010 %}
+{% set sci = 1.5e3 %}
+{% set nothing = null %}
+{% set yes = true %}
+{% set no = false %}
+{% set none_value = none %}
+{% set single = 'it\'s single quoted' %}
+{% set double = "double with \"escapes\" and \n newline" %}
+{% set interpolated = "Hello #{user.name|upper}, you have #{items|length} items" %}
+{% set list = [1, 2, 3, 'four', [5, 6]] %}
+{% set map = { sku: 'WGT-100', 'qty': 12, (dynamic_key): true, "nested": { a: 1 } } %}
+{% set spread = [...list, 7, 8] %}
+{% set merged = { ...map, extra: 1 } %}
+{% set range_a = 1..5 %}
+{% set range_b = range(0, 100, 10) %}
+{% set captured %}
+  <strong>{{ title|e }}</strong>
+{% endset %}
+{% set a, b = 'first', 'second' %}
+
+{# ── Macros ───────────────────────────────────────────────── #}
+{% macro money(n, currency = "GBP", places = 2) %}
+  {{- n|format_currency(currency, {fraction_digit: places}) -}}
+{% endmacro %}
+
+{% macro input(name, value = '', type = 'text', size = 20) %}
+  <input type="{{ type }}" name="{{ name }}" value="{{ value|e }}" size="{{ size }}">
+{% endmacro %}
+
+{# ── Blocks ───────────────────────────────────────────────── #}
+{% block stylesheets %}
+  {{ parent() }}
+  <style>.low { color: #c33; }</style>
+{% endblock stylesheets %}
+
+{% block content %}
+  <h1>Stock for {{ warehouse.name|title }}</h1>
+  <p>{{ block('summary') }}</p>
+
+  {# ── Conditionals and tests ─────────────────────────────── #}
+  {% if items is empty %}
+    <p class="muted">No items yet.</p>
+  {% elseif items|length < 3 and not user.isAdmin %}
+    <p>Only a few items.</p>
+  {% else %}
+    <table class="stock">
+      {# ── Loops ────────────────────────────────────────────── #}
+      {% for item in items|sort((a, b) => b.qty <=> a.qty)|slice(0, 20) %}
+        {% set low = item.qty <= reorder_point %}
+        <tr class="{{ low ? 'low' : 'ok' }} {{ loop.index is odd ? 'odd' : 'even' }}">
+          <td>{{ loop.index }}/{{ loop.length }}</td>
+          <td>{{ item.sku }}</td>
+          <td>{{ item.name ?? 'unnamed' }}</td>
+          <td>{{ item.qty }}</td>
+          <td>{{ fmt.money(item.price) }} / {{ cash(item.price, 'USD') }}</td>
+          <td>{{ item.tags|join(', ')|default('—') }}</td>
+          {% if loop.first %}<td><span class="badge">top</span></td>{% endif %}
+          {% if loop.last %}<td>end</td>{% endif %}
+        </tr>
+      {% else %}
+        <tr><td colspan="6">Nothing to show</td></tr>
+      {% endfor %}
+    </table>
+  {% endif %}
+
+  {% for key, value in map if value is not null %}
+    {{ key }} = {{ value }}{{ not loop.last ? ',' }}
+  {% endfor %}
+
+  {# ── Operators ──────────────────────────────────────────── #}
+  {{ 1 + 2 - 3 * 4 / 5 % 6 ** 2 // 3 }}
+  {{ 'a' ~ 'b' }}
+  {{ a == b or a != b and a < b or a > b or a <= b or a >= b }}
+  {{ a === b or a !== b }}
+  {{ a <=> b }}
+  {{ x ?: 'elvis' }} {{ x ?? 'coalesce' }} {{ x ? 'yes' : 'no' }}
+  {{ 'x' in list }} {{ 'x' not in list }}
+  {{ 'WGT' starts with 'W' }} {{ 'WGT' ends with 'T' }}
+  {{ 'WGT-100' matches '/^[A-Z]{3}-\\d+$/' }}
+  {{ 5 b-and 3 }} {{ 5 b-or 3 }} {{ 5 b-xor 3 }}
+  {{ item is defined }} {{ item is not null }} {{ n is divisible by(3) }}
+  {{ n is same as(1) }} {{ list is iterable }} {{ n is even }}
+  {{ item.price|round(2, 'floor') }}
+  {{ item?.supplier?.name }}
+  {{ list[0] }} {{ map['sku'] }} {{ list[1:3] }} {{ map.sku }}
+
+  {# ── Filters, functions, whitespace control ─────────────── #}
+  {{ user.name|lower|capitalize|trim }}
+  {{ "now"|date("Y-m-d H:i", "Europe/London") }}
+  {{ items|map(i => i.qty)|reduce((carry, v) => carry + v, 0) }}
+  {{ items|filter(i => i.qty > 0)|length }} of {{ items|length }}
+  {{ max(1, 2, 3) }} {{ min([4, 5]) }} {{ random(100) }} {{ cycle(['odd', 'even'], loop.index0) }}
+  {{ dump(items) }} {{ attribute(item, 'sku') }} {{ constant('PHP_INT_MAX') }}
+  {{ path('product_show', { id: item.id }) }} {{ asset('img/logo.png') }}
+  {{- ' trimmed on both sides ' -}}
+  {%- if true -%} tight {%- endif -%}
+  {{~ 'tilde trimming' ~}}
+
+  {# ── Tags: apply, autoescape, embed, include, with, verbatim ── #}
+  {% apply upper|trim %}shouting {{ user.name }}{% endapply %}
+  {% autoescape 'html' %}{{ unsafe }}{% endautoescape %}
+  {% autoescape false %}{{ trusted }}{% endautoescape %}
+  {% verbatim %}{{ not parsed }} {% nor this %}{% endverbatim %}
+  {% with { greeting: 'hi' } only %}{{ greeting }}{% endwith %}
+  {% include "partials/pagination.html.twig" with { page: page } only %}
+  {% include ['custom.twig', 'default.twig'] ignore missing %}
+  {{ include("partials/footer.html.twig", { year: 2026 }, with_context = false) }}
+  {% embed "card.html.twig" with { title: 'Low stock' } %}
+    {% block body %}Reorder {{ low_count }} items.{% endblock %}
+  {% endembed %}
+  {% sandbox %}{% include 'user.html.twig' %}{% endsandbox %}
+  {% flush %}
+  {% cache "stock-#{warehouse.id}" ttl(3600) %}{{ items|length }}{% endcache %}
+  {% deprecated 'The "old" template is deprecated, use "new".' %}
+  {% types { items: 'array', user: 'App\\User' } %}
+
+
+  {# ── More tags: do, line, guard, import-style, framework tags ── #}
+  {% do items|length %}
+  {% do cache.set('stock', items) %}
+  {% line 42 %}
+  {% guard function 'cache_clear' %}{{ cache_clear() }}{% else %}no cache{% endguard %}
+  {% guard filter 'markdown_to_html' %}{{ body|markdown_to_html }}{% endguard %}
+  {% guard test 'sortable' %}ok{% endguard %}
+  {% extends layout_name %}
+  {% extends [custom_layout, 'layout.html.twig'] %}
+  {% extends ajax ? 'ajax.twig' : 'full.twig' %}
+  {% block sidebar %}{{ parent() }}{{ block('footer_links', 'partials/footer.twig') }}{% endblock %}
+  {% trans with {'%count%': items|length} from 'stock' into 'de' %}%count% items{% endtrans %}
+  {% trans_default_domain 'stock' %}
+  {% form_theme form 'form/theme.html.twig' %}
+  {% stopwatch 'render' %}{{ include('heavy.twig') }}{% endstopwatch %}
+  {% component Alert with { type: 'warning' } %}{% block content %}Low stock{% endblock %}{% endcomponent %}
+  {% set total = 0 %}{% for i in items %}{% set total = total + i.qty %}{% endfor %}
+  {% if _self is same as(_context._self) %}{{ _self }} in {{ _charset }}{% endif %}
+  {{ _context|keys|join(',') }} {{ app.request.locale }} {{ app.user.username ?? 'guest' }}
+
+  {# ── Loop variables and the else branch ─────────────────── #}
+  {% for item in items %}
+    {{ loop.index0 }} {{ loop.revindex }} {{ loop.revindex0 }} {{ loop.parent.loop.index }}
+  {% endfor %}
+
+  {# ── Remaining tests, filters, functions, operators ─────── #}
+  {{ x is constant('Item::MAX') }} {{ x is empty }} {{ x is null }} {{ n is odd }} {{ x is mapping }} {{ x is sequence }}
+  {{ x is not same as(y) }} {{ 'a' is defined and 'b' is not defined }} {{ n is divisible by(2) }}
+  {{ 'a'|abs }} {{ list|batch(3, 'No item') }} {{ s|capitalize }} {{ s|column('sku') }} {{ a|convert_encoding('UTF-8', 'ISO-8859-1') }}
+  {{ n|currency }} {{ d|date_modify('+1 day')|date('d/m/Y') }} {{ x|default('none') }} {{ s|escape('url') }} {{ s|e('html_attr') }}
+  {{ s|first }} {{ s|last }} {{ n|format_number }} {{ s|format('%s', 1) }} {{ m|keys }} {{ s|length }} {{ s|nl2br }} {{ n|number_format(2, '.', ',') }}
+  {{ s|replace({'a': 'b'}) }} {{ list|reverse }} {{ s|slug }} {{ list|shuffle }} {{ s|spaceless }} {{ s|split(',') }} {{ s|striptags }}
+  {{ s|title }} {{ s|trim('-') }} {{ s|u.truncate(8, '...') }} {{ s|upper }} {{ s|url_encode }} {{ list|merge([1]) }} {{ m|data_uri }}
+  {{ s|inline_css }} {{ s|markdown_to_html }} {{ s|html_to_markdown }} {{ s|sort }} {{ n|round(1, 'ceil') }} {{ s|json_encode(constant('JSON_PRETTY_PRINT')) }}
+  {{ date() }} {{ date('2026-03-01') }} {{ enum('App\\Status') }} {{ enum_cases('App\\Status') }} {{ html_classes('a', {b: true}) }} {{ html_cva(base: 'btn') }}
+  {{ template_from_string('{{ x }}') }} {{ source('partials/a.twig') }} {{ country_names() }} {{ language_names('de') }} {{ currency_names() }} {{ timezone_names() }}
+  {{ 1 <=> 2 }} {{ 5 // 2 }} {{ 2 ** 3 }} {{ 'a' ~ 'b' }} {{ x ?? y ?? 'z' }} {{ not x }} {{ -x }} {{ +x }} {{ (x) }}
+  {{ true and false or null }} {{ 'abc' starts with 'a' }} {{ 'a' in 'abc' }} {{ 1 .. 3 }} {{ x[0] }} {{ x.0 }} {{ x.(name) }}
+  {{ "string with #{x} and #{ y ~ 'z' } and \\#{escaped}" }}
+  {{ 'single with \\' escape' }} {{ "tab\\tnewline\\nunicode\\u00e9" }}
+  {{ [1, 2, 3]|map(x => x * 2) }} {{ {a: 1, 'b': 2, (c): 3}|keys }} {{ ({a: 1}).a }}
+  {{ item.method(arg1, key: value) }} {{ macros.input(name: 'sku', value: item.sku) }}
+  {{ 0.5 }} {{ 1e3 }} {{ .5 }} {{ 1_0 }} {{ 0b11 }} {{ 0o7 }} {{ 0xA }}
+  {# Line {% inside %} comment is ignored #}
+  {{ attribute(_context, 'name') }}
+
+  {# ── Embedded HTML, script and style ────────────────────── #}
+  <script>
+    const stock = {{ items|json_encode|raw }};
+    console.log("items:", stock.length);
+  </script>
+  <a href="{{ url('home') }}" data-count="{{ items|length }}" onclick="go('{{ item.sku|e('js') }}')">Home</a>
+  {{ footerHtml|raw }}
+{% endblock content %}

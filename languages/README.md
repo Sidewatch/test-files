@@ -1,17 +1,25 @@
-# One sample per language
+# One complete showcase per language
 
-Every language the app's detector knows (`swift-code-language`, 221 languages) has a file here, named so that the
-detector picks it from the NAME alone — `sample.<ext>` where the language owns an extension, the exact filename
-where it is known by name (`Dockerfile`, `Makefile`, `go.mod`, `justfile`, `.zshrc`, `Localizable.strings`…).
-Each shows the syntax a highlighter has to cope with: comments, strings, numbers, keywords, a definition, a call.
+Every language the app's detector knows (`swift-code-kit`'s CodeLanguage, 221 languages) has a folder here holding
+ONE file that exercises everything its syntax has: every comment form (line, block, nested, doc, pragmas), every
+string form (escapes, raw, multi-line, heredocs, interpolation), every number form, every keyword group, every
+declaration kind, operator family, directive, annotation and embedded language. Open a folder in Sidewatch, or step
+through them in Finder with Space for Quick Look, and every highlighting role should show somewhere in each file.
 
-- 216 of the 221 detect from the name; the four that collide with another language's extension are under
-  `picker-only/` (Coq, MATLAB, MySQL, T-SQL — see its README), and `sample.txt` is plain text on purpose.
-- Some root-level fixtures cover a language too (`sample.php`, `sample.swift`…) and are what the harnesses read;
-  the copies here exist so this one folder can be stepped through end to end (Space in Finder for Quick Look,
-  or open the folder in Sidewatch).
-- Quick Look note: `.dot` is a Word template type to macOS, so the Graphviz sample is `sample.gv`; `.ts` and
-  `.mts` are MPEG-2 types, which the extension claims and sniffs.
+- The file is named so the detector picks the language from the NAME alone: `sample.<ext>` where the language owns an
+  extension, the exact filename where it is known by name (`makefile/Makefile`, `go/…`, `gomod/go.mod`,
+  `zsh/.zshrc`, `strings/Localizable.strings`).
+- `picker-only/` holds Coq, MATLAB, MySQL and T-SQL, whose extensions belong to another language (see its README).
+- `plaintext/sample.txt` is plain text on purpose; there is no SQLite folder (a database is binary, see `kinds/`).
+- A showcase aims at the HIGHLIGHTER, not at a compiler: where one language's constructs cannot all live in one
+  valid program (several shader stages, several SPARQL query forms, Svelte 4 and 5 syntax), the file holds them all.
+  Where a toolchain was installed the file was syntax-checked with it (`swiftc -parse`, `python3 -m py_compile`,
+  `node --check`, `php -l`, `perl -c`, `clang -fsyntax-only`, `xmllint`, `plutil -lint`, `jq`, `flex`, `cmake`,
+  `msgfmt -c`, `dot`, `xcrun metal`…).
+- Hidden-name samples are live to git inside their own folder only: `gitignore/.gitignore` ignores nothing in it, and
+  `gitattributes/.gitattributes` applies nothing to itself.
 
-Regenerate the coverage check with the detector itself: the scratch `detect` executable in the session notes, or
-`Sidewatch --dump-highlight <file>` from the bundle prints the detected language on its first line.
+`Sidewatch --selftest-highlight-roles ../TestFiles` (a gate entry) renders every showcase through the editor's three
+highlighting tiers with One Dark worn in memory: each must paint at least three colours, and the log ranks every
+language by how much of its text is painted, thinnest first. `Sidewatch --dump-captures <file>` prints the winning
+role per token for one file.

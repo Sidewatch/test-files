@@ -1,0 +1,13 @@
+{
+  "root": true,
+  // Shared rules first, then the project's own.
+  "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
+  "parser": "@typescript-eslint/parser",
+  "env": { "node": true, "es2022": true },
+  "rules": {
+    "no-console": "warn",
+    "eqeqeq": ["error", "always"],
+    "max-len": ["error", { "code": 120 }], /* wide screens */
+  },
+  "ignorePatterns": ["dist/"],
+}

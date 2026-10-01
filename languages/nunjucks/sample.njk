@@ -1,0 +1,146 @@
+{# Nunjucks showcase: an orders page rendered by Eleventy or Express. #}
+{#
+  A multi-line comment
+  spanning lines.
+#}
+{% extends "layouts/base.njk" %}
+{% import "macros/forms.njk" as forms %}
+{% from "macros/ui.njk" import button, badge as tag with context %}
+
+{% set title = user.name + " — Orders" %}
+{% set total = 0 %}
+{% set a, b = 1, 2 %}
+{% set captured %}
+  Block-captured text with {{ title }}.
+{% endset %}
+
+{% macro money(n, currency="GBP", precision=2) %}{{ n | currency(currency) }}{% endmacro %}
+
+{% macro row(order, highlight=false) %}
+  <tr class="{{ 'paid' if order.paid else 'open' }}{{ ' hot' if highlight }}">
+    <td>#{{ order.number }}</td>
+    <td>{{ money(order.total, currency="EUR") }}</td>
+    <td>{{ caller() if caller else "" }}</td>
+  </tr>
+{% endmacro %}
+
+{% call row(order) %}Nested call body{% endcall %}
+
+{% block content %}
+  <h1>Orders for {{ user.name | title }}</h1>
+
+  {# ── Literals and expressions ── #}
+  {{ "double \"quoted\"" }} {{ 'single \'quoted\'' }} {{ 42 }} {{ -3.14 }} {{ 1e3 }}
+  {{ true }} {{ false }} {{ none }} {{ null }}
+  {{ [1, 2, 3] }} {{ {"key": "value", other: 2} }} {{ (1, 2) }}
+  {{ 1 + 2 * 3 - 4 / 2 // 1 % 5 ** 2 }}
+  {{ a == b }} {{ a != b }} {{ a === b }} {{ a !== b }} {{ a < b }} {{ a <= b }} {{ a > b }} {{ a >= b }}
+  {{ a and b }} {{ a or b }} {{ not a }} {{ a in [1, 2] }} {{ a not in [3] }} {{ a is odd }} {{ a is not even }}
+  {{ "a" ~ "b" }} {{ items[0] }} {{ items[1:3] }} {{ user.address.city }} {{ user["name"] }}
+  {{ fn(1, key=2, *rest) }} {{ 'yes' if flag else 'no' }} {{ x if y }} {{ value or "fallback" }}
+
+  {# ── Filters ── #}
+  {{ name | upper | trim | truncate(20, true, "…") }}
+  {{ items | join(", ") | safe }} {{ html | escape }} {{ html | e }} {{ text | striptags }}
+  {{ list | first }} {{ list | last }} {{ list | length }} {{ list | reverse | list }}
+  {{ n | round(2, "floor") }} {{ n | abs }} {{ s | replace("a", "b", 1) }} {{ s | default("none", true) }}
+  {{ obj | dump(2) }} {{ s | urlencode }} {{ s | wordcount }} {{ s | capitalize }} {{ s | lower }}
+  {{ list | sort(false, true, "name") | batch(3) | slice(2) | groupby("kind") }}
+  {{ d | dictsort }} {{ n | float }} {{ n | int }} {{ s | nl2br }} {{ s | center(20) }} {{ s | indent(2, true) }}
+
+  {# ── Conditionals ── #}
+  {% if orders | length == 0 %}
+    <p class="muted">No orders yet.</p>
+  {% elif orders | length < 5 %}
+    <p>A few orders.</p>
+  {% elseif orders | length < 50 %}
+    <p>Plenty.</p>
+  {% else %}
+    <table>
+      {# ── Loops ── #}
+      {% for order in orders | sort(true, false, "placedAt") %}
+        {{ row(order, loop.first) }}
+        {% if loop.first %}<td><span class="badge">latest</span></td>{% endif %}
+        {% if loop.last %}last{% endif %}
+        <td>{{ loop.index }} {{ loop.index0 }} {{ loop.revindex }} {{ loop.revindex0 }} {{ loop.length }}</td>
+        {% set total = total + order.total %}
+      {% else %}
+        <tr><td>Empty loop</td></tr>
+      {% endfor %}
+      {% for key, value in config %}{{ key }}={{ value }}{% endfor %}
+      {% for x, y, z in triples %}{{ x }}{{ y }}{{ z }}{% endfor %}
+      {% asyncEach item in items %}{{ item }}{% endeach %}
+      {% asyncAll item in items %}{{ item }}{% endall %}
+    </table>
+  {% endif %}
+
+  {# ── Includes and raw ── #}
+  {% include "partials/pagination.njk" %}
+  {% include "partials/optional.njk" ignore missing %}
+  {% include "partials/ctx.njk" ignore missing with context %}
+  {% raw %}{{ this is not rendered }} {% not a tag %}{% endraw %}
+  {% verbatim %}{{ also literal }}{% endverbatim %}
+
+  {# ── Filter block and whitespace control ── #}
+  {% filter upper %}shout this{% endfilter %}
+  {%- if flag -%}
+    trimmed on both sides
+  {%- endif -%}
+  {{- title -}}
+  {% switch status %}
+    {% case "paid" %}Paid
+    {% case "open" %}Open
+    {% default %}Unknown
+  {% endswitch %}
+
+  <script>
+    window.__DATA__ = {{ orders | dump | safe }};
+  </script>
+  <style>.paid { color: green; }</style>
+  {{ footerHtml | safe }}
+{% endblock %}
+
+{% block footer %}
+  {{ super() }}
+  <p>Total: {{ money(total) }}</p>
+  {% if forms.valid %}{{ forms.input("email", type="email") }}{% endif %}
+{% endblock footer %}
+
+{# ── More Nunjucks forms ── #}
+{% set pattern = r/^inv-\d+$/gi %}
+{% if pattern.test(sku) %}{{ sku }} matches{% endif %}
+{{ "a" if x is defined else "b" }} {{ x is undefined }} {{ x is none }} {{ x is string }} {{ x is number }}
+{{ x is callable }} {{ x is divisibleby(3) }} {{ x is equalto(5) }} {{ x is eq(5) }} {{ x is ne(5) }} {{ x is lt(5) }}
+{{ x is gt(5) }} {{ x is le(5) }} {{ x is ge(5) }} {{ x is falsy }} {{ x is truthy }} {{ x is iterable }} {{ x is mapping }}
+{{ x is escaped }} {{ x is lower }} {{ x is upper }} {{ x is sameas(y) }} {{ x is null }}
+{% set greeting = "hi" if user else "bye" %}
+{% set list = [1, 2, 3] %}{% set dict = { a: 1, "b": 2, 3: [4] } %}
+{{ list[-1] }} {{ dict.a }} {{ dict["b"] }} {{ list | length }} {{ list.length }}
+{{ 7 // 2 }} {{ 7 % 2 }} {{ 2 ** 10 }} {{ -x }} {{ +x }} {{ x ~ y }} {{ (a, b) }}
+{{ a and (b or not c) }} {{ a == 1 and b != 2 or c === 3 and d !== 4 }}
+{% macro field(name, value="", attrs={}) %}<input name="{{ name }}" value="{{ value }}"{% for k, v in attrs %} {{ k }}="{{ v }}"{% endfor %}>{% endmacro %}
+{{ field("sku", attrs={ class: "wide", required: true }) }}
+{% call(item) list_items(orders) %}<li>{{ item.number }}</li>{% endcall %}
+{% for i in range(0, 10, 2) %}{{ i }}{% endfor %}
+{% for i in range(5) %}{{ i }}{% else %}none{% endfor %}
+{% for item in cycler("odd", "even") %}{% endfor %}
+{% set c = cycler("a", "b") %}{{ c.next() }}{{ c.current }}{% set _ = c.reset() %}
+{% set j = joiner(", ") %}{% for x in list %}{{ j() }}{{ x }}{% endfor %}
+{{ lipsum(2) }} {{ range(3) | list }} {{ now }} {{ caller }}
+{% ifAsync cond %}async branch{% endif %}
+{% extends parentTemplate %}
+{% extends "a.njk" if flag else "b.njk" %}
+{% block sidebar scoped %}{{ super() }} extra{% endblock %}
+{%- set trimmed = "x" -%}
+{{- 'trim both' -}}
+{% include "partial.njk" ignore missing with context %}
+{% import "macros.njk" as m with context %}{{ m.field("x") }}
+{% from "macros.njk" import field as f, other %}
+{{ "Hello %s" | format(name) }} {{ text | wordwrap(20) }} {{ items | map(attribute="name") | join(",") }}
+{{ items | selectattr("active") | rejectattr("hidden") | list }} {{ items | sum(attribute="qty") }} {{ items | unique | min }}
+{{ value | tojson | safe }} {{ str | trim | title | upper | lower | capitalize | reverse }} {{ n | random }}
+{{ obj | items }} {{ obj | keys }} {{ obj | values }} {{ s | split(",") }} {{ s | startswith("a") }} {{ s | endswith("z") }}
+{{ s | forceescape }} {{ s | escape | e }} {{ s | striptags(true) }} {{ s | truncate(10, false, "...") }} {{ s | urlize(40, true) }}
+{{ "{{ not evaluated }}" }} {{ '{% not a tag %}' }} \{{ escaped braces }}
+<script type="text/template">{% raw %}<% erb style %> {{ mustache }}{% endraw %}</script>
+<a href="{{ url('home', { id: 5 }) }}" {{ 'class="x"' | safe }}>link</a>

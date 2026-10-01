@@ -1,0 +1,177 @@
+# ── Comments ──
+# Git attributes: line endings, diff drivers, merge strategies, linguist hints.
+# Each line is a pattern followed by one or more attributes.
+  # An indented comment is still a comment.
+
+# ── Default: attribute states set, unset, value, unspecified ──
+*                       text=auto eol=lf
+*                       -export-ignore
+
+# ── text attribute forms ──
+*.txt                   text
+*.md                    text diff=markdown
+*.log                   -text
+*.dat                   !text
+*.sh                    text eol=lf
+*.bat                   text eol=crlf
+*.cmd                   text eol=crlf
+*.ps1                   text working-tree-encoding=UTF-16LE-BOM eol=crlf
+*.sln                   text eol=crlf
+*.vcproj                text working-tree-encoding=UTF-8
+
+# ── binary macro and explicit equivalents ──
+*.png                   binary
+*.jpg                   binary
+*.gif                   binary
+*.woff2                 binary
+*.pdf                   -text -diff -merge
+*.zip                   -diff -merge -text
+*.ico                   binary
+
+# ── diff drivers ──
+*.sqlite                binary diff=sqlite
+*.plist                 diff=plist
+*.docx                  diff=word
+*.c                     diff=cpp
+*.h                     diff=cpp
+*.py                    diff=python
+*.rb                    diff=ruby
+*.rs                    diff=rust
+*.go                    diff=golang
+*.swift                 diff=swift
+*.json                  diff=json
+*.html                  diff=html
+*.css                   diff=css
+*.cs                    diff=csharp
+*.tex                   diff=tex
+*.bib                   diff=bibtex
+*.php                   diff=php
+
+# ── merge strategies ──
+CHANGELOG.md            merge=union
+.gitmodules             merge=union
+*.lock                  merge=ours
+yarn.lock               -diff merge=binary
+package-lock.json       -diff -merge linguist-generated=true
+db/schema.rb            merge=ours
+translations/*.po       merge=union
+
+# ── Filters (LFS, smudge/clean) ──
+*.mp4                   filter=lfs diff=lfs merge=lfs -text
+*.mov                   filter=lfs diff=lfs merge=lfs -text
+*.psd                   filter=lfs diff=lfs merge=lfs -text
+*.zip.big               filter=lfs diff=lfs merge=lfs -text
+secrets/*.enc           filter=crypt diff=crypt merge=crypt
+*.ipynb                 filter=nbstrip
+
+# ── export attributes (git archive) ──
+.gitattributes          export-ignore
+.gitignore              export-ignore
+/tests                  export-ignore
+/docs/internal/**       export-ignore
+/.github                export-ignore
+VERSION                 export-subst
+version.txt             export-subst
+README.md               export-subst
+
+# ── whitespace and ident ──
+*.c                     whitespace=trailing-space,space-before-tab,indent-with-non-tab,tabwidth=8
+*.py                    whitespace=tab-in-indent,cr-at-eol
+Makefile                whitespace=-indent-with-non-tab
+*.tpl                   ident
+*.keep                  -whitespace
+
+# ── Linguist (GitHub language statistics) ──
+package-lock.json       linguist-generated=true -diff
+*.min.js                linguist-generated=true
+*.min.css               linguist-generated
+dist/**                 linguist-generated
+docs/**                 linguist-documentation
+examples/**             linguist-documentation=true
+vendor/**               linguist-vendored
+third_party/**          linguist-vendored=true
+*.h                     linguist-language=C
+*.inc                   linguist-language=PHP
+*.tmpl                  linguist-detectable
+*.txt                   -linguist-detectable
+.github/**              linguist-detectable=false
+
+# ── Pattern forms: anchored, directory, wildcard, character class, escaped ──
+/build/**               -diff
+src/**/generated/*.go   linguist-generated
+**/node_modules/**      -diff
+*.[oa]                  binary
+file[0-9].dat           -text
+\#special               text
+"quoted name.txt"       text
+foo\ bar.txt            text
+docs/*/api              linguist-documentation
+?-test.txt              text
+
+# ── Encoding and conflict markers ──
+*.conf                  conflict-marker-size=32
+*.xml                   encoding=utf-8
+*.rc                    working-tree-encoding=UTF-16 eol=crlf
+
+# ── Delta, bigfile, large files ──
+*.bin                   delta
+*.tar.gz                -delta
+
+# ── Macro definitions ──
+[attr]vendored          -diff -merge linguist-vendored
+[attr]generated         -diff linguist-generated=true
+[attr]sourcecode        text diff=cpp whitespace=trailing-space
+/lib/external/**        vendored
+/gen/**                 generated
+*.cc                    sourcecode
+
+# ── Legacy crlf attribute and remaining merge/diff drivers ──
+*.legacy                crlf
+*.legacy-input          crlf=input
+*.nocrlf                -crlf
+*.astext                diff=astextplain
+*.pbxproj               merge=union -diff
+*.strings               text working-tree-encoding=UTF-16 diff=strings
+*.merge-text            merge=text
+*.merge-binary          merge=binary
+*.merge-unset           -merge
+*.merge-unspec          !merge
+*.diff-unset            -diff
+*.diff-unspec           !diff
+*.filter-unset          -filter
+*.eol-unspec            !eol
+*.ident-unset           -ident
+
+# ── Git LFS lockable files and extra LFS patterns ──
+*.fbx                   filter=lfs diff=lfs merge=lfs -text lockable
+*.blend                 filter=lfs diff=lfs merge=lfs -text lockable
+*.wav                   filter=lfs diff=lfs merge=lfs -text
+*.tiff                  filter=lfs diff=lfs merge=lfs -text
+
+# ── More linguist and tooling hints ──
+*.lock                  linguist-generated=true
+*.snap                  linguist-generated
+*.pb.go                 linguist-generated=true -diff
+*.designer.cs           linguist-generated
+*.ipynb                 linguist-language=Jupyter\ Notebook
+*.mdx                   linguist-language=Markdown
+Dockerfile.*            linguist-language=Dockerfile
+*.vue                   linguist-detectable=true
+*.svg                   linguist-detectable=false linguist-generated=false
+test/fixtures/**        linguist-vendored=false
+bin/*                   -linguist-vendored
+
+# ── Comments with attributes-like text and escaped characters ──
+\#hash-prefixed         text
+\!bang-prefixed         text
+# pattern text=auto in a comment is ignored
+"tab\there.txt"         text
+"unicode-café.txt"      text
+日本語.txt               text
+
+# ── Directory and trailing patterns ──
+node_modules/           -diff
+*/cache/                -diff
+**/.git                 export-ignore
+docs/**/*.md            text eol=lf
+**/*.generated.*        linguist-generated

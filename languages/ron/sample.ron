@@ -1,0 +1,144 @@
+// ── Comments ──
+// RON (Rusty Object Notation) showcase: a warehouse service configuration.
+// TODO: split per environment. FIXME: ports are not validated.
+
+/* A block comment
+   /* with a nested block comment */
+   spanning lines. */
+
+/// Doc comments are ordinary comments in RON.
+
+// ── Extensions ──
+#![enable(implicit_some)]
+#![enable(unwrap_newtypes)]
+#![enable(unwrap_variant_newtypes)]
+
+// ── The root value ──
+Config(
+    // Strings
+    name: "inventory-api",
+    version: "1.4.0",
+    description: "Escapes: \"quote\" \\ backslash \n newline \t tab \r return \u{1F4E6} \x41 \u00e9",
+    multiline: "line one
+line two",
+    continuation: "joined \
+                   across lines",
+    raw: r"C:\raw\path with no escapes",
+    raw_hashes: r#"raw with "quotes" inside"#,
+    raw_more: r##"raw with "# inside"##,
+    byte_string: b"bytes \x00\xff",
+    raw_bytes: br#"raw bytes "here""#,
+
+    // Characters
+    initial: 'p',
+    newline: '\n',
+    quote: '\'',
+    unicode_char: '\u{00e9}',
+    hex_char: '\x41',
+
+    // Numbers
+    replicas: 3,
+    negative: -42,
+    positive: +7,
+    underscore: 1_000_000,
+    hex: 0xFF,
+    hex_upper: 0XDEAD_BEEF,
+    octal: 0o755,
+    binary: 0b1010_0101,
+    ratio: 0.75,
+    float_exp: 1.5e-3,
+    float_exp2: 6.022E23,
+    float_leading: 1.,
+    float_neg: -0.5,
+    infinity: inf,
+    neg_infinity: -inf,
+    not_a_number: NaN,
+
+    // Booleans
+    debug: false,
+    enabled: true,
+
+    // Unit and options
+    nothing: (),
+    maybe: None,
+    something: Some("value"),
+    nested_option: Some(Some(5)),
+    implicit: "implicit some via the extension",
+
+    // Lists and tuples
+    ports: [8080, 9090],
+    empty_list: [],
+    trailing_comma: [
+        "a",
+        "b",
+    ],
+    nested_list: [[1, 2], [3, 4]],
+    tags: ("eu-west-1", 'p', 3.5, true),
+    single_tuple: (1,),
+
+    // Maps
+    env: {
+        "LOG_LEVEL": "info",
+        "FEATURE_FLAGS": "search,export",
+        "EMPTY": "",
+    },
+    numeric_keys: {
+        1: "one",
+        2: "two",
+    },
+    struct_keys: {
+        (1, 2): "point",
+        Red: "enum key",
+    },
+    empty_map: {},
+
+    // Structs: named, anonymous and unit
+    database: Database(
+        host: "db.internal",
+        port: 5432,
+        ssl: true,
+        timeout: Duration(secs: 30, nanos: 0),
+        credentials: (user: "inventory", password: "example-not-a-real-password"),
+    ),
+    anonymous_struct: (
+        left: 1,
+        right: 2,
+    ),
+    unit_struct: UnitStruct,
+    unit_value: Unit,
+    newtype: Meters(12.5),
+    raw_identifier: (r#type: "keyword as field", r#fn: 1),
+
+    // Enums: unit, tuple and struct variants
+    mode: Production,
+    level: Level(3),
+    shape: Rectangle(width: 4.0, height: 2.5),
+    tuple_variant: Point(1, 2, 3),
+    result_ok: Ok("fine"),
+    result_err: Err("failed"),
+    nested_enum: Outer(Inner(Deep(1))),
+
+    // Nested configuration
+    retry: Some(Retry(attempts: 3, backoff_ms: 250, jitter: true)),
+    warehouses: [
+        Warehouse(
+            code: "NORTH",
+            bins: [Bin(label: "A1", capacity: 100), Bin(label: "A2", capacity: 80)],
+            location: (lat: 51.5074, lon: -0.1278),
+            opened: "2026-01-15T09:00:00Z",
+        ),
+        Warehouse(
+            code: "SOUTH",
+            bins: [],
+            location: (lat: 50.8225, lon: -0.1372),
+            opened: "2026-03-01T09:00:00Z",
+        ),
+    ],
+
+    // Identifiers with unusual shapes
+    snake_case_field: 1,
+    camelCaseField: 2,
+    PascalCaseField: 3,
+    field_with_digits_123: 4,
+    _leading_underscore: 5,
+)

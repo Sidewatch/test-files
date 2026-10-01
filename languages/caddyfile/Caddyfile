@@ -1,0 +1,400 @@
+# Caddyfile for the warehouse stock portal.
+# Comments start with a hash and run to the end of the line.
+# TODO: split the sites into imported files.
+
+# ── Global options block ────────────────────────────────────────────
+{
+	email ops@example.com
+	admin off
+	debug
+	auto_https disable_redirects
+	order rate_limit before basicauth
+	servers {
+		protocols h1 h2 h3
+		timeouts {
+			read_body   10s
+			idle        2m
+		}
+	}
+	log {
+		level INFO
+		format json
+	}
+	acme_ca https://acme-staging.example.com/directory
+	storage file_system /var/lib/caddy
+}
+
+# ── Snippets ────────────────────────────────────────────────────────
+(security_headers) {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+		defer
+	}
+}
+
+(logging) {
+	log {
+		output file /var/log/caddy/{args[0]}.log {
+			roll_size 50mb
+			roll_keep 5
+			roll_keep_for 720h
+		}
+	}
+}
+
+# ── Named matchers and placeholders ─────────────────────────────────
+example.com, www.example.com {
+	import security_headers
+	import logging example
+
+	encode zstd gzip
+	root * /srv/site
+	file_server {
+		hide .git
+		index index.html
+		precompressed br gzip
+	}
+
+	@static path *.css *.js *.png *.woff2
+	header @static Cache-Control "public, max-age=31536000, immutable"
+
+	@api {
+		path /api/*
+		method GET POST PUT DELETE
+		header Content-Type application/json
+		not remote_ip 192.0.2.0/24 2001:db8::/32
+	}
+
+	@mobile header_regexp mobile User-Agent (?i)(iphone|android)
+	@healthy expression {http.request.uri.path} == "/healthz" && {method} == "GET"
+	@old path_regexp oldpath ^/legacy/(.*)$
+
+	handle @healthy {
+		respond "ok" 200
+	}
+
+	handle /api/* {
+		reverse_proxy localhost:8080 localhost:8081 {
+			lb_policy least_conn
+			lb_try_duration 5s
+			health_uri /healthz
+			health_interval 10s
+			health_status 2xx
+			header_up Host {upstream_hostport}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+			header_down -Server
+			transport http {
+				dial_timeout 3s
+				tls_insecure_skip_verify
+			}
+		}
+	}
+
+	handle_path /files/* {
+		root * /srv/files
+		file_server browse
+	}
+
+	handle @old {
+		redir /new/{re.oldpath.1} 301
+	}
+
+	handle_errors {
+		@404 expression {err.status_code} == 404
+		rewrite @404 /404.html
+		file_server
+	}
+
+	route {
+		rate_limit {remote.ip} 100r/m
+		basic_auth /admin/* {
+			admin example-not-a-real-hash
+		}
+	}
+
+	rewrite /home /
+	uri strip_prefix /v1
+	uri replace /old /new
+	try_files {path} {path}/ /index.html
+	templates
+	php_fastcgi unix//run/php/php-fpm.sock
+
+	redir /blog https://blog.example.com{uri} permanent
+	respond /robots.txt "User-agent: *\nDisallow: /private/" 200
+
+	request_body {
+		max_size 10MB
+	}
+
+	tls {
+		protocols tls1.2 tls1.3
+		ciphers TLS_AES_256_GCM_SHA384
+		on_demand
+	}
+
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 50mb
+		}
+		format json {
+			time_format iso8601
+		}
+	}
+}
+
+# ── Other site address forms ────────────────────────────────────────
+http://example.org {
+	redir https://example.com{uri}
+}
+
+:8080 {
+	respond "hello from {host}" 200
+	vars site_name {$SITE_NAME:warehouse}
+	map {host} {backend} {
+		example.com   localhost:9000
+		~^api\.(.+)$  localhost:9001
+		default       localhost:9002
+	}
+	reverse_proxy {backend}
+}
+
+*.example.net {
+	tls {
+		dns cloudflare {env.DNS_API_TOKEN}
+	}
+	@sub host sub.example.net
+	handle @sub {
+		respond "sub site"
+	}
+	handle {
+		abort
+	}
+}
+
+localhost:3000, 127.0.0.1:3000, [::1]:3000 {
+	tls internal
+	root * ./public
+	file_server
+	log
+}
+
+# ── Environment variable and file placeholders ──────────────────────
+import /etc/caddy/sites/*.caddy
+import {$CONFIG_DIR}/extra.caddy
+
+{$DOMAIN:stock.example.com} {
+	respond "{file./srv/motd.txt}"
+	header X-Request-Id {http.request.uuid}
+	header X-Time "{time.now.unix}"
+}
+
+# ── Further constructs ──────────────────────────────────────────────
+# Heredocs, backtick strings and escaped placeholders
+respond <<EOF
+	{
+	  "status": "ok",
+	  "host": "{host}"
+	}
+	EOF 200
+
+respond `backtick string with "quotes" inside`
+respond "string with \"escaped quotes\" and a \{literal placeholder}"
+respond "{http.request.host} {http.request.uri.path.file} {http.vars.site}" 200
+respond "{query.page} {header.User-Agent} {cookie.session} {tls_cipher} {err.status_code}"
+
+# Matchers of every kind
+example.org {
+	@by_client_cert client_auth {
+		trusted_ca_certs "base64 placeholder"
+	}
+	@file file {
+		try_files {path} {path}/index.html
+		try_policy first_exist
+	}
+	@proto protocol https
+	@query query a=1 b=*
+	@vars vars {http.request.host} example.org
+	@vars_regexp vars_regexp domain {host} ^(.+)\.example\.org$
+	@not_get not method GET
+	@multi {
+		host example.org www.example.org
+		path /a /b/*
+		path_regexp ^/user/([0-9]+)$
+		header X-Forwarded-For 192.0.2.*
+		header_regexp ref Referer ^https?://example\.com/
+		query q=*
+		remote_ip forwarded 192.0.2.0/24
+		client_ip private_ranges
+		expression `{method} == "POST" && {path}.startsWith("/api")`
+		maxmind_geolocation {
+			db_path /etc/GeoLite2.mmdb
+			allow_countries US
+		}
+	}
+	@named_cel expression {http.request.uri.query.debug} == "1"
+	handle @multi {
+		respond "multi" 200
+	}
+	respond @not_get "Method Not Allowed" 405
+	abort @proto
+}
+
+# Directives, every common one
+directives.example.com {
+	acme_server
+	basic_auth bcrypt "Restricted Area" {
+		user example-not-a-real-hash
+	}
+	bind 192.0.2.5 [2001:db8::5]
+	cache
+	copy_response_headers
+	error /secret "Forbidden" 403
+	forward_auth localhost:9091 {
+		uri /api/verify
+		copy_headers Remote-User Remote-Groups
+	}
+	fs
+	intercept
+	invoke named_route
+	log_append user_id {http.auth.user.id}
+	log_name access
+	log_skip /health
+	metrics /metrics
+	method POST
+	pki {
+		ca local {
+			name "Example CA"
+		}
+	}
+	push /style.css
+	reverse_proxy /api/* {
+		to http://192.0.2.10:8080 https://192.0.2.11 h2c://192.0.2.12
+		dynamic srv _api._tcp.example.com
+		lb_policy ip_hash
+		lb_retries 3
+		fail_duration 30s
+		max_fails 2
+		unhealthy_latency 2s
+		flush_interval -1
+		trusted_proxies private_ranges
+		handle_response @error {
+			copy_response
+		}
+		replace_status 502
+		transport http {
+			versions h2c 2
+			keepalive 30s
+			max_conns_per_host 10
+			read_timeout 1m
+			tls_client_auth cert.pem key.pem
+			tls_trusted_ca_certs ca.pem
+			tls_server_name internal.example.com
+		}
+	}
+	skip_log
+	tracing {
+		span "warehouse"
+	}
+	vars my_var some_value
+	wasm
+	&(route_name) {
+		respond "named route"
+	}
+}
+
+# Site address forms
+http://:80
+https://example.com:8443
+example.com:443
+:2015
+unix//run/caddy.sock
+http://*.example.com
+localhost
+{$HOST:localhost}:{$PORT:8080}
+
+# Global options, every common one
+{
+	debug
+	http_port 8080
+	https_port 8443
+	default_bind 192.0.2.1
+	grace_period 10s
+	shutdown_delay 5s
+	auto_https off
+	auto_https ignore_loaded_certs
+	skip_install_trust
+	local_certs
+	renew_interval 30m
+	ocsp_interval 12h
+	ocsp_stapling off
+	key_type ed25519
+	cert_issuer acme {
+		dir https://acme.example.com/directory
+		email ops@example.com
+	}
+	acme_dns cloudflare {env.CF_API_TOKEN}
+	acme_eab {
+		key_id example-key-id
+		mac_key example-not-a-real-key
+	}
+	on_demand_tls {
+		ask http://localhost:9123/check
+		interval 2m
+		burst 5
+	}
+	storage_clean_interval 24h
+	log default {
+		output stderr
+		format console
+		level WARN
+		include http.log.access admin.api
+		exclude http.log.access.static
+	}
+	servers :443 {
+		name https
+		listener_wrappers {
+			proxy_protocol
+			tls
+		}
+		trusted_proxies static private_ranges
+		client_ip_headers X-Forwarded-For X-Real-IP
+		strict_sni_host insecure_off
+		metrics
+		trace
+	}
+	pki {
+		ca internal {
+			root_cn "Example Root"
+		}
+	}
+	events {
+		on cert_obtained exec ./notify.sh
+	}
+	cert_lifetime 24h
+	ech example.com
+	dns cloudflare {env.CF_API_TOKEN}
+}
+
+# Imports with arguments and snippet reuse
+(cors) {
+	@cors_preflight method OPTIONS
+	handle @cors_preflight {
+		header Access-Control-Allow-Origin {args[0]}
+		header Access-Control-Allow-Methods "GET, POST, OPTIONS"
+		respond "" 204
+	}
+}
+(common) {
+	encode zstd gzip
+	{block}
+}
+import cors https://app.example.com
+import common {
+	respond "inside block"
+}
+# TODO: document each directive's default value.
