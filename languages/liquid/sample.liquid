@@ -143,7 +143,7 @@
 {%- assign neg_range = (-3..3) -%}
 {%- assign var_range = (start..finish) -%}
 {%- assign empty_str = '' -%}
-{%- assign esc_str = "tab\t newline\n quote \" apostrophe ' backslash \\" -%}
+{%- assign no_escapes = "Liquid has no escapes: a backslash \ stays, an apostrophe ' sits inside" -%}
 {%- assign nil_check = nil == null -%}
 
 {% ifchanged %}{{ product.type }}{% endifchanged %}
