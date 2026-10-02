@@ -42,7 +42,7 @@ spec:
 
 # Flow-style collections
 featureFlags: { darkMode: true, betaSearch: false, retryCount: 5 }
-allowedOrigins: ["https://example.com", "https://sidewatch.app"]
+allowedOrigins: ["https://example.com", "https://app.example.com"]
 
 # Multi-line block scalar
 startupScript: |

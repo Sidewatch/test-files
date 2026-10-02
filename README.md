@@ -58,7 +58,7 @@ Or open any folder in Sidewatch (or press Space in Finder for Quick Look) and lo
   shapes + text, viewBox-only). Four short ffmpeg videos (mp4/mov/m4v, one with an audio
   track). Audio: synthetic sine/silence/pink-noise in wav/m4a/aiff/flac/mp3 across sample rates
   and channel counts (a 10-minute silence for the duration column), plus a handful of real
-  Example pads and a stretching source. `nested/` and `nested/deeper/` hold ten more (five
+  recorded instrument pads and a stretching source. `nested/` and `nested/deeper/` hold ten more (five
   PNGs and a pad one level down, three JPEGs and a pad two down) for the Subfolders box; `notes.txt`
   and `manifest.json` are the non-media noise a gallery must ignore. The harness also writes a
   2 s ramping-tone WAV of its own for the waveform tile. 13 MB.
@@ -78,6 +78,6 @@ Or open any folder in Sidewatch (or press Space in Finder for Quick Look) and lo
 
 ## Licence
 
-MIT — see `LICENSE`. Two exceptions, the JetBrains Mono font files (OFL 1.1) and the Example audio in
+MIT — see `LICENSE`. Two exceptions, the JetBrains Mono font files (OFL 1.1) and the recorded audio in
 `gallery/` (testing only), are listed in `NOTICE.md`. Every name, address and key in the fixtures is fictional.
 See `CONTRIBUTING.md` before adding files.

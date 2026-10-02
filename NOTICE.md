@@ -8,9 +8,9 @@ Everything in this repository is covered by the MIT licence in `LICENSE`, except
 wrapped by fontTools. Copyright 2020 The JetBrains Mono Project Authors
 (https://github.com/JetBrains/JetBrainsMono). The licence text is in `kinds/OFL-JetBrainsMono.txt`.
 
-## Example audio — included for testing only
+## Recorded audio — included for testing only
 
-These recordings are real instrument pads from Example. They are here so the gallery and waveform
+These are real instrument recordings, not generated tones. They are here so the gallery and waveform
 previews meet real-world audio, and they are NOT licensed under MIT: do not reuse them outside testing
 Sidewatch.
 
