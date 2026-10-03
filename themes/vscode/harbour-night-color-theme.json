@@ -1,0 +1,52 @@
+// Harbour Night: a fictional VS Code colour theme for Sidewatch's importer
+// (Settings > Appearance > Import VS Code Theme). Written the way theme authors
+// write them: JSONC, with comments, trailing commas, scope arrays, comma-joined
+// scope strings, #RGB and #RRGGBBAA colours, and the integrated terminal's ANSI set.
+{
+  "$schema": "vscode://schemas/color-theme",
+  "name": "Harbour Night",
+  "type": "dark",
+  "colors": {
+    "editor.background": "#14181F",
+    "editor.foreground": "#C9D1DC",
+    "editorCursor.foreground": "#F2B45A",
+    "editor.selectionBackground": "#2B3A55CC", // 8-digit: alpha is dropped on import
+    "editorLineNumber.foreground": "#4A5466",
+    "editorLineNumber.activeForeground": "#9AA6B8",
+    "sideBar.background": "#10141A",
+    "sideBar.foreground": "#9AA6B8",
+    "editorGroupHeader.tabsBackground": "#10141A",
+    "tab.inactiveForeground": "#6B7689",
+    "tab.activeForeground": "#E6EDF5",
+    "editorGroup.border": "#232A35",
+    "statusBar.background": "#0C1015",
+    "statusBar.foreground": "#9AA6B8",
+    "terminal.ansiBlack": "#1B2029",
+    "terminal.ansiRed": "#E0636F",
+    "terminal.ansiGreen": "#8CC98A",
+    "terminal.ansiYellow": "#E8C56A",
+    "terminal.ansiBlue": "#6CA6E8",
+    "terminal.ansiMagenta": "#C792EA",
+    "terminal.ansiCyan": "#5FC9C4",
+    "terminal.ansiWhite": "#C9D1DC",
+    "terminal.ansiBrightBlack": "#4A5466",
+    "terminal.ansiBrightRed": "#F07E89",
+    "terminal.ansiBrightGreen": "#A6DDA4",
+    "terminal.ansiBrightYellow": "#F5D78A",
+    "terminal.ansiBrightBlue": "#8DBDF2",
+    "terminal.ansiBrightMagenta": "#DAB0F2",
+    "terminal.ansiBrightCyan": "#82DDD8",
+    "terminal.ansiBrightWhite": "#FFF", // 3-digit form
+  },
+  "tokenColors": [
+    { "name": "Comments", "scope": ["comment", "punctuation.definition.comment"], "settings": { "foreground": "#5C6B80", "fontStyle": "italic" } },
+    { "name": "Strings", "scope": "string, string.quoted", "settings": { "foreground": "#8CC98A" } },
+    { "name": "Keywords and storage", "scope": ["keyword", "storage", "storage.modifier"], "settings": { "foreground": "#C792EA" } },
+    { "name": "Types", "scope": "entity.name.type, support.type, entity.name.class", "settings": { "foreground": "#5FC9C4" } },
+    { "name": "Numbers", "scope": "constant.numeric", "settings": { "foreground": "#F2B45A" } },
+    { "name": "Functions", "scope": ["entity.name.function", "support.function"], "settings": { "foreground": "#6CA6E8" } },
+    { "name": "Variables", "scope": "variable", "settings": { "foreground": "#C9D1DC" } },
+    { "name": "Properties", "scope": ["variable.other.property", "meta.object-literal.key"], "settings": { "foreground": "#E0A47A" } },
+    { "name": "Global settings, no scope", "settings": { "foreground": "#C9D1DC" } },
+  ],
+}

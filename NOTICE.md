@@ -5,8 +5,15 @@ Everything in this repository is covered by the MIT licence in `LICENSE`, except
 ## JetBrains Mono — SIL Open Font License 1.1
 
 `kinds/sample.ttf` is JetBrains Mono Regular; `kinds/sample.woff` and `kinds/sample.woff2` are the same face
-wrapped by fontTools. Copyright 2020 The JetBrains Mono Project Authors
+wrapped by fontTools, and `kinds/sample.otf` is the same face rebuilt by fontTools with CFF outlines. Copyright 2020 The JetBrains Mono Project Authors
 (https://github.com/JetBrains/JetBrainsMono). The licence text is in `kinds/OFL-JetBrainsMono.txt`.
+
+## Agent transcripts — MIT, Alexander Malakhov
+
+`sessions/gemini/chats/session-v040.jsonl` and everything under `sessions/grok/` are sanitized captures of real
+Gemini CLI 0.40 and Grok Build CLI runs from [jazzyalex/agent-sessions](https://github.com/jazzyalex/agent-sessions)
+at commit `a93b22b`, the same fixtures swift-agent-kit's adapter tests use. MIT License, Copyright (c) 2026
+Alexander Malakhov: <https://github.com/jazzyalex/agent-sessions/blob/main/LICENSE>.
 
 ## Recorded audio — included for testing only
 
