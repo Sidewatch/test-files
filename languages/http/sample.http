@@ -1,0 +1,35 @@
+# A showcase for the .http request format (the JetBrains HTTP Client / VS Code REST Client form).
+// Both comment styles are allowed. Every address is under example.com (RFC 2606).
+
+@host = api.example.com
+@token = example-not-a-real-token
+
+### List open orders, with placeholders and a protocol version
+GET https://{{host}}/v1/orders?status=open&limit=20 HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{token}}
+
+### Create an order with a JSON body
+POST https://{{host}}/v1/orders
+Content-Type: application/json
+
+{
+  "customer": "Acme Widgets",
+  "priority": 2,
+  "express": true,
+  "gift_note": null,
+  "items": [{ "sku": "WID-001", "quantity": 3 }]
+}
+
+### A form body and a header value holding a colon
+put https://{{host}}/v1/orders/1042/address
+Content-Type: application/x-www-form-urlencoded
+If-Match: "v3:2026-10-03T09:00:00Z"
+
+line1=12+Example+Street&city=Springfield
+
+### Every method word the format accepts
+PATCH https://{{host}}/v1/orders/1042
+DELETE https://{{host}}/v1/drafts/77
+HEAD https://{{host}}/v1/status
+OPTIONS https://{{host}}/v1/orders

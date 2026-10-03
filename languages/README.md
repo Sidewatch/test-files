@@ -1,6 +1,6 @@
 # One complete showcase per language
 
-Every language the app's detector knows (`swift-code-kit`'s CodeLanguage, 221 languages) has a folder here holding
+Every language the app's detector knows (`swift-code-kit`'s CodeLanguage, 222 languages) has a folder here holding
 ONE file that exercises everything its syntax has: every comment form (line, block, nested, doc, pragmas), every
 string form (escapes, raw, multi-line, heredocs, interpolation), every number form, every keyword group, every
 declaration kind, operator family, directive, annotation and embedded language. Open a folder in Sidewatch, or step
