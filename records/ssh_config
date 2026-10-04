@@ -1,0 +1,24 @@
+# ssh_config(5) for the warehouse team — fictional hosts under example.com
+ServerAliveInterval 60
+AddKeysToAgent yes
+
+Host bastion
+    HostName bastion.example.com
+    User deploy
+    Port 2222
+    IdentityFile ~/.ssh/id_ed25519
+
+Host *.internal !legacy.internal
+    ProxyJump bastion
+    User ops
+    ForwardAgent no
+
+Host build
+    HostName=build.example.com
+    User=ci
+    IdentityFile "~/.ssh/ci key"
+    LocalForward 5432 localhost:5432
+
+Match host legacy.internal exec "test -f ~/.ssh/legacy"
+    KexAlgorithms +diffie-hellman-group14-sha1
+    HostKeyAlgorithms +ssh-rsa

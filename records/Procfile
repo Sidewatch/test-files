@@ -1,0 +1,6 @@
+# Processes for the warehouse service (foreman / Overmind / Heroku format)
+web: bundle exec puma -C config/puma.rb
+worker:   bundle exec sidekiq -C config/sidekiq.yml
+scheduler: bin/rails runner 'Scheduler.start' --env=production
+release: bin/rails db:migrate && bin/rails assets:precompile
+search_indexer: bin/indexer --batch 500 --queue "default,low"
