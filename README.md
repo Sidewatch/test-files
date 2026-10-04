@@ -47,6 +47,8 @@ Or open any folder in Sidewatch (or press Space in Finder for Quick Look) and lo
 - `editor/` — `gutter-check.swift`, `scrolltest.swift`: for checking the gutter and scrolling by hand (the gate's
   `--selftest-gutter` builds its own files).
 - `structured/` — one fixture for every name the structure tree reads (its own README).
+- `records/` — a `Procfile` and an `ssh_config` for the record tables (with the hosts, crontab and gettext
+  showcases under `languages/`; `--selftest-record-tables` opens and edits them all).
 - `kinds/` — one file per non-code format the previews handle that the gallery does not, plus `requests.http`
   for the HTTP client (its own README).
 - `sessions/<agent>/` — agent transcripts, at least one per adapter, for `Sidewatch --dump-session` and the
