@@ -24,10 +24,10 @@ case that once broke a preview.
 ## Adding a language
 
 1. Add `languages/<language>/<file>` with a complete showcase.
-2. If the app reads it as structure (JSON, YAML, TOML, XML, INI…), add a fixture to `structured/` too:
+2. If the app reads it as structure (JSON, YAML, TOML, XML, INI…), add a fixture to `data/trees/` too:
    the structure harness fails when a name the detector claims has no fixture there.
 3. Run Sidewatch's `--selftest-highlight-roles ../TestFiles` and, for structure, `--selftest-config-views
-   ../TestFiles/structured` from the app repository.
+   ../TestFiles/data/trees` from the app repository.
 
 ## Licence
 

@@ -1,7 +1,7 @@
-# structured — every file the structure tree reads
+# data/trees — every file the structure tree reads
 
 One fixture for **every extension and every exact filename** the language table maps to a format the
-editor's tree view shows (25 Sep 2026). `--selftest-config-views ../TestFiles/structured` checks both
+editor's tree view shows (25 Sep 2026). `--selftest-config-views ../TestFiles/data/trees` checks both
 directions: every file here routes to a format and reads to a non-empty tree, and every name the
 detector claims has a file here — so a name the table gains without a fixture fails the gate. It also
 OPENS every file through the editor's own open path and fails any that lands on its source instead of its tree.

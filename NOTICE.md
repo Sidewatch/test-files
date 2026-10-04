@@ -4,9 +4,9 @@ Everything in this repository is covered by the MIT licence in `LICENSE`, except
 
 ## JetBrains Mono — SIL Open Font License 1.1
 
-`kinds/sample.ttf` is JetBrains Mono Regular; `kinds/sample.woff` and `kinds/sample.woff2` are the same face
-wrapped by fontTools, and `kinds/sample.otf` is the same face rebuilt by fontTools with CFF outlines. Copyright 2020 The JetBrains Mono Project Authors
-(https://github.com/JetBrains/JetBrainsMono). The licence text is in `kinds/OFL-JetBrainsMono.txt`.
+`media/fonts/sample.ttf` is JetBrains Mono Regular; `media/fonts/sample.woff` and `media/fonts/sample.woff2` are the same face
+wrapped by fontTools, and `media/fonts/sample.otf` is the same face rebuilt by fontTools with CFF outlines. Copyright 2020 The JetBrains Mono Project Authors
+(https://github.com/JetBrains/JetBrainsMono). The licence text is in `media/fonts/OFL-JetBrainsMono.txt`.
 
 ## Agent transcripts — MIT, Alexander Malakhov
 
@@ -21,16 +21,16 @@ These are real instrument recordings, not generated tones. They are here so the 
 previews meet real-world audio, and they are NOT licensed under MIT: do not reuse them outside testing
 Sidewatch.
 
-- `gallery/DAWNING.wav`
-- `gallery/Pad_Space.wav`
-- `gallery/Pad_Forgotten_Path.mp3`
-- `gallery/Pad_Spring.mp3`
-- `gallery/Piano_Vortex.mp3`
-- `gallery/Pluck_Sweetest.mp3`
-- `gallery/nested/Pad_Truck.mp3`
-- `gallery/nested/deeper/Pad_Wide_Loop.mp3`
+- `media/gallery/DAWNING.wav`
+- `media/gallery/Pad_Space.wav`
+- `media/gallery/Pad_Forgotten_Path.mp3`
+- `media/gallery/Pad_Spring.mp3`
+- `media/gallery/Piano_Vortex.mp3`
+- `media/gallery/Pluck_Sweetest.mp3`
+- `media/gallery/nested/Pad_Truck.mp3`
+- `media/gallery/nested/deeper/Pad_Wide_Loop.mp3`
 
-Every other image, sound and video in `gallery/` and `kinds/` was generated for this repository (CoreGraphics,
+Every other image, sound and video in `media/` was generated for this repository (CoreGraphics,
 ffmpeg, `afconvert`, `sips`, `cupsfilter`).
 
 ## Example data
