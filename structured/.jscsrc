@@ -1,0 +1,6 @@
+{
+  // JSCS code style: JSON with comments.
+  "preset": "google",
+  "maximumLineLength": 100,
+  "requireCurlyBraces": ["if", "else", "for", "while"]
+}

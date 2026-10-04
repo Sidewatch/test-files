@@ -1,0 +1,8 @@
+{
+  "all": true,
+  "include": ["src/**/*.js"],
+  "exclude": ["src/**/*.test.js"],
+  "reporter": ["text", "lcov"],
+  "check-coverage": true,
+  "lines": 85
+}

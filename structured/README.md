@@ -14,7 +14,9 @@ edit it in place: the format's finder names the one token, its encoder keeps the
 
 `package.json`, `schema.avsc` (Avro), `warehouses.geojson`, `session.har`, `analysis.ipynb`,
 `regions.topojson`, `app.webmanifest`, `.arcconfig`, `.babelrc`, `.jshintrc`,
-`.phpunit.result.cache`, `.prettierrc`, `.stylelintrc`, `.swcrc`, `composer.lock`, `deno.lock`,
+`.phpunit.result.cache`, `.prettierrc`, `.stylelintrc`, `.swcrc`, `.swift-format`, `.bowerrc`, `.watchmanconfig`,
+`.htmlhintrc`, `.csslintrc`, `.nycrc`, `.c8rc`, `.firebaserc`, `.huskyrc`, `.czrc`, `.remarkrc`, `.eslintrc`, `.jscsrc`,
+`.yamllint`, `composer.lock`, `deno.lock`,
 `flake.lock`, `Package.resolved`, `Pipfile.lock`
 
 ## JSONC and JSON5 — `.jsonc .json5` and the config files that are JSONC

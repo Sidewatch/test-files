@@ -1,0 +1,11 @@
+{
+  "projects": {
+    "default": "warehouse-demo",
+    "staging": "warehouse-demo-staging"
+  },
+  "targets": {
+    "warehouse-demo": {
+      "hosting": { "site": ["warehouse-demo-web"] }
+    }
+  }
+}

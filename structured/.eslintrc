@@ -1,0 +1,10 @@
+// Legacy ESLint config: JSON with comments.
+{
+  "root": true,
+  "env": { "browser": true, "es2022": true },
+  "extends": ["eslint:recommended"],
+  "rules": {
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }], // underscore = intentionally unused
+    "eqeqeq": "error",
+  },
+}

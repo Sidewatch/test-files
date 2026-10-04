@@ -1,0 +1,6 @@
+{
+  "reporter": ["text", "html"],
+  "exclude": ["test/**", "coverage/**"],
+  "branches": 80,
+  "functions": 80
+}

@@ -1,0 +1,5 @@
+{
+  "directory": "vendor/components",
+  "registry": "https://registry.example.com",
+  "timeout": 60000
+}

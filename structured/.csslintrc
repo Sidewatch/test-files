@@ -1,0 +1,7 @@
+{
+  "box-model": false,
+  "adjoining-classes": false,
+  "important": true,
+  "ids": true,
+  "zero-units": true
+}
