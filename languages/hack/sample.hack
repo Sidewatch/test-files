@@ -1,7 +1,7 @@
 // Hack (HHVM 2025; .hack files carry no <?hh header) — syntax showcase
 // ── Comments ──
 // Hack: a typed repository with async loading, shapes, generics and attributes.
-# Hash-style comment. TODO: split into files. FIXME: rounding.
+// Hack has no # comments (# is a token). TODO: split into files. FIXME: rounding.
 /* Block comment */
 /**
  * Doc comment.
@@ -170,10 +170,10 @@ function literals(): void {
   $heredoc = <<<EOT
   Heredoc with $int and {$double}
     indented text
-  EOT;
+EOT;
   $nowdoc = <<<'EOT'
   Nowdoc keeps $int literal
-  EOT;
+EOT;
   $vec = vec[1, 2, 3];
   $dict = dict['a' => 1, 'b' => 2];
   $keyset = keyset['x', 'y'];
@@ -225,7 +225,7 @@ function control(mixed $x): string {
     return 'positive';
   } else if ($x is string) {
     return $x;
-  } elseif ($x === null) {
+  } else if ($x === null) {
     return 'null';
   } else {
     // fallthrough
@@ -374,7 +374,7 @@ function legacy_statements(): void {
   [$d, $e] = tuple(3, 4);
   $str = <<<"QUOTED"
   Heredoc with double-quoted tag $a
-  QUOTED;
+QUOTED;
   $nested = "Nested: {$a->b['c']->d()} and $a[0] and $a->prop and {$a}";
   $arr = dict['a' => 1, 'b' => vec[2, 3]];
   $v = vec[1, 2, 3]

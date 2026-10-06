@@ -230,7 +230,7 @@ Math/E
 (def ^:deprecated old-name 1)
 
 ;; Numeric tower and character oddities
-[0x7FFFFFFF 0X1f 01 -0x10 2r-101 16rFF 1e0 1.E2 +1 -1.5e+3 1N 0N -1N 1M 1.0M 1/2 -1/2 ##Inf ##-Inf ##NaN]
+[0x7FFFFFFF 0X1f 01 -0x10 -2r101 16rFF 1e0 1.E2 +1 -1.5e+3 1N 0N -1N 1M 1.0M 1/2 -1/2 ##Inf ##-Inf ##NaN]
 [\a \A \0 \space \newline \return \tab \backspace \formfeed \u0041 \u00E9 \o7 \o101 \( \) \" \\ \;]
 ["" "\u00e9" "\\" "\"" "tab\tnewline\nreturn\rbackspace\bformfeed\f" "octal\101" "unicode \uD83D\uDE00"]
 [#"" #"\\d+" #"(?i)case" #"a|b" #"[\]\[]" #"\"quoted\""]
