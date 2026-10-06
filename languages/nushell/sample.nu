@@ -258,7 +258,7 @@ export module nested { export def inner [] { 1 } }
 use nested inner
 if (which git | is-empty) { error make {msg: "git missing"} }
 let closure_with_captured = {|| $counter }
-let sorted = [3 1 2] | sort-by {|x| -$x }
+let sorted = [3 1 2] | sort-by {|x| -($x) }
 let grouped = [1 2 3 4] | group-by {|x| $x mod 2 }
 let reduced = [1 2 3] | reduce {|it, acc| $acc + $it }
 let folded = 1..5 | reduce --fold 10 {|it, acc| $acc * $it }

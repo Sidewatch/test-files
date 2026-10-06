@@ -67,7 +67,7 @@ char1 : Char
 char1 = 'a'
 
 char2 : List Char
-char2 = ['\n', '\t', '\\', '\'', '\x41', '\65', '\o101', '\NUL', '\DEL', '\u00e9']
+char2 = ['\n', '\t', '\\', '\'', '\x41', '\65', '\o101', '\NUL', '\DEL', '\xe9']
 
 str1 : String
 str1 = "double \"quoted\" with \\ backslash, \t tab, \x41 hex, \1234 decimal, \u00e9"

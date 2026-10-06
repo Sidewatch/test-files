@@ -558,14 +558,6 @@ orPattern :: Status -> Bool
 orPattern (Pending; Paid) = True
 orPattern _ = False
 
--- Multiline string literals (9.12)
-banner :: String
-banner = """
-  Welcome to the warehouse.
-    Indentation relative to the closing quotes is kept.
-  Escapes like \t and quotes " work.
-  """
-
 -- Required type arguments (9.10): a visible forall
 sizeOfType :: forall a -> Show a => String
 sizeOfType a = "type argument"
@@ -648,3 +640,10 @@ guardLet n = let f x | x > 0 = "pos" | otherwise = "non-pos" in f n
 typeclassDefault :: String
 typeclassDefault = show (2 ^ 10)
 
+-- Multiline string literals (9.12)
+banner :: String
+banner = """
+  Welcome to the warehouse.
+    Indentation relative to the closing quotes is kept.
+  Escapes like \t and quotes " work.
+  """
