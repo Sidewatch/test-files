@@ -1,0 +1,29 @@
+# _redirects — one rule per line: source, destination, optional status.
+# Cloudflare Pages / Workers Static Assets and Netlify read this file.
+
+# A page that moved (301 is the default).
+/home                 /
+/about-us             /about                    301
+
+# A splat carries the rest of the path over.
+/blog/*               /posts/:splat             301
+
+# Placeholders name segments; an absolute destination leaves the site.
+/news/:year/:id       https://news.example.com/:year/:id    302
+
+# Force the rule even when a file exists at the source (`!`).
+/app/*                /app/index.html           200!
+
+# Proxy (200) an API through the site's own origin.
+/api/*                https://api.example.com/v2/:splat     200
+
+# Query-string and country conditions (Netlify).
+/store id=:id         /items/:id                301
+/                     /fr/                      302  Country=fr
+/                     /de/                      302  Language=de
+
+# A fragment is part of the destination, not a comment.
+/docs                 /guide#getting-started    301
+
+# Anything else.
+/*                    /404.html                 404

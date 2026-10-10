@@ -1,0 +1,30 @@
+# _headers — response headers for a static site (Cloudflare Pages / Workers
+# Static Assets, Netlify). An unindented line is a URL pattern; the indented
+# `Name: value` lines under it apply to every path it matches.
+
+# Every page: never framed, no sniffing.
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+# The admin pages: their own scripts and API only.
+/admin/*
+  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self' https://*.storage.example.com; img-src 'self' data: https:; frame-ancestors 'none'
+  Cache-Control: no-cache
+  X-Robots-Tag: noindex
+
+# Fingerprinted assets: cached for a year.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# A placeholder names one path segment; a splat matches the rest.
+/blog/:year/:slug/*
+  Cache-Control: public, max-age=3600
+  Link: </assets/blog.css>; rel=preload; as=style
+
+# Take back a header an earlier block set on these paths.
+/admin/public/*
+  ! X-Robots-Tag
+  Access-Control-Allow-Origin: https://www.example.com

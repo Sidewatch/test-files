@@ -6,7 +6,7 @@ every file exists to exercise one part of the app — a language's highlighting,
 tree, a gallery edge case — at a known size.
 
 It is public so anyone can use it to test an editor, a highlighter, a previewer or a file-type detector:
-219 languages with a complete syntax showcase each, a fixture for every structured config format, every
+221 languages with a complete syntax showcase each, a fixture for every structured config format, every
 common media and archive kind, broken files, and 200,000-line sources.
 
 ## Using it
