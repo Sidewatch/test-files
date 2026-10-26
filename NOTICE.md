@@ -30,8 +30,9 @@ Sidewatch.
 - `media/gallery/nested/Pad_Truck.mp3`
 - `media/gallery/nested/deeper/Pad_Wide_Loop.mp3`
 
-Every other image, sound and video in `media/` was generated for this repository (CoreGraphics,
-ffmpeg, `afconvert`, `sips`, `cupsfilter`).
+Every other image, sound, video and 3D model in `media/` was generated for this repository (CoreGraphics,
+ffmpeg, `afconvert`, `sips`, `cupsfilter`, and for the models the generator in `media/models/` with Apple's USD
+tools).
 
 ## Example data
 

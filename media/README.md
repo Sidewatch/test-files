@@ -19,8 +19,12 @@ opens each through the editor's real open path and checks it lands on its surfac
   `Payload/App.app/App`, a nested folder), `sample.tar` (the same tree as a tar), `sample.ear` (a Java enterprise
   archive: `META-INF/application.xml` and a nested `.war` and `.jar`), `sample.xpi` (a browser extension:
   `manifest.json`, scripts, an icon, a locale) and `example.zip`.
+- `models/` — 3D models: one toy rocket as USDZ, USDA, USDC, OBJ, STL, PLY, Alembic, Collada, SceneKit, glTF and
+  GLB, plus an animated copy, a Z-up copy in centimetres and a dense mesh (its own README). Sidewatch does not
+  preview them yet, and `--selftest-kinds` does not read this folder.
 - `gallery/` — a folder of mixed media Sidewatch opens as a gallery, with every awkward size and broken file (see
   the top-level README).
 
-Made with `sips`, `ffmpeg`, `afconvert`, `cupsfilter`, `zip`, `tar` and fontTools. The SQLite variants that used to
+Made with `sips`, `ffmpeg`, `afconvert`, `cupsfilter`, `zip`, `tar` and fontTools; the models with the generator in
+`models/` and Apple's USD tools. The SQLite variants that used to
 sit with these are in `../database/`.

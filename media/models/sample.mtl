@@ -1,0 +1,37 @@
+# Materials for sample.obj. A toy rocket, a Sidewatch test model (make-models.py).
+
+newmtl Body
+Kd 1 1 1
+Ks 0.5 0.5 0.5
+Ns 235
+d 1
+illum 2
+map_Kd sample-uv-checker.png
+
+newmtl Paint
+Kd 0.8 0.12 0.1
+Ks 0.5 0.5 0.5
+Ns 390
+d 1
+illum 2
+
+newmtl Metal
+Kd 0.62 0.63 0.66
+Ks 0.62 0.63 0.66
+Ns 451
+d 1
+illum 2
+
+newmtl Glass
+Kd 0.2 0.5 0.85
+Ks 0.5 0.5 0.5
+Ns 822
+d 1
+illum 2
+
+newmtl Nozzle
+Kd 0.18 0.18 0.2
+Ks 0.18 0.18 0.2
+Ns 192
+d 1
+illum 2
