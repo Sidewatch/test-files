@@ -1,0 +1,36 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<Meta name="ExplicitAutoJoints">true</Meta>
+	<Item class="Workspace" referent="RBX0">
+		<Properties>
+			<string name="Name">Workspace</string>
+			<float name="Gravity">196.2</float>
+		</Properties>
+		<Item class="Part" referent="RBX1">
+			<Properties>
+				<string name="Name">Baseplate</string>
+				<bool name="Anchored">true</bool>
+				<Vector3 name="size">
+					<X>512</X>
+					<Y>20</Y>
+					<Z>512</Z>
+				</Vector3>
+			</Properties>
+		</Item>
+	</Item>
+	<Item class="ServerScriptService" referent="RBX2">
+		<Properties>
+			<string name="Name">ServerScriptService</string>
+		</Properties>
+		<Item class="Script" referent="RBX3">
+			<Properties>
+				<string name="Name">Main</string>
+				<ProtectedString name="Source"><![CDATA[local Players = game:GetService("Players")
+
+Players.PlayerAdded:Connect(function(player: Player)
+	print(`{player.Name} joined`)
+end)
+]]></ProtectedString>
+			</Properties>
+		</Item>
+	</Item>
+</roblox>

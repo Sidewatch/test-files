@@ -4,9 +4,18 @@ One file per non-code format the app (and its Quick Look extension) previews, so
 opens each through the editor's real open path and checks it lands on its surface with content.
 
 - `images/` — `sample.icns`, `sample.ico`, `sample.avif`, `sample.bmp`, `sample.jpeg` (the four-letter spelling),
-  `sample.tif`, `sample.png` (png, jpg, gif, webp, svg, tiff and heic in every awkward size are in `gallery/`).
-- `audio/` — `sample.aac`, `sample.ogg` (Opus in Ogg), `sample.aif` (wav, mp3, m4a, flac and aiff are in
-  `gallery/`).
+  `sample.tif`, `sample.png` (png, jpg, gif, webp, svg, tiff and heic in every awkward size are in `gallery/`), and
+  the textures games ship, all one 128 × 128 picture (a hue sweep, a soft white disc, a half-transparent band):
+  `sample.dds` (BC1, the legacy header), `sample-bc7.dds` (BC7 with the DX10 header, which keeps the band's alpha),
+  `sample.ktx` (RGBA8) and `sample.hdr` (Radiance RGBE, a spot eight times brighter than white), from a small
+  encoder; and `sample.ktx2`, `sample.astc`, `sample.tga`, `sample.exr`, `sample.psd` and `sample.pvr`, written by
+  ImageIO. Each decodes back to the picture (BC1 and Radiance without the band's alpha, which they cannot hold).
+  ImageIO's KTX writer is not used: it stores 8-bit values under a half-float type, which decodes to nothing
+  visible. Its ASTC writer stores rows bottom-up while readers, ImageIO's own included, take the first row as the
+  top, so `sample.astc` was written from the picture turned over.
+- `audio/` — `sample.aac`, `sample.ogg` (Opus in Ogg), `sample.opus` (the same bytes under Opus's own extension),
+  `sample-vorbis.ogg` (Vorbis, what game engines ship), `sample.caf` (Core Audio Format) and `sample.aif` (wav, mp3,
+  m4a, flac and aiff are in `gallery/`).
 - `video/` — `sample.webm`, which plays through WebKit (mp4, mov and m4v are in `gallery/`).
 - `fonts/` — `sample.ttf` (JetBrains Mono Regular, OFL — `OFL-JetBrainsMono.txt`), `sample.woff`, `sample.woff2`
   (the same face wrapped by fontTools), and `sample.otf`: the same face rebuilt by fontTools with CFF (PostScript)
@@ -20,8 +29,9 @@ opens each through the editor's real open path and checks it lands on its surfac
   archive: `META-INF/application.xml` and a nested `.war` and `.jar`), `sample.xpi` (a browser extension:
   `manifest.json`, scripts, an icon, a locale) and `example.zip`.
 - `models/` — 3D models: one toy rocket as USDZ, USDA, USDC, OBJ, STL, PLY, Alembic, Collada, SceneKit, glTF and
-  GLB, plus an animated copy, a Z-up copy in centimetres and a dense mesh (its own README). Sidewatch does not
-  preview them yet, and `--selftest-kinds` does not read this folder.
+  GLB, plus an animated copy, a Z-up copy in centimetres and a dense mesh (its own README). `--selftest-models`
+  opens each in a tab and the gallery (the folder also holds the OBJ's MTL, the glTF's buffer, the texture and the
+  generator, which `--selftest-kinds` would not know, so that harness leaves it alone).
 - `gallery/` — a folder of mixed media Sidewatch opens as a gallery, with every awkward size and broken file (see
   the top-level README).
 

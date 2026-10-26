@@ -1,0 +1,79 @@
+{
+    "__header__": {
+        "fileType": "LDtk Project JSON",
+        "app": "LDtk",
+        "doc": "https://ldtk.io/json",
+        "schema": "https://ldtk.io/files/JSON_SCHEMA.json",
+        "appAuthor": "Example",
+        "appVersion": "1.5.3",
+        "url": "https://ldtk.io"
+    },
+    "iid": "8a7b6c5d-4e3f-11ef-9a8b-7c6d5e4f3a2b",
+    "jsonVersion": "1.5.3",
+    "worldLayout": "Free",
+    "defaultGridSize": 16,
+    "bgColor": "#40465B",
+    "defs": {
+        "layers": [
+            {
+                "__type": "IntGrid",
+                "identifier": "Collisions",
+                "uid": 1,
+                "gridSize": 16,
+                "intGridValues": [
+                    {
+                        "value": 1,
+                        "identifier": "wall",
+                        "color": "#000000"
+                    }
+                ]
+            }
+        ],
+        "entities": [
+            {
+                "identifier": "Player",
+                "uid": 2,
+                "width": 16,
+                "height": 16,
+                "color": "#94D9B3"
+            }
+        ],
+        "tilesets": [],
+        "enums": [],
+        "externalEnums": [],
+        "levelFields": []
+    },
+    "levels": [
+        {
+            "identifier": "Level_0",
+            "iid": "9b8c7d6e-4f5a-11ef-8b9c-6d5e4f3a2b1c",
+            "uid": 0,
+            "worldX": 0,
+            "worldY": 0,
+            "pxWid": 64,
+            "pxHei": 32,
+            "layerInstances": [
+                {
+                    "__identifier": "Collisions",
+                    "__type": "IntGrid",
+                    "__cWid": 4,
+                    "__cHei": 2,
+                    "__gridSize": 16,
+                    "levelId": 0,
+                    "layerDefUid": 1,
+                    "intGridCsv": [
+                        1,
+                        1,
+                        1,
+                        1,
+                        1,
+                        0,
+                        0,
+                        1
+                    ],
+                    "entityInstances": []
+                }
+            ]
+        }
+    ]
+}

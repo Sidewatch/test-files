@@ -1,0 +1,10 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI/Theme.uss?fileID=7433441132597879392&amp;guid=3c2b1a09f8e7d6c5b4a3928170615243&amp;type=3#Theme" />
+    <ui:VisualElement name="root" class="menu">
+        <ui:Label text="Example Quest" name="title" class="title" />
+        <ui:Button text="Play" name="play" class="menu-button" />
+        <ui:Button text="Settings" name="settings" class="menu-button" />
+        <ui:Toggle label="Music" name="music" value="true" />
+        <ui:Slider label="Volume" name="volume" low-value="0" high-value="1" value="0.8" />
+    </ui:VisualElement>
+</ui:UXML>

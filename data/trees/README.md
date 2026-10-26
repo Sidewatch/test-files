@@ -10,7 +10,7 @@ Open one and flip the breadcrumb's tree glyph. XML opens on its **source** (mark
 the tree is one click away); every other format opens on its tree. Double-click a key or a value to
 edit it in place: the format's finder names the one token, its encoder keeps the kind, one undo step.
 
-## JSON — `.json .avsc .geojson .har .ipynb .topojson .webmanifest` and the config files that are JSON
+## JSON — `.json .avsc .geojson .har .ipynb .topojson .webmanifest`, the engine files that are JSON, and the config files that are JSON
 
 `package.json`, `schema.avsc` (Avro), `warehouses.geojson`, `session.har`, `analysis.ipynb`,
 `regions.topojson`, `app.webmanifest`, `.arcconfig`, `.babelrc`, `.jshintrc`,
@@ -18,6 +18,10 @@ edit it in place: the format's finder names the one token, its encoder keeps the
 `.htmlhintrc`, `.csslintrc`, `.nycrc`, `.c8rc`, `.firebaserc`, `.huskyrc`, `.czrc`, `.remarkrc`, `.eslintrc`, `.jscsrc`,
 `.yamllint`, `composer.lock`, `deno.lock`,
 `flake.lock`, `Package.resolved`, `Pipfile.lock`
+
+Game engines and their tools: `Shooter.uproject` and `Inventory.uplugin` (Unreal, tab-indented as the editor
+writes them), `Game.asmdef` and `Game.Tests.asmref` (Unity assembly definitions), `Controls.inputactions` (Unity's
+Input System), `World.ldtk` (LDtk), `level1.tmj` and `tiles.tsj` (Tiled's map and tileset)
 
 ## JSONC and JSON5 — `.jsonc .json5` and the config files that are JSONC
 
@@ -28,10 +32,16 @@ says "Invalid JSON". An edit in place leaves every comment where it was.
 `tsconfig.json`, `jsconfig.json`, `devcontainer.json`, `.eslintrc.json`, `.babelrc.json`, `bun.lock`,
 `settings.jsonc`, `config.json5`
 
-## YAML — `.yaml .yml` and the config files that are YAML
+## YAML — `.yaml .yml`, Unity's serialised assets, and the config files that are YAML
 
 `config.yaml` (typed scalars, a flow sequence, a block scalar), `docker-compose.yml`,
 `.clang-format`, `.clang-tidy`, `.condarc`, `.gemrc`, `glide.lock`
+
+Unity (`.unity .prefab .asset .mat .anim .controller .meta`): `Main.unity`, `Player.prefab`, `GameSettings.asset`,
+`Hero.mat`, `Run.anim`, `Hero.controller`, `Player.prefab.meta`. Each object is its own document under
+`%YAML 1.1` and `%TAG !u!`, tagged with its class and anchored by its file ID (`--- !u!4 &519420032`). `Main.unity`
+holds a prefab instance whose overridden `Transform` is written `--- !u!4 &1846034758 stripped`: that word is not
+YAML, and without care it costs the tree the file's first object.
 
 ## TOML — `.toml` and the manifests and locks that are TOML
 
@@ -40,7 +50,7 @@ integer bases, floats, `+inf`, the four date-time forms, arrays, nested inline t
 and literal strings — plus `Cargo.toml`, `pyproject.toml`, `Pipfile`, `Cargo.lock`, `poetry.lock`,
 `uv.lock`, `pdm.lock`
 
-## XML — `.xml .atom .rss .csproj .fsproj .vbproj .props .targets .iml .pom .resx .storyboard .xib .wsdl .xaml .xsd .xsl .xslt .nuspec .opml .gpx .kml` and `web.config`
+## XML — `.xml .atom .rss .csproj .fsproj .vbproj .props .targets .iml .pom .resx .storyboard .xib .wsdl .xaml .xsd .xsl .xslt .nuspec .opml .gpx .kml .uxml .tmx .rbxlx .rbxmx .xliff .xlf` and `web.config`
 
 `catalog.xml` — prolog, DOCTYPE, comments, attributes, namespaces, entities (predefined, numeric and a
 DTD's own), CDATA, repeated children gathered into one sequence, mixed content, empty elements — plus
@@ -48,7 +58,8 @@ DTD's own), CDATA, repeated children gathered into one sequence, mixed content, 
 `Directory.Build.props`, `Directory.Build.targets`, `inventory.iml`, `inventory-1.4.0.pom`, `pom.xml`,
 `Resources.resx`, `Main.storyboard`, `Panel.xib`, `orders.wsdl`, `MainWindow.xaml`, `orders.xsd`,
 `catalog.xsl`, `catalog.xslt`, `Inventory.nuspec`, `subscriptions.opml`, `track.gpx`, `sites.kml`,
-`web.config`
+`web.config`, and from game tools `MainMenu.uxml` (Unity UI Toolkit), `level1.tmx` (Tiled), `Place.rbxlx` and
+`Sword.rbxmx` (a Roblox place and model, Luau in their CDATA), `Localizable.xliff` (XLIFF 1.2) and `en.xlf` (XLIFF 2.0)
 
 ## Property lists — `.plist .entitlements .stringsdict`, text and compiled
 

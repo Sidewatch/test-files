@@ -1,8 +1,9 @@
 # 3D models
 
 One toy rocket in every format a 3D preview meets, plus the cases that trip previews up: an animated
-copy, a Z-up copy in centimetres and a dense mesh. They are here for checking a 3D preview by hand
-(Finder's Quick Look today); no Sidewatch check reads this folder yet.
+copy, a Z-up copy in centimetres and a dense mesh. Sidewatch's `--selftest-models` opens every one in a
+real tab and its gallery, and `--selftest-corrupt-input` damages each and opens the copies; open them in
+Finder too, where Quick Look shows the formats macOS reads and Sidewatch's extension shows glTF and GLB.
 
 The rocket is 6 meshes (body, nose, fins, window frame, window, nozzle), 3,254 vertices and 5,216
 triangles, 1 unit (a metre) tall, Y up, the window facing +Z. Its five materials are physically based:
