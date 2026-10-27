@@ -7,7 +7,8 @@ tree, a gallery edge case — at a known size.
 
 It is public so anyone can use it to test an editor, a highlighter, a previewer or a file-type detector:
 225 languages with a complete syntax showcase each, a fixture for every structured config format, every
-common media and archive kind, broken files, and 200,000-line sources.
+common media and archive kind, broken files, 200,000-line sources, and a file at every size limit the app draws
+(up to 70 MiB, with a generator for the 100 MiB and 1 GiB cases).
 
 ## Using it
 
@@ -37,7 +38,7 @@ Or open any folder in Sidewatch (or press Space in Finder for Quick Look) and lo
 | `media/` | Images, audio, video, fonts, documents, archives, 3D models, and a gallery folder |
 | `database/` | SQLite databases, schema files and migrations |
 | `sessions/` | Real agent transcripts, one folder per agent |
-| `large-files/` | 200,000-line sources for performance |
+| `large-files/` | 200,000-line sources, and generated files at every size limit (its own README) |
 | `themes/` | VS Code colour themes for the importer |
 
 - `languages/<language>/` — one COMPLETE showcase per language the detector knows, named so the detector
@@ -82,8 +83,12 @@ Or open any folder in Sidewatch (or press Space in Finder for Quick Look) and lo
   a `chat_history.jsonl` beside its `summary.json`). The Gemini 0.40 and Grok transcripts are sanitized
   captures of real runs, under the MIT licence noted in `NOTICE.md`.
 - `large-files/` — `huge-200k.swift` / `.php` / `.js` / `.py`: 200,000 lines each of plausible code, the scale
-  test for highlighting, folding, the minimap, sticky scroll and bracket matching. Generated (see the header
-  comment in each); never hand-edit, regenerate.
+  test for highlighting, folding, the minimap, sticky scroll and bracket matching (see the header comment in each).
+  `editor/`, `large-file-view/` and `previews/` hold a file at each size where the app changes how it opens one:
+  the editor's plain-text cap, the large-file view (70 MiB, and a 1 MiB line), and every preview's limit, one
+  complex file per format (YAML with anchors and merge keys, TOML with every value type, a SQL dump with a
+  trigger…). `generate.py` writes them byte for byte (`--verify` compares, `--huge DIR` writes the 100 MiB and
+  1 GiB ones outside the repository); its README lists each file. Never hand-edit, regenerate.
 - `themes/vscode/` — two VS Code colour themes for the importer: a dark one in JSONC with every awkward form
   theme authors use, and a light one with no `type` (its own README).
 
