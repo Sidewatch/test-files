@@ -11,7 +11,7 @@ folding, the minimap, sticky scroll and bracket matching. The header comment in 
 
 Everything in `editor/`, `large-file-view/` and `previews/` is written by `generate.py`, seeded, so a run reproduces the
 committed files byte for byte. Change the script, run it, commit what it wrote; never edit a file by hand. The
-set is 344 MB, about 69 MB once git compresses it, and each regeneration adds that much to the history again:
+set is 352 MB, about 70 MB once git compresses it, and each regeneration adds that much to the history again:
 change the generator only when a check needs it.
 
 ```sh
@@ -27,10 +27,9 @@ heaviest case:
 |---|---|
 | 64 MiB, or one line of 1 MiB | a text file opens in the large-file view: read-only, any size, read in pieces |
 | 20 MiB or 300,000 lines | the editor's plain-text cap: no highlighting, outline or folding |
-| 8 MiB | the structure tree (JSON, JSON Lines, YAML, TOML, XML, plists, INI, .properties, .strings) says "Too Large to Preview" |
+| 8 MiB | the structure tree (JSON, JSON Lines, YAML, TOML, XML, plists, INI, .properties, .strings) and a rendered Markdown page say "Too Large to Preview" |
 | 16 MiB | the CSV table, the record tables (hosts, gettext) and rendered HTML pages do too |
 | 4 MiB | the `.env` table, the SQL schema and notebooks do too |
-| 1 MiB | a rendered Markdown page does too |
 
 ### `editor/`
 
@@ -70,7 +69,7 @@ Each just under its preview's limit, and each using its format whole:
 | `dump.sql` | 4 MiB | four tables with keys and checks, an index, a view, a trigger, 19,750 rows each, an apostrophe and a semicolon inside strings |
 | `analysis.ipynb` | 4 MiB | 2,203 cells: stream, HTML-table, PNG and error outputs |
 | `production.env` | 4 MiB | 77,952 entries: `export`, both quotes, `${…}` expansion, inline comments, multi-line values |
-| `handbook.md` | 1 MiB | 1,043 chapters: every block and inline form, tables, task lists, code fences, some math |
+| `handbook.md` | 8 MiB | 8,440 chapters: every block and inline form, tables, task lists, code fences, some math |
 | `report.html` | 16 MiB | 13,608 sections: tables, `<details>`, inline SVG |
 | `too-large.yaml` | 9 MiB | past the tree's 8 MiB: "Too Large to Preview" |
 

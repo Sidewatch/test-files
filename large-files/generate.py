@@ -44,7 +44,7 @@ RECORDS = 16 * MIB
 ENV_TABLE = 4 * MIB
 SCHEMA = 4 * MIB
 NOTEBOOK = 4 * MIB
-MARKDOWN = 1 * MIB
+MARKDOWN = 8 * MIB
 PAGE = 16 * MIB
 # How far under its limit an "at the limit" file stops.
 UNDER = 16 * 1024
