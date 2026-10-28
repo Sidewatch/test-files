@@ -44,6 +44,7 @@ RECORDS = 16 * MIB
 ENV_TABLE = 4 * MIB
 SCHEMA = 4 * MIB
 NOTEBOOK = 4 * MIB
+MARKDOWN = 1 * MIB
 PAGE = 16 * MIB
 # How far under its limit an "at the limit" file stops.
 UNDER = 16 * 1024
@@ -1021,7 +1022,7 @@ def files() -> list[tuple[str, object]]:
         ("previews/dump.sql", lambda p: write_sql(p, SCHEMA - UNDER, 215)),
         ("previews/analysis.ipynb", lambda p: write_notebook(p, NOTEBOOK - UNDER, 216)),
         ("previews/production.env", lambda p: write_env(p, ENV_TABLE - UNDER, 217)),
-        ("previews/handbook.md", lambda p: write_markdown(p, PAGE - UNDER, 218)),
+        ("previews/handbook.md", lambda p: write_markdown(p, MARKDOWN - UNDER, 218)),
         ("previews/report.html", lambda p: write_html(p, PAGE - UNDER, 219)),
         ("previews/too-large.yaml", lambda p: write_yaml(p, TREE + MIB, 220)),
     ]
