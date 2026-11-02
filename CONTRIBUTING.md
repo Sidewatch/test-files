@@ -17,7 +17,7 @@ case that once broke a preview.
 - **Plain UTF-8, LF line endings**, a trailing newline, no BOM — unless the file exists to test exactly that.
 - **Hidden files are live to git in their own folder.** A `.gitignore` showcase must not ignore anything
   else in the repository, and a `.gitattributes` showcase must not change how its own folder checks out.
-- **Generated files are regenerated, not edited** (`large-files/`, the generated media). Their header or the
+- **Generated files are regenerated, not edited** (`large-files/`, the generated media, `data/logs/`). Their header or the
   folder's README says how.
 - **Third-party material** needs a licence that allows redistribution and an entry in `NOTICE.md`.
 

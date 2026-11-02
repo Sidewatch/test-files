@@ -1,0 +1,12 @@
+{
+  "name": "log-fixtures",
+  "private": true,
+  "description": "Pinned Node loggers for the log fixtures (json_loggers.js and logfmt.js).",
+  "license": "MIT",
+  "dependencies": {
+    "bunyan": "1.8.15",
+    "logfmt": "1.4.0",
+    "pino": "9.14.0",
+    "winston": "3.19.0"
+  }
+}

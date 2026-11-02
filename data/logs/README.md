@@ -23,7 +23,31 @@ cited below, and the generator wrote the expected file from the same values it b
   is taken as UTC and has `"zoned": false`. Formats without a year or a date take them from `referenceDate`.
 - `component` is the logger, module, tag or program name the format carries, or null.
 
-All generators ran with `TZ=UTC`. Real runs that use the real clock are dated 2 November 2026; runs with a
+## Regenerating
+
+`generators/` holds every program that made these files, one folder per toolchain, and `generate.sh`, which
+runs them all and writes the result here:
+
+```sh
+data/logs/generators/generate.sh            # or: generate.sh <another folder>
+```
+
+It needs python3, node and npm, php and composer, ruby, cargo, swiftc, curl, and macOS's own `/usr/sbin/httpd`
+and `/usr/bin/log`, with port 18080 free on the loopback interface. Dependencies are pinned
+(`python/requirements.txt`, `node/package-lock.json`, `php/composer.json`, `rust/Cargo.lock`) and installed into
+a scratch folder, never here. Fixtures from a seeded clock come out byte for byte the same on every run; those
+from the real clock (structlog, Rust, PHP's error_log, Apache, macOS) get new times and process IDs.
+
+`generators/finalize.py` checks everything before it writes a file, and writes nothing if any check fails:
+
+- every answer file fits its log: entries in order, inside the file, with known levels and well-formed times;
+- no path from the scratch folder or any home folder, and not this machine's name, its user's name or its own
+  time zone;
+- every address is a documentation one (RFC 5737, RFC 3849), apart from `0.0.0.0` and `[::]` as listen addresses.
+
+Change a fixture by changing its generator and running `generate.sh`, not by editing the log or its answers.
+
+All generators run with `TZ=UTC`. Real runs that use the real clock are dated 2 November 2026; runs with a
 simulated clock start at 2026-10-01T00:00:00Z.
 
 ## Fixtures
@@ -79,10 +103,11 @@ Real means the named tool wrote the file. Doc means the file was written to the 
 
 ## Post-processing
 
-- Paths: the generators ran from a scratch directory. Its path in tracebacks and stack traces became `/srv/app/`
-  (python, plain, node, php). Apache paths are listed in the table. Line counts are unchanged.
-- Hostnames: pino and bunyan were given `web-01` through their own options. Monolog's syslog lines had the
-  gethostname() value replaced with `web-01`. httpd ran with `ServerName web-01.example.com`. `log show` and
+- Paths: the generators run from a scratch copy of `generators/`. Its paths in tracebacks and stack traces
+  become `/srv/app/` (python, plain, node, php, ruby). Apache paths are listed in the table. Line counts are
+  unchanged.
+- Hostnames: pino and bunyan were given `web-01` through their own options. Monolog's syslog lines have the
+  gethostname() value replaced with `web-01` as they are written. httpd ran with `ServerName web-01.example.com`. `log show` and
   `log stream` write `localhost` themselves.
 - Addresses: Apache's loopback clients were rewritten to documentation ranges, as listed in the table. Every
   other address in these files is from 192.0.2.0/24, 198.51.100.0/24, 203.0.113.0/24 or 2001:db8::/32.
@@ -130,6 +155,8 @@ Real means the named tool wrote the file. Doc means the file was written to the 
 - Ruby Logger `A`/`ANY` (Logger::UNKNOWN) maps to fatal.
 
 ## Corrections made when the reader was checked against these answers (2 Nov 2026)
+
+These began as edits to the answer files; the generators now make the answers this way.
 
 - `macos/show-syslog`: every level is null. `log show --style syslog` prints no level; the answers had taken theirs from
   `--style ndjson`, which the lines themselves do not carry.

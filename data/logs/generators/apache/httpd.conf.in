@@ -1,0 +1,52 @@
+# The httpd.conf run.sh starts macOS's own /usr/sbin/httpd with; @DIR@ becomes the scratch copy of this folder.
+# Loopback only, on a high port, with its own pid file, so nothing else on the machine is touched.
+ServerRoot "/usr"
+Listen 127.0.0.1:18080
+Listen [::1]:18080
+LoadModule mpm_prefork_module libexec/apache2/mod_mpm_prefork.so
+LoadModule authz_core_module libexec/apache2/mod_authz_core.so
+LoadModule authz_host_module libexec/apache2/mod_authz_host.so
+LoadModule mime_module libexec/apache2/mod_mime.so
+LoadModule log_config_module libexec/apache2/mod_log_config.so
+LoadModule unixd_module libexec/apache2/mod_unixd.so
+LoadModule dir_module libexec/apache2/mod_dir.so
+LoadModule alias_module libexec/apache2/mod_alias.so
+LoadModule cgi_module libexec/apache2/mod_cgi.so
+ServerName web-01.example.com:18080
+PidFile "@DIR@/logs/httpd.pid"
+ScoreBoardFile "@DIR@/logs/scoreboard"
+Mutex file:@DIR@/logs default
+DefaultRuntimeDir "@DIR@/logs"
+StartServers 2
+MinSpareServers 1
+MaxSpareServers 2
+
+DocumentRoot "@DIR@/www"
+<Directory "@DIR@/www">
+  Options -Indexes
+  Require all granted
+</Directory>
+<Directory "@DIR@/www/private">
+  Require all denied
+</Directory>
+ScriptAlias /cgi-bin/ "@DIR@/cgi-bin/"
+<Directory "@DIR@/cgi-bin">
+  Require all granted
+</Directory>
+DirectoryIndex index.html
+TypesConfig /private/etc/apache2/mime.types
+
+# The error log in httpd's built-in default format, with more detail for two folders.
+ErrorLog "@DIR@/logs/error_log"
+LogLevel info
+<Location "/private/">
+  LogLevel authz_core:debug
+</Location>
+<Location "/docs/">
+  LogLevel trace1
+</Location>
+
+# access_log is the fixture; answers is a second log of the same requests that the answer file is made from.
+LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
+CustomLog "@DIR@/logs/access_log" combined
+CustomLog "@DIR@/logs/answers" "%{msec}t %>s"

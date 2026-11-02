@@ -1,0 +1,2 @@
+# The structlog fixture (structlog_json.py). stdlib_logging.py needs nothing beyond Python itself.
+structlog==26.1.0

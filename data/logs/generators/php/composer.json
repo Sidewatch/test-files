@@ -1,0 +1,10 @@
+{
+    "description": "Monolog, pinned, for the PHP log fixtures (laravel.php and syslog.php).",
+    "require": {
+        "monolog/monolog": "3.12.1",
+        "psr/log": "3.0.2"
+    },
+    "config": {
+        "lock": false
+    }
+}
